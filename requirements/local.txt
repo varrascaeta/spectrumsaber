@@ -1,0 +1,4 @@
+# Django modules
+django==5.0.4
+# Integrations
+apache-airflow==2.9.0
