@@ -2,7 +2,8 @@
 import logging
 # Django imports
 from django.db import models
-
+# Project imports
+from resources.places.models import District
 
 logger = logging.getLogger(__name__)
 
@@ -88,7 +89,7 @@ class Campaign(BaseFile):
     # Relationships
     cover = models.ForeignKey(Coverage, on_delete=models.CASCADE, related_name='campaigns')
     data_points = models.ManyToManyField(DataPoint, blank=True, related_name='campaigns')
-    # location = models.ForeignKey('places.Location', null=True, on_delete=models.SET_NULL)
+    district = models.ForeignKey(District, null=True, on_delete=models.SET_NULL)
     measuring_tool = models.ForeignKey(MeasuringTool, null=True, related_name='campaigns', on_delete=models.SET_NULL)
     spreadsheets = models.ManyToManyField('Spreadsheet', blank=True, related_name='campaigns')
 
