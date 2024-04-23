@@ -2,3 +2,5 @@
 django==5.0.4
 # Integrations
 apache-airflow==2.9.0
+# Linting
+pycodestyle==2.11.1

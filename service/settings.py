@@ -42,7 +42,9 @@ DJANGO_APPS = [
 ]
 
 LOCAL_APPS = [
+    "resources.campaigns.apps.CampaignsConfig",
     "resources.integrations.apps.IntegrationsConfig",
+    "resources.places.apps.PlacesConfig",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + LOCAL_APPS
