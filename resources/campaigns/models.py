@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 # Common utils
 class BaseFile(models.Model):
     name = models.CharField(max_length=255)
+    path = models.CharField(max_length=255)
     description = models.TextField()
     date = models.DateField()
     metadata = models.JSONField()
@@ -52,8 +53,6 @@ class Category(models.Model):
 
 
 class Measurement(BaseFile):
-    # Fields
-    filepath = models.FileField(upload_to='measurements/')
     # Relationships
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
 
