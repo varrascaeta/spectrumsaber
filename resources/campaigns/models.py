@@ -80,18 +80,31 @@ class DataPoint(BaseFile):
     latitude = models.FloatField()
     longitude = models.FloatField()
     # Relationships
-    measurements = models.ManyToManyField(Measurement, blank=True, related_name='data_points')
+    measurements = models.ManyToManyField(
+        Measurement, blank=True, related_name='data_points'
+    )
 
 
 class Campaign(BaseFile):
     # Fields
     external_id = models.CharField(max_length=255)
     # Relationships
-    cover = models.ForeignKey(Coverage, on_delete=models.CASCADE, related_name='campaigns')
-    data_points = models.ManyToManyField(DataPoint, blank=True, related_name='campaigns')
-    district = models.ForeignKey(District, null=True, on_delete=models.SET_NULL)
-    measuring_tool = models.ForeignKey(MeasuringTool, null=True, related_name='campaigns', on_delete=models.SET_NULL)
-    spreadsheets = models.ManyToManyField('Spreadsheet', blank=True, related_name='campaigns')
+    cover = models.ForeignKey(
+        Coverage, on_delete=models.CASCADE, related_name='campaigns'
+    )
+    data_points = models.ManyToManyField(
+        DataPoint, blank=True, related_name='campaigns'
+    )
+    district = models.ForeignKey(
+        District, null=True, on_delete=models.SET_NULL
+    )
+    measuring_tool = models.ForeignKey(
+        MeasuringTool, null=True, related_name='campaigns',
+        on_delete=models.SET_NULL
+    )
+    spreadsheets = models.ManyToManyField(
+        'Spreadsheet', blank=True, related_name='campaigns'
+    )
 
 
 # Spreadsheets
