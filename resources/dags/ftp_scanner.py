@@ -4,7 +4,7 @@ import logging
 import os
 import json
 # Project imports
-from dags.utils import FTPClient
+from resources.dags.utils import FTPClient
 # Airflow imports
 from airflow.decorators import dag, task
 
