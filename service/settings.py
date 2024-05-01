@@ -1,3 +1,4 @@
+# flake8: noqa
 """
 Django settings for spectral-pymg project.
 
@@ -9,7 +10,7 @@ https://docs.djangoproject.com/en/5.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
-
+import os
 from pathlib import Path
 from django.utils.log import DEFAULT_LOGGING
 
@@ -27,8 +28,9 @@ SECRET_KEY = 'django-insecure-xh+$+-i5y*01p7rbj#%zwdh%kloirp476qohe)(98swzu^w&i2
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["localhost", "0.0.0.0", "127.0.0.1"]
 
+os.environ.setdefault("DJANGO_ALLOW_ASYNC_UNSAFE", "True")
 
 # Application definition
 
@@ -39,11 +41,11 @@ DJANGO_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_extensions',
 ]
 
 LOCAL_APPS = [
     "resources.campaigns.apps.CampaignsConfig",
-    "resources.integrations.apps.IntegrationsConfig",
     "resources.places.apps.PlacesConfig",
 ]
 

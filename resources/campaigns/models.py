@@ -11,15 +11,20 @@ logger = logging.getLogger(__name__)
 # Common utils
 class BaseFile(models.Model):
     name = models.CharField(max_length=255)
-    description = models.TextField()
-    date = models.DateField()
-    metadata = models.JSONField()
+    path = models.CharField(max_length=255)
+    description = models.TextField(null=True)
+    date = models.DateField(null=True)
+    metadata = models.JSONField(null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self) -> str:
         return self.name
+
+    @classmethod
+    def matches_pattern(cls, filename: str) -> bool:
+        raise NotImplementedError
 
 
 # Measurements
@@ -52,15 +57,13 @@ class Category(models.Model):
 
 
 class Measurement(BaseFile):
-    # Fields
-    filepath = models.FileField(upload_to='measurements/')
     # Relationships
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
 
 
 class MeasuringTool(models.Model):
     name = models.CharField(max_length=255)
-    model_name = models.CharField(max_length=255)
+    model_name = models.CharField(max_length=255, null=True)
     fov = models.FloatField(null=True)
     measure_height = models.FloatField(null=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -71,27 +74,42 @@ class MeasuringTool(models.Model):
 
 # Campaigns
 class Coverage(BaseFile):
-    pass
+    @classmethod
+    def matches_pattern(cls, filename: str) -> bool:
+        return filename.isupper()
 
 
 class DataPoint(BaseFile):
     # Fields
     order = models.IntegerField()
-    latitude = models.FloatField()
-    longitude = models.FloatField()
+    latitude = models.FloatField(null=True)
+    longitude = models.FloatField(null=True)
     # Relationships
-    measurements = models.ManyToManyField(Measurement, blank=True, related_name='data_points')
+    measurements = models.ManyToManyField(
+        Measurement, blank=True, related_name='data_points'
+    )
 
 
 class Campaign(BaseFile):
     # Fields
-    external_id = models.CharField(max_length=255)
+    external_id = models.CharField(max_length=255, null=True)
     # Relationships
-    cover = models.ForeignKey(Coverage, on_delete=models.CASCADE, related_name='campaigns')
-    data_points = models.ManyToManyField(DataPoint, blank=True, related_name='campaigns')
-    district = models.ForeignKey(District, null=True, on_delete=models.SET_NULL)
-    measuring_tool = models.ForeignKey(MeasuringTool, null=True, related_name='campaigns', on_delete=models.SET_NULL)
-    spreadsheets = models.ManyToManyField('Spreadsheet', blank=True, related_name='campaigns')
+    cover = models.ForeignKey(
+        Coverage, on_delete=models.CASCADE, related_name='campaigns'
+    )
+    data_points = models.ManyToManyField(
+        DataPoint, blank=True, related_name='campaigns'
+    )
+    district = models.ForeignKey(
+        District, null=True, on_delete=models.SET_NULL
+    )
+    measuring_tool = models.ForeignKey(
+        MeasuringTool, null=True, related_name='campaigns',
+        on_delete=models.SET_NULL
+    )
+    spreadsheets = models.ManyToManyField(
+        'Spreadsheet', blank=True, related_name='campaigns'
+    )
 
 
 # Spreadsheets
@@ -107,5 +125,4 @@ class SheetType():
 
 class Spreadsheet(BaseFile):
     sheet_type = models.CharField(max_length=16, choices=SheetType.CHOICES)
-    filepath = models.FileField(upload_to='spreadsheets/')
     delimiter = models.CharField(max_length=1, default=';')
