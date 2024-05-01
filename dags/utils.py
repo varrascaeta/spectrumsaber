@@ -16,10 +16,10 @@ TIME_FORMAT = "%I:%M%p"
 
 
 class FTPClient():
-    def __init__(self, host: str, username: str, password: str) -> None:
-        self.host = host
-        self.username = username
-        self.password = password
+    def __init__(self, credentials: dict) -> None:
+        self.host = credentials["host"]
+        self.username = credentials["username"]
+        self.password = credentials["password"]
         self.connection = None
 
     def connect(self) -> FTP:
@@ -28,14 +28,18 @@ class FTPClient():
         status = self.connection.login(self.username, self.password)
         logger.info("Status: %s", status)
 
-    def get_files(self, path: str) -> list['dict']:
+    def get_dir_data(self, path: str) -> list[dict]:
         self.connect()
         logger.info("Scanning %s", path)
         self.connection.cwd(path)
         lines = []
         self.connection.dir(lines.append)
         self.connection.quit()
-        parsed_files = [self.parse_line(path, line) for line in lines]
+        parsed_files = []
+        for line in lines:
+            parsed = self.parse_line(path, line)
+            if parsed:
+                parsed_files.append(parsed)
         return parsed_files
 
     def parse_line(self, path, line):
@@ -46,12 +50,13 @@ class FTPClient():
             time = datetime.strptime(time_str, TIME_FORMAT).time()
             created_at = datetime.combine(date, time)
             return {
-                "filepath": os.path.join(path, filename),
+                "name": filename,
+                "path": os.path.join(path, filename),
                 "created_at": created_at,
                 "is_dir": kind == "<DIR>",
             }
         else:
-            logger.error(f"Line {line} does not match pattern")
+            logger.error(f"Line {line} does not match FTP pattern")
             return {}
 
     def __str__(self) -> str:
