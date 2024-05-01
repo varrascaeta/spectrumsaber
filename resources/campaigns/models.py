@@ -12,15 +12,19 @@ logger = logging.getLogger(__name__)
 class BaseFile(models.Model):
     name = models.CharField(max_length=255)
     path = models.CharField(max_length=255)
-    description = models.TextField()
-    date = models.DateField()
-    metadata = models.JSONField()
+    description = models.TextField(null=True)
+    date = models.DateField(null=True)
+    metadata = models.JSONField(null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self) -> str:
         return self.name
+
+    @classmethod
+    def matches_pattern(cls, filename: str) -> bool:
+        raise NotImplementedError
 
 
 # Measurements
@@ -59,7 +63,7 @@ class Measurement(BaseFile):
 
 class MeasuringTool(models.Model):
     name = models.CharField(max_length=255)
-    model_name = models.CharField(max_length=255)
+    model_name = models.CharField(max_length=255, null=True)
     fov = models.FloatField(null=True)
     measure_height = models.FloatField(null=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -70,14 +74,16 @@ class MeasuringTool(models.Model):
 
 # Campaigns
 class Coverage(BaseFile):
-    pass
+    @classmethod
+    def matches_pattern(cls, filename: str) -> bool:
+        return filename.isupper()
 
 
 class DataPoint(BaseFile):
     # Fields
     order = models.IntegerField()
-    latitude = models.FloatField()
-    longitude = models.FloatField()
+    latitude = models.FloatField(null=True)
+    longitude = models.FloatField(null=True)
     # Relationships
     measurements = models.ManyToManyField(
         Measurement, blank=True, related_name='data_points'
@@ -86,7 +92,7 @@ class DataPoint(BaseFile):
 
 class Campaign(BaseFile):
     # Fields
-    external_id = models.CharField(max_length=255)
+    external_id = models.CharField(max_length=255, null=True)
     # Relationships
     cover = models.ForeignKey(
         Coverage, on_delete=models.CASCADE, related_name='campaigns'
@@ -119,5 +125,4 @@ class SheetType():
 
 class Spreadsheet(BaseFile):
     sheet_type = models.CharField(max_length=16, choices=SheetType.CHOICES)
-    filepath = models.FileField(upload_to='spreadsheets/')
     delimiter = models.CharField(max_length=1, default=';')
