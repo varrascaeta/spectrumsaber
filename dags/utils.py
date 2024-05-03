@@ -48,7 +48,7 @@ class FTPClient():
             date_str, time_str, kind, filename = match.groups()
             date = datetime.strptime(date_str, DATE_FORMAT).date()
             time = datetime.strptime(time_str, TIME_FORMAT).time()
-            created_at = datetime.combine(date, time)
+            created_at = datetime.combine(date, time).replace(tzinfo=UTC)
             return {
                 "name": filename,
                 "path": os.path.join(path, filename),
