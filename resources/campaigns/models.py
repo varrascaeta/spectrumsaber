@@ -2,6 +2,7 @@
 import logging
 # Django imports
 from django.db import models
+from django.utils import timezone
 # Project imports
 from resources.places.models import District
 
@@ -16,7 +17,7 @@ class BaseFile(models.Model):
     date = models.DateField(null=True)
     metadata = models.JSONField(null=True)
 
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self) -> str:
@@ -25,6 +26,9 @@ class BaseFile(models.Model):
     @classmethod
     def matches_pattern(cls, filename: str) -> bool:
         raise NotImplementedError
+
+    class Meta:
+        abstract = True
 
 
 # Measurements
@@ -50,7 +54,7 @@ class CategoryType():
 
 class Category(models.Model):
     name = models.CharField(max_length=128, choices=CategoryType.CHOICES)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self) -> str:
         return self.get_name_display()
@@ -66,7 +70,7 @@ class MeasuringTool(models.Model):
     model_name = models.CharField(max_length=255, null=True)
     fov = models.FloatField(null=True)
     measure_height = models.FloatField(null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self) -> str:
         return self.name + ' ' + self.model_name
@@ -85,6 +89,9 @@ class DataPoint(BaseFile):
     latitude = models.FloatField(null=True)
     longitude = models.FloatField(null=True)
     # Relationships
+    campaign = models.ForeignKey(
+        'Campaign', on_delete=models.CASCADE, related_name='data_points'
+    )
     measurements = models.ManyToManyField(
         Measurement, blank=True, related_name='data_points'
     )
@@ -94,11 +101,8 @@ class Campaign(BaseFile):
     # Fields
     external_id = models.CharField(max_length=255, null=True)
     # Relationships
-    cover = models.ForeignKey(
-        Coverage, on_delete=models.CASCADE, related_name='campaigns'
-    )
-    data_points = models.ManyToManyField(
-        DataPoint, blank=True, related_name='campaigns'
+    coverage = models.ForeignKey(
+        Coverage, on_delete=models.CASCADE, related_name='coverage_campaigns'
     )
     district = models.ForeignKey(
         District, null=True, on_delete=models.SET_NULL
@@ -110,6 +114,9 @@ class Campaign(BaseFile):
     spreadsheets = models.ManyToManyField(
         'Spreadsheet', blank=True, related_name='campaigns'
     )
+
+    def __str__(self) -> str:
+        return f"{self.name} of {self.coverage}"
 
 
 # Spreadsheets
