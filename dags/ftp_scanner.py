@@ -1,15 +1,15 @@
 # Standard imports
 import datetime
+import json
 import logging
 import os
-import json
-import sys
-# Django imports
-import django
+from collections.abc import Callable
 # Project imports
-from dags.utils import FTPClient
+from dags.operators import DjangoOperator
 # Airflow imports
 from airflow.decorators import dag, task
+
+from dags.utils import FTPClient
 
 
 logger = logging.getLogger(__name__)
@@ -24,56 +24,85 @@ BASE_FTP_PATH = os.getenv("BASE_FTP_PATH")
     tags=["ftp_scanner"],
 )
 def ftp_file_scanner():
-    @task
-    def get_ftp_credentials() -> dict:
-        credentials_filepath = os.getenv("FTP_CREDENTIALS_FILEPATH")
-        if not credentials_filepath:
+    setup_django = DjangoOperator(task_id="setup_django")
+
+    @task()
+    def get_children_data(parent_data: dict) -> list[dict]:
+        path = parent_data["path"]
+        credentials_path = os.getenv("FTP_CREDENTIALS_FILEPATH")
+        if not credentials_path:
             raise ValueError("FTP_CREDENTIALS_FILEPATH not set")
         else:
-            return json.load(open(credentials_filepath))
-
-    @task
-    def setup_django() -> None:
-        sys.path.append('./spectral-pymg/')  # TODO: Change this to env var
-        os.environ.setdefault("DJANGO_SETTINGS_MODULE", "service.settings")
-        django.setup()
-
-    @task
-    def match_coverages(credentials: dict) -> list[dict]:
-        from resources.campaigns.models import Coverage
+            credentials = json.load(open(credentials_path))
         client = FTPClient(credentials=credentials)
-        file_data = client.get_dir_data(BASE_FTP_PATH)
-        matched_paths = []
-        for data in file_data:
-            if data.get("is_dir", False):
-                if Coverage.matches_pattern(data["name"]):
-                    matched_paths.append(data)
-        return matched_paths
+        children_data = client.get_dir_data(path)
+        for child in children_data:
+            child["parent_id"] = parent_data.get("id", None)
+        return children_data
 
-    @task
-    def create_coverages(coverage_data: list[dict]) -> None:
+    @task()
+    def process_coverage(coverage_data: dict) -> int:
         from resources.campaigns.models import Coverage
-        for data in coverage_data:
-            cover, created = Coverage.objects.get_or_create(
+        if Coverage.matches_pattern(coverage_data["name"]):
+            coverage, created = Coverage.objects.get_or_create(
+                name=coverage_data["name"],
+                path=coverage_data["path"],
+                created_at=coverage_data["created_at"],
+            )
+            logger.info(f"{'Created' if created else 'Found'} {coverage}")
+            coverage_data["id"] = coverage.id
+            return coverage_data
+
+    @task()
+    def process_campaign(campaign_data: list[dict]) -> None:
+        from resources.campaigns.models import Campaign
+        for data in campaign_data:
+            parent_id = data["parent_id"]
+            campaign, created = Campaign.objects.get_or_create(
                 name=data["name"],
                 path=data["path"],
                 created_at=data["created_at"],
+                coverage_id=parent_id,
             )
-            if created:
-                logger.info("Created %s", cover)
-            else:
-                logger.info("Already exists %s", cover)
+            logger.info(f"{'Created' if created else 'Found'} {campaign}")
 
-    credentials = get_ftp_credentials()
-    setup = setup_django()
-    coverages = match_coverages(credentials)
-    result = create_coverages(coverages)
+    @task()
+    def filter_files(data: list[dict], condition: Callable) -> list[dict]:
+        return [d for d in data if condition(d)]
 
-    credentials >> setup >> coverages >> result
+    # Define flow
+    coverage_data = get_children_data(
+        parent_data={
+            'path': BASE_FTP_PATH
+        }
+    )
+    # Branch for each coverage
+    created_coverages_data = process_coverage.expand(
+        coverage_data=coverage_data
+    )
+    # Filter only HIDRO for now
+    filtered_coverages = filter_files(
+        data=created_coverages_data,
+        condition=lambda d: "HIDROLOGIA" in d['path']
+    )
+    # Branch for each campaign
+    campaign_data = get_children_data.expand(parent_data=filtered_coverages)
+    created_campaigns_data = process_campaign.expand(
+        campaign_data=campaign_data
+    )
+    tasks = [
+        setup_django,
+        coverage_data,
+        created_coverages_data,
+        filtered_coverages,
+        campaign_data,
+        created_campaigns_data
+    ]
+    for i, task_id in enumerate(tasks[:-1]):
+        task_id >> tasks[i+1]
 
 
 dag = ftp_file_scanner()
-
 
 if __name__ == "__main__":
     dag.test()
