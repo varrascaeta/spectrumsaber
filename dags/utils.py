@@ -3,7 +3,7 @@ import logging
 from ftplib import FTP
 import re
 import os
-from datetime import datetime
+from datetime import datetime, UTC
 
 
 logger = logging.getLogger(__name__)
@@ -21,26 +21,33 @@ class FTPClient():
         self.username = credentials["username"]
         self.password = credentials["password"]
         self.connection = None
+        self.connect()
 
     def connect(self) -> FTP:
         logger.info("Connecting to %s", self.host)
-        self.connection = FTP(self.host, encoding="latin-1")
+        if not self.connection:
+            self.connection = FTP(self.host, encoding="latin-1")
         status = self.connection.login(self.username, self.password)
         logger.info("Status: %s", status)
 
     def get_dir_data(self, path: str) -> list[dict]:
-        self.connect()
-        logger.info("Scanning %s", path)
-        self.connection.cwd(path)
-        lines = []
-        self.connection.dir(lines.append)
-        self.connection.quit()
-        parsed_files = []
-        for line in lines:
-            parsed = self.parse_line(path, line)
-            if parsed:
-                parsed_files.append(parsed)
-        return parsed_files
+        retries = 0
+        while retries < 3:
+            try:
+                logger.info("Scanning %s", path)
+                self.connection.cwd(path)
+                lines = []
+                self.connection.dir(lines.append)
+                parsed_files = []
+                for line in lines:
+                    parsed = self.parse_line(path, line)
+                    if parsed:
+                        parsed_files.append(parsed)
+                return parsed_files
+            except Exception as e:
+                logger.error("Error scanning %s: %s", path, e)
+                self.connect()
+                retries += 1
 
     def parse_line(self, path, line):
         match = re.match(DIR_LIST_PATTERN, line.strip())
