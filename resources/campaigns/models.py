@@ -27,6 +27,10 @@ class BaseFile(models.Model):
     def matches_pattern(cls, filename: str) -> bool:
         raise NotImplementedError
 
+    @classmethod
+    def get_attributes_from_name(cls, filename: str) -> dict:
+        raise NotImplementedError
+
     class Meta:
         abstract = True
 
@@ -114,6 +118,26 @@ class Campaign(BaseFile):
     spreadsheets = models.ManyToManyField(
         "Spreadsheet", blank=True, related_name="campaigns"
     )
+
+    @classmethod
+    def matches_pattern(cls, filename: str) -> bool:
+        splitted = filename.split("-")
+        right_length = len(splitted) == 3
+        right_prefix = splitted[0].isdigit()
+        right_date = len(splitted[1]) == 8
+        return right_length and right_prefix and right_date
+
+    @classmethod
+    def get_attributes_from_name(cls, filename: str) -> dict:
+        if cls.matches_pattern(filename):
+            splitted = filename.split("-")
+            return {
+                "external_id": splitted[0],
+                "date_str": splitted[1],
+                "geo_code": splitted[2],
+            }
+        else:
+            return {}
 
     def __str__(self) -> str:
         return f"{self.name} of {self.coverage}"
