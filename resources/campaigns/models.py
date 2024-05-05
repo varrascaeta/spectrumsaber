@@ -1,5 +1,6 @@
 # Standard imports
 import logging
+from datetime import datetime
 # Django imports
 from django.db import models
 from django.utils import timezone
@@ -14,7 +15,6 @@ class BaseFile(models.Model):
     name = models.CharField(max_length=255)
     path = models.CharField(max_length=255)
     description = models.TextField(null=True)
-    date = models.DateField(null=True)
     metadata = models.JSONField(null=True)
 
     created_at = models.DateTimeField(default=timezone.now)
@@ -64,11 +64,6 @@ class Category(models.Model):
         return self.get_name_display()
 
 
-class Measurement(BaseFile):
-    # Relationships
-    category = models.ForeignKey(Category, on_delete=models.CASCADE)
-
-
 class MeasuringTool(models.Model):
     name = models.CharField(max_length=255)
     model_name = models.CharField(max_length=255, null=True)
@@ -87,22 +82,9 @@ class Coverage(BaseFile):
         return filename.isupper()
 
 
-class DataPoint(BaseFile):
-    # Fields
-    order = models.IntegerField()
-    latitude = models.FloatField(null=True)
-    longitude = models.FloatField(null=True)
-    # Relationships
-    campaign = models.ForeignKey(
-        'Campaign', on_delete=models.CASCADE, related_name='data_points'
-    )
-    measurements = models.ManyToManyField(
-        Measurement, blank=True, related_name='data_points'
-    )
-
-
 class Campaign(BaseFile):
     # Fields
+    date = models.DateField(null=True)
     external_id = models.CharField(max_length=255, null=True)
     # Relationships
     coverage = models.ForeignKey(
@@ -141,6 +123,43 @@ class Campaign(BaseFile):
 
     def __str__(self) -> str:
         return f"{self.name} of {self.coverage}"
+
+
+class DataPoint(BaseFile):
+    # Fields
+    order = models.IntegerField()
+    latitude = models.FloatField(null=True)
+    longitude = models.FloatField(null=True)
+    # Relationships
+    campaign = models.ForeignKey(
+        Campaign, on_delete=models.CASCADE, related_name="data_points"
+    )
+
+    @classmethod
+    def matches_pattern(cls, filename: str) -> bool:
+        splitted = filename.split("-")
+        right_length = len(splitted) == 2
+        right_prefix = splitted[0] == "Punto"
+        right_order = splitted[1].isdigit()
+        return right_length and right_prefix and right_order
+
+    @classmethod
+    def get_attributes_from_name(cls, filename: str) -> dict:
+        if cls.matches_pattern(filename):
+            splitted = filename.split("-")
+            return {
+                "order": int(splitted[1])
+            }
+        else:
+            return {}
+
+
+class Measurement(BaseFile):
+    # Relationships
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, null=True)
+    data_points = models.ForeignKey(
+        "DataPoint", on_delete=models.CASCADE, related_name="measurements"
+    )
 
 
 # Spreadsheets
