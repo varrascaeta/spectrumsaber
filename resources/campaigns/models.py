@@ -73,7 +73,7 @@ class MeasuringTool(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self) -> str:
-        return self.name + ' ' + self.model_name
+        return self.name + " " + self.model_name
 
 
 # Campaigns
@@ -102,17 +102,17 @@ class Campaign(BaseFile):
     external_id = models.CharField(max_length=255, null=True)
     # Relationships
     coverage = models.ForeignKey(
-        Coverage, on_delete=models.CASCADE, related_name='coverage_campaigns'
+        Coverage, on_delete=models.CASCADE, related_name="coverage_campaigns"
     )
     district = models.ForeignKey(
         District, null=True, on_delete=models.SET_NULL
     )
     measuring_tool = models.ForeignKey(
-        MeasuringTool, null=True, related_name='campaigns',
+        MeasuringTool, null=True, related_name="campaigns",
         on_delete=models.SET_NULL
     )
     spreadsheets = models.ManyToManyField(
-        'Spreadsheet', blank=True, related_name='campaigns'
+        "Spreadsheet", blank=True, related_name="campaigns"
     )
 
     def __str__(self) -> str:
@@ -132,4 +132,4 @@ class SheetType():
 
 class Spreadsheet(BaseFile):
     sheet_type = models.CharField(max_length=16, choices=SheetType.CHOICES)
-    delimiter = models.CharField(max_length=1, default=';')
+    delimiter = models.CharField(max_length=1, default=";")
