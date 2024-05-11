@@ -1,6 +1,5 @@
 # Standard imports
 import logging
-from datetime import datetime
 # Django imports
 from django.db import models
 from django.utils import timezone
@@ -44,16 +43,44 @@ class CategoryType():
     REFLECTANCE = "Reflectance"
     AVG_REFLECTANCE = "Average Reflectance"
     TXT_REFLECTANCE = "Text Reflectance"
+    TXT_AVG_RADIANCE = "Text Average Radiance"
+    TXT_AVG_REFLECTANCE = "Text Average Reflectance"
 
     CHOICES = (
-        (RAW_DATA, "RAW"),
-        (RADIANCE, "RAD"),
-        (AVG_RADIANCE, "AVG_RAD"),
-        (TXT_RADIANCE, "TXT_RAD"),
-        (REFLECTANCE, "REF"),
-        (AVG_REFLECTANCE, "AVG_REF"),
-        (TXT_REFLECTANCE, "TXT_REF"),
+        (RAW_DATA, RAW_DATA),
+        # Radiance
+        (RADIANCE, RADIANCE),
+        (AVG_RADIANCE, AVG_RADIANCE),
+        (TXT_RADIANCE, TXT_RADIANCE),
+        (TXT_AVG_RADIANCE, TXT_AVG_RADIANCE),
+        # Reflectance
+        (REFLECTANCE, REFLECTANCE),
+        (AVG_REFLECTANCE, AVG_REFLECTANCE),
+        (TXT_REFLECTANCE, TXT_REFLECTANCE),
+        (TXT_AVG_REFLECTANCE, TXT_AVG_REFLECTANCE),
     )
+
+    SLUG_ALIASES = {
+        RAW_DATA: ["datocrudo"],
+        # Radiance aliases
+        RADIANCE: ["radiancia"],
+        AVG_RADIANCE: ["radianciapromedio"],
+        TXT_RADIANCE: ["radianciatexto", "textoradiancia"],
+        TXT_AVG_RADIANCE: ["textoradianciapromedio"],
+        # Reflectance aliases
+        REFLECTANCE: ["reflectancia"],
+        AVG_REFLECTANCE: ["reflectanciapromedio"],
+        TXT_REFLECTANCE: ["reflectanciatexto", "textoreflectancia"],
+        TXT_AVG_REFLECTANCE: ["textoreflectanciapromedio"],
+    }
+
+    @classmethod
+    def get_by_alias(cls, alias: str) -> str:
+        slug_alias = alias.lower().replace(" ", "")
+        for category, aliases in cls.SLUG_ALIASES.items():
+            if slug_alias in aliases:
+                return category
+        return None
 
 
 class Category(models.Model):
@@ -164,7 +191,7 @@ class DataPoint(BaseFile):
 class Measurement(BaseFile):
     # Relationships
     category = models.ForeignKey(Category, on_delete=models.CASCADE, null=True)
-    data_points = models.ForeignKey(
+    data_point = models.ForeignKey(
         "DataPoint", on_delete=models.CASCADE, related_name="measurements"
     )
 
