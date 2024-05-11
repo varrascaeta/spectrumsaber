@@ -103,11 +103,14 @@ class Campaign(BaseFile):
 
     @classmethod
     def matches_pattern(cls, filename: str) -> bool:
-        splitted = filename.split("-")
-        right_length = len(splitted) == 3
-        right_prefix = splitted[0].isdigit()
-        right_date = len(splitted[1]) == 8
-        return right_length and right_prefix and right_date
+        try:
+            splitted = filename.split("-")
+            right_prefix = splitted[0].isdigit()
+            right_date = len(splitted[1]) == 8
+            return right_prefix and right_date
+        except Exception as e:
+            logger.error(f"Error parsing {filename}: {e}")
+            return False
 
     @classmethod
     def get_attributes_from_name(cls, filename: str) -> dict:
@@ -137,11 +140,15 @@ class DataPoint(BaseFile):
 
     @classmethod
     def matches_pattern(cls, filename: str) -> bool:
-        splitted = filename.split("-")
-        right_length = len(splitted) == 2
-        right_prefix = splitted[0] == "Punto"
-        right_order = splitted[1].isdigit()
-        return right_length and right_prefix and right_order
+        try:
+            cleaned_spaces = filename.replace(" ", "-")
+            splitted = cleaned_spaces.split("-")
+            right_prefix = splitted[0] == "Punto"
+            right_order = splitted[1].isdigit()
+            return right_prefix and right_order
+        except Exception as e:
+            logger.error(f"Error parsing {filename}: {e}")
+            return False
 
     @classmethod
     def get_attributes_from_name(cls, filename: str) -> dict:
