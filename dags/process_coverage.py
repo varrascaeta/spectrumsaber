@@ -1,14 +1,16 @@
 # Standard imports
 import datetime
 import logging
-import os
 # Project imports
 from dags.operators import DjangoOperator, FTPGetterOperator
 # Airflow imports
 from airflow.decorators import dag, task
+from airflow import XComArg
+# Django imports
+from django.conf import settings
+
 
 logger = logging.getLogger(__name__)
-BASE_FTP_PATH = os.getenv("BASE_FTP_PATH")
 
 
 @dag(
@@ -35,11 +37,12 @@ def process_coverage():
     # Define flow
     coverage_data = FTPGetterOperator(
         task_id="get_coverage_data",
-        path=BASE_FTP_PATH,
+        parent_data={"id": None, "path": settings.BASE_FTP_PATH},
+        parent_keys=["id"],
     )
     # Branch for each coverage
     create_coverages = process_coverage.expand(
-        coverage_data=coverage_data.output
+        coverage_data=XComArg(coverage_data)
     )
     setup_django >> coverage_data >> create_coverages
 
