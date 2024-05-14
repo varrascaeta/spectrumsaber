@@ -6,6 +6,7 @@ import json
 from dags.utils import FTPClient
 # Airflow imports
 from airflow.models.baseoperator import BaseOperator
+from airflow.models.xcom_arg import PlainXComArg
 
 
 class DjangoOperator(BaseOperator):
@@ -23,6 +24,11 @@ class FTPGetterOperator(BaseOperator):
         self.parent_keys = parent_keys
 
     def execute(self, *args, **kwargs) -> list[dict]:
+        if isinstance(self.parent_data, PlainXComArg):
+            task_instance = kwargs["context"]["ti"]
+            self.parent_data = task_instance.xcom_pull(
+                key=self.parent_data.key
+            )
         credentials_path = os.getenv("FTP_CREDENTIALS_FILEPATH")
         if not credentials_path:
             raise ValueError("FTP_CREDENTIALS_FILEPATH not set")
