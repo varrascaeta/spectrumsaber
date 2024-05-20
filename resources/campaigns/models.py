@@ -2,6 +2,7 @@
 import logging
 # Django imports
 from django.db import models
+from django.utils import timezone
 # Project imports
 from resources.places.models import District
 
@@ -13,10 +14,9 @@ class BaseFile(models.Model):
     name = models.CharField(max_length=255)
     path = models.CharField(max_length=255)
     description = models.TextField(null=True)
-    date = models.DateField(null=True)
     metadata = models.JSONField(null=True)
 
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self) -> str:
@@ -25,6 +25,13 @@ class BaseFile(models.Model):
     @classmethod
     def matches_pattern(cls, filename: str) -> bool:
         raise NotImplementedError
+
+    @classmethod
+    def get_attributes_from_name(cls, filename: str) -> dict:
+        raise NotImplementedError
+
+    class Meta:
+        abstract = True
 
 
 # Measurements
@@ -36,29 +43,52 @@ class CategoryType():
     REFLECTANCE = "Reflectance"
     AVG_REFLECTANCE = "Average Reflectance"
     TXT_REFLECTANCE = "Text Reflectance"
+    TXT_AVG_RADIANCE = "Text Average Radiance"
+    TXT_AVG_REFLECTANCE = "Text Average Reflectance"
 
     CHOICES = (
-        (RAW_DATA, "RAW"),
-        (RADIANCE, "RAD"),
-        (AVG_RADIANCE, "AVG_RAD"),
-        (TXT_RADIANCE, "TXT_RAD"),
-        (REFLECTANCE, "REF"),
-        (AVG_REFLECTANCE, "AVG_REF"),
-        (TXT_REFLECTANCE, "TXT_REF"),
+        (RAW_DATA, RAW_DATA),
+        # Radiance
+        (RADIANCE, RADIANCE),
+        (AVG_RADIANCE, AVG_RADIANCE),
+        (TXT_RADIANCE, TXT_RADIANCE),
+        (TXT_AVG_RADIANCE, TXT_AVG_RADIANCE),
+        # Reflectance
+        (REFLECTANCE, REFLECTANCE),
+        (AVG_REFLECTANCE, AVG_REFLECTANCE),
+        (TXT_REFLECTANCE, TXT_REFLECTANCE),
+        (TXT_AVG_REFLECTANCE, TXT_AVG_REFLECTANCE),
     )
+
+    SLUG_ALIASES = {
+        RAW_DATA: ["datocrudo"],
+        # Radiance aliases
+        RADIANCE: ["radiancia"],
+        AVG_RADIANCE: ["radianciapromedio"],
+        TXT_RADIANCE: ["radianciatexto", "textoradiancia"],
+        TXT_AVG_RADIANCE: ["textoradianciapromedio"],
+        # Reflectance aliases
+        REFLECTANCE: ["reflectancia"],
+        AVG_REFLECTANCE: ["reflectanciapromedio"],
+        TXT_REFLECTANCE: ["reflectanciatexto", "textoreflectancia"],
+        TXT_AVG_REFLECTANCE: ["textoreflectanciapromedio"],
+    }
+
+    @classmethod
+    def get_by_alias(cls, alias: str) -> str:
+        slug_alias = alias.lower().replace(" ", "")
+        for category, aliases in cls.SLUG_ALIASES.items():
+            if slug_alias in aliases:
+                return category
+        return None
 
 
 class Category(models.Model):
     name = models.CharField(max_length=128, choices=CategoryType.CHOICES)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self) -> str:
         return self.get_name_display()
-
-
-class Measurement(BaseFile):
-    # Relationships
-    category = models.ForeignKey(Category, on_delete=models.CASCADE)
 
 
 class MeasuringTool(models.Model):
@@ -66,10 +96,10 @@ class MeasuringTool(models.Model):
     model_name = models.CharField(max_length=255, null=True)
     fov = models.FloatField(null=True)
     measure_height = models.FloatField(null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self) -> str:
-        return self.name + ' ' + self.model_name
+        return self.name + " " + self.model_name
 
 
 # Campaigns
@@ -79,36 +109,90 @@ class Coverage(BaseFile):
         return filename.isupper()
 
 
+class Campaign(BaseFile):
+    # Fields
+    date = models.DateField(null=True)
+    external_id = models.CharField(max_length=255, null=True)
+    # Relationships
+    coverage = models.ForeignKey(
+        Coverage, on_delete=models.CASCADE, related_name="coverage_campaigns"
+    )
+    district = models.ForeignKey(
+        District, null=True, on_delete=models.SET_NULL
+    )
+    measuring_tool = models.ForeignKey(
+        MeasuringTool, null=True, related_name="campaigns",
+        on_delete=models.SET_NULL
+    )
+    spreadsheets = models.ManyToManyField(
+        "Spreadsheet", blank=True, related_name="campaigns"
+    )
+
+    @classmethod
+    def matches_pattern(cls, filename: str) -> bool:
+        try:
+            splitted = filename.split("-")
+            right_prefix = splitted[0].isdigit()
+            right_date = len(splitted[1]) == 8
+            return right_prefix and right_date
+        except Exception as e:
+            logger.error(f"Error parsing {filename}: {e}")
+            return False
+
+    @classmethod
+    def get_attributes_from_name(cls, filename: str) -> dict:
+        if cls.matches_pattern(filename):
+            splitted = filename.split("-")
+            return {
+                "external_id": splitted[0],
+                "date_str": splitted[1],
+                "geo_code": splitted[2],
+            }
+        else:
+            return {}
+
+    def __str__(self) -> str:
+        return f"{self.name} of {self.coverage}"
+
+
 class DataPoint(BaseFile):
     # Fields
     order = models.IntegerField()
     latitude = models.FloatField(null=True)
     longitude = models.FloatField(null=True)
     # Relationships
-    measurements = models.ManyToManyField(
-        Measurement, blank=True, related_name='data_points'
+    campaign = models.ForeignKey(
+        Campaign, on_delete=models.CASCADE, related_name="data_points"
     )
 
+    @classmethod
+    def matches_pattern(cls, filename: str) -> bool:
+        try:
+            cleaned_spaces = filename.replace(" ", "-")
+            splitted = cleaned_spaces.split("-")
+            right_prefix = splitted[0] == "Punto"
+            right_order = splitted[1].isdigit()
+            return right_prefix and right_order
+        except Exception as e:
+            logger.error(f"Error parsing {filename}: {e}")
+            return False
 
-class Campaign(BaseFile):
-    # Fields
-    external_id = models.CharField(max_length=255, null=True)
+    @classmethod
+    def get_attributes_from_name(cls, filename: str) -> dict:
+        if cls.matches_pattern(filename):
+            splitted = filename.split("-")
+            return {
+                "order": int(splitted[1])
+            }
+        else:
+            return {}
+
+
+class Measurement(BaseFile):
     # Relationships
-    cover = models.ForeignKey(
-        Coverage, on_delete=models.CASCADE, related_name='campaigns'
-    )
-    data_points = models.ManyToManyField(
-        DataPoint, blank=True, related_name='campaigns'
-    )
-    district = models.ForeignKey(
-        District, null=True, on_delete=models.SET_NULL
-    )
-    measuring_tool = models.ForeignKey(
-        MeasuringTool, null=True, related_name='campaigns',
-        on_delete=models.SET_NULL
-    )
-    spreadsheets = models.ManyToManyField(
-        'Spreadsheet', blank=True, related_name='campaigns'
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, null=True)
+    data_point = models.ForeignKey(
+        "DataPoint", on_delete=models.CASCADE, related_name="measurements"
     )
 
 
@@ -125,4 +209,4 @@ class SheetType():
 
 class Spreadsheet(BaseFile):
     sheet_type = models.CharField(max_length=16, choices=SheetType.CHOICES)
-    delimiter = models.CharField(max_length=1, default=';')
+    delimiter = models.CharField(max_length=1, default=";")

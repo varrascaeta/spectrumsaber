@@ -159,3 +159,5 @@ DEFAULT_LOGGING["loggers"][""] = {
     "level": "DEBUG",
     "propagate": True,
 }
+
+BASE_FTP_PATH = os.getenv("BASE_FTP_PATH")
