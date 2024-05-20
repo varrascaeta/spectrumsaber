@@ -1,6 +1,7 @@
 # Standard imports
 import datetime
 import logging
+import json
 # Project imports
 from dags.operators import DjangoOperator, FTPGetterOperator
 # Airflow imports
@@ -33,6 +34,10 @@ def process_coverage():
                 created_at=coverage_data["created_at"],
             )
             logger.info(f"{'Created' if created else 'Found'} {coverage}")
+        else:
+            with open("unmatched_coverages.txt", "a") as f:
+                data = json.dumps(coverage_data, default=lambda x: x.__str__())
+                f.write(f"{data}\n")
 
     # Define flow
     coverage_data = FTPGetterOperator(

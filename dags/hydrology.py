@@ -1,6 +1,7 @@
 # Standard imports
 import sys
 import logging
+import json
 from datetime import datetime
 # Airflow imports
 from airflow.decorators import dag, task
@@ -50,6 +51,9 @@ def process_hydro_campaigns() -> None:
             logger.info(f"{'Created' if created else 'Found'} {campaign}")
         else:
             logger.info(f"Skipping {campaign_data['name']}")
+            with open("unmatched_campaigns_hydro.txt", "a") as f:
+                data = json.dumps(campaign_data, default=lambda x: x.__str__())
+                f.write(f"{data}\n")
 
     # Define flow
     coverage_data = get_coverage_data()
@@ -106,6 +110,9 @@ def process_hydro_data_points(campaign_ids: list = None) -> None:
             logger.info(f"{'Created' if created else 'Found'} {data_point}")
         else:
             logger.info(f"Skipping {point_data['name']}")
+            with open("unmatched_datapoints_hydro.txt", "a") as f:
+                data = json.dumps(point_data, default=lambda x: x.__str__())
+                f.write(f"{data}\n")
 
     @task
     def flatten_result(input: list[list[dict]]) -> list[dict]:
@@ -180,6 +187,11 @@ def process_hydro_measurements(data_point_ids: list = None) -> None:
             logger.info(f"{'Created' if created else 'Found'} {category}")
             category_data["category_id"] = category.id
             return category_data
+        else:
+            logger.info(f"Skipping {category_data['name']}")
+            with open("unmatched_categories_hydro.txt", "a") as f:
+                data = json.dumps(category_data, default=lambda x: x.__str__())
+                f.write(f"{data}\n")
 
     @task()
     def create_measurement(measurement_data: dict, **kwargs) -> None:
@@ -291,9 +303,9 @@ hydro_measurements = process_hydro_measurements()
 
 if __name__ == "__main__":
     dag_name = sys.argv[1]
-    if dag_name == "process_hydro_campaigns":
+    if dag_name == "campaigns":
         hydro_campaigns.test()
-    elif dag_name == "process_hydro_data_points":
+    elif dag_name == "data_points":
         hydro_data_points.test()
-    elif dag_name == "process_hydro_measurements":
+    elif dag_name == "measurements":
         hydro_measurements.test()
