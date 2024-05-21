@@ -79,7 +79,8 @@ def process_hydro_campaigns() -> None:
     create_campaigns = create_campaign.expand(
         campaign_data=XComArg(get_hydro_campaigns)
     )
-    setup_django >> coverage_data >> get_hydro_campaigns >> create_campaigns
+    setup_django >> coverage_data >> get_hydro_campaigns >> init_file
+    init_file >> create_campaigns
 
 
 @dag(
@@ -112,59 +113,25 @@ def process_hydro_data_points(campaign_ids: list = None) -> None:
             )
             logger.info(msg)
         else:
-            return list(campaigns.values("id", "path"))
+            return list(campaigns.values_list("id", flat=True))
 
     @task()
-    def create_data_point(point_data: dict, **kwargs) -> dict:
-        from resources.campaigns.models import DataPoint
-        parsed_attrs = DataPoint.get_attributes_from_name(point_data["name"])
-        if parsed_attrs:
-            data_point, created = DataPoint.objects.get_or_create(
-                name=point_data["name"],
-                path=point_data["path"],
-                created_at=point_data["created_at"],
-                campaign_id=point_data["parent"]["id"],
-                order=parsed_attrs["order"],
-            )
-            logger.info(f"{'Created' if created else 'Found'} {data_point}")
-        else:
-            logger.info(f"Skipping {point_data['name']}")
-            with open("unmatched_datapoints_hydro.txt", "a") as f:
-                data = json.dumps(point_data, default=lambda x: x.__str__())
-                f.write(f"{data}\n")
-
-    @task
-    def flatten_result(input: list[list[dict]]) -> list[dict]:
-        flattened = []
-        for item in input:
-            flattened.extend(item)
-        return flattened
+    def create_data_points(campaign_id: int,) -> None:
+        from resources.campaigns.data_point_creators import (
+            HydroDataPointCreator
+        )
+        creator = HydroDataPointCreator(campaign_id=campaign_id)
+        creator.process()
 
     # Define flow
-    campaign_data = get_campaign_data()
+    init_file = init_unmatched_file()
 
-    get_data_points = FTPGetterOperator.partial(
-        task_id="get_hydro_data_points",
-        parent_keys=["id"]
-    ).expand(
-        parent_data=campaign_data
-    )
+    campaign_ids = get_campaign_ids()
 
-    flatten_data_points = flatten_result(
-        input=XComArg(get_data_points)
+    created_data_points = create_data_points.expand(
+        campaign_id=campaign_ids
     )
-    create_data_points = create_data_point.expand(
-        point_data=flatten_data_points
-    )
-    tasks = [
-        setup_django,
-        campaign_data,
-        get_data_points,
-        flatten_data_points,
-        create_data_points
-    ]
-    for i in range(1, len(tasks)):
-        tasks[i-1] >> tasks[i]
+    setup_django >> init_file >> campaign_ids >> created_data_points
 
 
 @dag(
@@ -174,18 +141,37 @@ def process_hydro_data_points(campaign_ids: list = None) -> None:
     catchup=False,
     tags=["measurements", "hydro"],
 )
-def process_hydro_measurements(data_point_ids: list = None) -> None:
+def process_hydro_measurements(campaign_ids: list = None) -> None:
     setup_django = DjangoOperator(task_id="setup_django")
 
     @task()
-    def get_data_points_data(data_point_ids: list = None) -> str:
-        from resources.campaigns.models import DataPoint
-        if data_point_ids:
-            data_points = DataPoint.objects.filter(id__in=data_point_ids)
-        else:
-            data_points = DataPoint.objects.filter(
-                campaign__coverage__name="HIDROLOGIA"
+    def init_unmatched_file() -> None:
+        run_date = timezone.now().strftime("%Y-%m-%d %H:%M:%s")
+        with open("unmatched_categories_hydro.txt", "a") as f:
+            f.write("="*80)
+            f.write(f"\nUnmatched categories on {run_date}\n")
+
+    @task()
+    def get_campaign_ids(campaign_ids: list = None) -> list[dict]:
+        from resources.campaigns.models import Campaign
+        campaigns = Campaign.objects.filter(coverage__name="HIDROLOGIA")
+        if campaign_ids:
+            campaigns = campaigns.filter(id__in=campaign_ids)
+        if not campaigns.exists():
+            msg = (
+                "No campaigns found.",
+                "Try running process_hydro_campaigns dag first..."
             )
+            logger.info(msg)
+        else:
+            return list(campaigns.values_list("id", flat=True))
+
+    @task()
+    def get_data_points_data(campaign_id: int = None) -> str:
+        from resources.campaigns.models import DataPoint
+        data_points = DataPoint.objects.filter(
+            campaign_id=campaign_id
+        )
         if not data_points.exists():
             msg = (
                 "No data points found for HIDROLOGIA.",
@@ -193,127 +179,27 @@ def process_hydro_measurements(data_point_ids: list = None) -> None:
             )
             logger.info(msg)
         else:
-            return list(data_points.values("id", "path"))
+            return list(data_points.values_list("id", flat=True))
 
     @task()
-    def get_or_create_category(category_data: dict) -> dict:
-        from resources.campaigns.models import CategoryType, Category
-        category_name = CategoryType.get_by_alias(category_data["name"])
-        if category_name:
-            category, created = Category.objects.get_or_create(
-                name=category_name
-            )
-            logger.info(f"{'Created' if created else 'Found'} {category}")
-            category_data["category_id"] = category.id
-            return category_data
-        else:
-            logger.info(f"Skipping {category_data['name']}")
-            with open("unmatched_categories_hydro.txt", "a") as f:
-                data = json.dumps(category_data, default=lambda x: x.__str__())
-                f.write(f"{data}\n")
-
-    @task()
-    def create_measurement(measurement_data: dict, **kwargs) -> None:
-        from resources.campaigns.models import Measurement
-        measurement, created = Measurement.objects.get_or_create(
-            name=measurement_data["name"],
-            path=measurement_data["path"],
-            created_at=measurement_data["created_at"],
-            data_point_id=measurement_data["parent"]["id"],
-            category_id=measurement_data["parent"]["category_id"],
-        )
-        logger.info(f"{'Created' if created else 'Found'} {measurement}")
-
-    @task()
-    def flatten_result(input: list[list[dict]]) -> list[dict]:
-        flattened = []
-        for item in input:
-            flattened.extend(item)
-        return flattened
-
-    @task.branch()
-    def branch_categories(category_data: dict) -> str:
-        from resources.campaigns.models import CategoryType
-        name = category_data["name"].lower().replace(" ", "")
-        category_aliases = CategoryType.SLUG_ALIASES.values()
-        if not any([name in aliases for aliases in category_aliases]):
-            return "get_subcategories"
-        else:
-            return "create_categories"
+    def get_or_create_measurements(data_point_id: int) -> dict:
+        from resources.campaigns.measurement_creators import MeasurementCreator
+        creator = MeasurementCreator(data_point_id=data_point_id)
+        creator.process()
 
     # Define flow
-    data_points_data = get_data_points_data(data_point_ids=data_point_ids)
+    init_file = init_unmatched_file()
 
-    get_categories = FTPGetterOperator.partial(
-        task_id="get_hydro_categories",
-        parent_keys=["id"]
-    ).expand(parent_data=data_points_data)
+    campaign_ids = get_campaign_ids(campaign_ids=campaign_ids)
 
-    category_data = flatten_result(input=XComArg(get_categories))
+    setup_django >> init_file >> campaign_ids
 
-    # Normalize branched categories
-    normalize_branch = branch_categories.expand(category_data=category_data)
-
-    get_subcategories = FTPGetterOperator.partial(
-        task_id="get_subcategories",
-        parent_keys=["parent"]
-    ).expand(parent_data=category_data)
-
-    subcategory_data = flatten_result(input=XComArg(get_subcategories))
-
-    create_norm_categories = get_or_create_category.expand(
-        category_data=subcategory_data
-    )
-
-    get_norm_measurements = FTPGetterOperator.partial(
-        task_id="get_normalized_measurements",
-        parent_keys=["parent", "category_id"]
-    ).expand(parent_data=create_norm_categories)
-
-    norm_measurements_data = flatten_result(
-        input=XComArg(get_norm_measurements)
-    )
-
-    create_norm_measurements = create_measurement.expand(
-        measurement_data=norm_measurements_data
-    )
-
-    # Create measurements
-    create_categories = get_or_create_category.expand(
-        category_data=category_data
-    )
-
-    get_measurements = FTPGetterOperator.partial(
-        task_id="get_measurements",
-        parent_keys=["parent", "category_id"]
-    ).expand(parent_data=create_categories)
-
-    measurement_data = flatten_result(input=XComArg(get_measurements))
-
-    create_measurements = create_measurement.expand(
-        measurement_data=measurement_data
-    )
-
-    # Subcategories flow
-    get_subcategories >> subcategory_data >> create_norm_categories
-    create_norm_categories >> get_norm_measurements >> norm_measurements_data
-    norm_measurements_data >> create_norm_measurements
-
-    # Normal flow
-    create_categories >> get_measurements >> measurement_data
-    measurement_data >> create_measurements
-
-    # Full flow
-    tasks = [
-        setup_django,
-        data_points_data,
-        get_categories,
-        category_data,
-        normalize_branch,
-        [get_subcategories, create_norm_categories],
-    ]
-    for i in range(1, len(tasks)):
-        tasks[i-1] >> tasks[i]
+    for campaign_id in campaign_ids:
+        data_points_data = get_data_points_data(campaign_id=campaign_id)
+        create_measurements = get_or_create_measurements.expand(
+            data_point_data=data_points_data
+        )
+        campaign_ids >> data_points_data >> create_measurements
 
 
 hydro_campaigns = process_hydro_campaigns()
