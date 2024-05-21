@@ -36,7 +36,7 @@ def process_coverage():
             logger.info(f"{'Created' if created else 'Found'} {coverage}")
         else:
             with open("unmatched_coverages.txt", "a") as f:
-                data = json.dumps(coverage_data, default=lambda x: x.__str__())
+                data = json.dumps(coverage_data, default=str)
                 f.write(f"{data}\n")
 
     # Define flow

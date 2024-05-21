@@ -6,6 +6,8 @@ from datetime import datetime
 # Airflow imports
 from airflow.decorators import dag, task
 from airflow import XComArg
+# Django imports
+from django.utils import timezone
 # Project imports
 from dags.operators import DjangoOperator, FTPGetterOperator
 
@@ -22,6 +24,13 @@ logger = logging.getLogger(__name__)
 )
 def process_hydro_campaigns() -> None:
     setup_django = DjangoOperator(task_id="setup_django")
+
+    @task()
+    def init_unmatched_file() -> None:
+        run_date = timezone.now().strftime("%Y-%m-%d %H:%M:%s")
+        with open("unmatched_campaigns_hydro.txt", "a") as f:
+            f.write("="*80)
+            f.write(f"\nUnmatched campaigns on {run_date}\n")
 
     @task()
     def get_coverage_data() -> dict:
@@ -52,7 +61,7 @@ def process_hydro_campaigns() -> None:
         else:
             logger.info(f"Skipping {campaign_data['name']}")
             with open("unmatched_campaigns_hydro.txt", "a") as f:
-                data = json.dumps(campaign_data, default=lambda x: x.__str__())
+                data = json.dumps(campaign_data, default=str)
                 f.write(f"{data}\n")
 
     # Define flow
@@ -63,6 +72,9 @@ def process_hydro_campaigns() -> None:
         parent_data=coverage_data,
         parent_keys=["id"]
     )
+
+    init_file = init_unmatched_file()
+
     # Branch for each campaign
     create_campaigns = create_campaign.expand(
         campaign_data=XComArg(get_hydro_campaigns)
@@ -81,7 +93,14 @@ def process_hydro_data_points(campaign_ids: list = None) -> None:
     setup_django = DjangoOperator(task_id="setup_django")
 
     @task()
-    def get_campaign_data(campaign_ids: list = None) -> list[dict]:
+    def init_unmatched_file() -> None:
+        run_date = timezone.now().strftime("%Y-%m-%d %H:%M:%s")
+        with open("unmatched_datapoints_hydro.txt", "a") as f:
+            f.write("="*80)
+            f.write(f"\nUnmatched data points on {run_date}\n")
+
+    @task()
+    def get_campaign_ids(campaign_ids: list = None) -> list[dict]:
         from resources.campaigns.models import Campaign
         campaigns = Campaign.objects.filter(coverage__name="HIDROLOGIA")
         if campaign_ids:
