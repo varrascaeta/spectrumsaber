@@ -29,12 +29,7 @@ class FTPGetterOperator(BaseOperator):
             self.parent_data = task_instance.xcom_pull(
                 key=self.parent_data.key
             )
-        credentials_path = os.getenv("FTP_CREDENTIALS_FILEPATH")
-        if not credentials_path:
-            raise ValueError("FTP_CREDENTIALS_FILEPATH not set")
-        else:
-            credentials = json.load(open(credentials_path))
-        client = FTPClient(credentials=credentials)
+        client = FTPClient()
         children_data = client.get_dir_data(self.parent_data["path"])
         for child in children_data:
             child["parent"] = {}

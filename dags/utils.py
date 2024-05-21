@@ -1,5 +1,6 @@
 # Standard imports
 import functools
+import json
 import logging
 import os
 import re
@@ -20,12 +21,23 @@ TIME_FORMAT = "%I:%M%p"
 
 
 class FTPClient():
-    def __init__(self, credentials: dict) -> None:
+    def __init__(self) -> None:
+        credentials_path = os.getenv("FTP_CREDENTIALS_FILEPATH")
+        if not credentials_path:
+            raise ValueError("FTP_CREDENTIALS_FILEPATH not set")
+        else:
+            credentials = json.load(open(credentials_path))
         self.host = credentials["host"]
         self.username = credentials["username"]
         self.password = credentials["password"]
         self.connection = None
+
+    def __enter__(self):
         self.connect()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.connection.quit()
 
     def connect(self) -> FTP:
         logger.info("Connecting to %s", self.host)
