@@ -1,7 +1,6 @@
 # Standard imports
 import os
 import sys
-import json
 # Project imports
 from dags.utils import FTPClient
 # Airflow imports
