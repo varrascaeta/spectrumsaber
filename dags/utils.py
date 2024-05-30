@@ -10,7 +10,7 @@ from datetime import datetime, UTC
 # Extra imports
 import inspect
 import pickle
-from ftplib import FTP
+from ftplib import FTP, error_perm
 
 
 logger = logging.getLogger(__name__)
