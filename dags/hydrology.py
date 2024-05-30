@@ -10,9 +10,17 @@ from airflow import XComArg
 from django.utils import timezone
 # Project imports
 from dags.operators import DjangoOperator, FTPGetterOperator
+from dags.utils import DatabaseContext
 
 
 logger = logging.getLogger(__name__)
+
+
+def get_campaign_ids() -> list:
+    with DatabaseContext():
+        from resources.campaigns.models import Campaign
+        campaigns = Campaign.objects.filter(coverage__name="HIDROLOGIA")
+        return list(campaigns.values_list("id", flat=True))
 
 
 @dag(
@@ -90,9 +98,7 @@ def process_hydro_campaigns() -> None:
     catchup=False,
     tags=["data_points", "hydro"],
 )
-def process_hydro_data_points(campaign_ids: list = None) -> None:
-    setup_django = DjangoOperator(task_id="setup_django")
-
+def process_hydro_data_points() -> None:
     @task()
     def init_unmatched_file() -> None:
         run_date = timezone.now().strftime("%Y-%m-%d %H:%M:%s")
@@ -101,22 +107,7 @@ def process_hydro_data_points(campaign_ids: list = None) -> None:
             f.write(f"\nUnmatched data points on {run_date}\n")
 
     @task()
-    def get_campaign_ids(campaign_ids: list = None) -> list[dict]:
-        from resources.campaigns.models import Campaign
-        campaigns = Campaign.objects.filter(coverage__name="HIDROLOGIA")
-        if campaign_ids:
-            campaigns = campaigns.filter(id__in=campaign_ids)
-        if not campaigns.exists():
-            msg = (
-                "No campaigns found.",
-                "Try running process_hydro_campaigns dag first..."
-            )
-            logger.info(msg)
-        else:
-            return list(campaigns.values_list("id", flat=True))
-
-    @task()
-    def create_data_points(campaign_id: int,) -> None:
+    def create_data_points(campaign_id: int) -> None:
         from resources.campaigns.data_point_creators import (
             HydroDataPointCreator
         )
@@ -125,13 +116,9 @@ def process_hydro_data_points(campaign_ids: list = None) -> None:
 
     # Define flow
     init_file = init_unmatched_file()
-
     campaign_ids = get_campaign_ids()
-
-    created_data_points = create_data_points.expand(
-        campaign_id=campaign_ids
-    )
-    setup_django >> init_file >> campaign_ids >> created_data_points
+    data_point_task = create_data_points.expand(campaign_id=campaign_ids)
+    init_file >> data_point_task
 
 
 @dag(
@@ -141,7 +128,7 @@ def process_hydro_data_points(campaign_ids: list = None) -> None:
     catchup=False,
     tags=["measurements", "hydro"],
 )
-def process_hydro_measurements(campaign_ids: list = None) -> None:
+def process_hydro_measurements() -> None:
     setup_django = DjangoOperator(task_id="setup_django")
 
     @task()
@@ -152,37 +139,13 @@ def process_hydro_measurements(campaign_ids: list = None) -> None:
             f.write(f"\nUnmatched categories on {run_date}\n")
 
     @task()
-    def get_campaign_ids(campaign_ids: list = None) -> list[dict]:
-        from resources.campaigns.models import Campaign
-        campaigns = Campaign.objects.filter(coverage__name="HIDROLOGIA")
-        if campaign_ids:
-            campaigns = campaigns.filter(id__in=campaign_ids)
-        if not campaigns.exists():
-            msg = (
-                "No campaigns found.",
-                "Try running process_hydro_campaigns dag first..."
-            )
-            logger.info(msg)
-        else:
-            return list(campaigns.values_list("id", flat=True))
-
-    @task()
-    def get_data_points_data(campaign_id: int = None) -> str:
+    def get_data_point_ids(campaign_id: int) -> list:
         from resources.campaigns.models import DataPoint
-        data_points = DataPoint.objects.filter(
-            campaign_id=campaign_id
-        )
-        if not data_points.exists():
-            msg = (
-                "No data points found for HIDROLOGIA.",
-                "Try running process_hydro_data_points dag first..."
-            )
-            logger.info(msg)
-        else:
-            return list(data_points.values_list("id", flat=True))
+        data_points = DataPoint.objects.filter(campaign_id=campaign_id)
+        return list(data_points.values_list("id", flat=True))
 
     @task()
-    def get_or_create_measurements(data_point_id: int) -> dict:
+    def create_measurements(data_point_id: int) -> None:
         from resources.campaigns.measurement_creators import MeasurementCreator
         creator = MeasurementCreator(data_point_id=data_point_id)
         creator.process()
@@ -190,16 +153,18 @@ def process_hydro_measurements(campaign_ids: list = None) -> None:
     # Define flow
     init_file = init_unmatched_file()
 
-    campaign_ids = get_campaign_ids(campaign_ids=campaign_ids)
+    setup_django >> init_file
 
-    setup_django >> init_file >> campaign_ids
+    campaign_ids = get_campaign_ids()
 
     for campaign_id in campaign_ids:
-        data_points_data = get_data_points_data(campaign_id=campaign_id)
-        create_measurements = get_or_create_measurements.expand(
-            data_point_data=data_points_data
+        data_point_ids = get_data_point_ids(
+            campaign_id=campaign_id
         )
-        campaign_ids >> data_points_data >> create_measurements
+        measurements = create_measurements.expand(
+            data_point_id=data_point_ids
+        )
+        init_file >> data_point_ids >> measurements
 
 
 hydro_campaigns = process_hydro_campaigns()
