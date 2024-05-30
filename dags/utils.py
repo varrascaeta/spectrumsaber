@@ -144,3 +144,15 @@ def serialize_model(serializer):
             return result
         return _dec
     return _wrapper
+
+
+class DatabaseContext():
+    def __enter__(self):
+        sys.path.append('./spectral-pymg/')  # TODO: Change this to env var
+        os.environ.setdefault("DJANGO_SETTINGS_MODULE", "service.settings")
+        import django
+        django.setup()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
