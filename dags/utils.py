@@ -4,6 +4,8 @@ import json
 import logging
 import os
 import re
+import sys
+import signal
 from datetime import datetime, UTC
 # Extra imports
 import inspect
@@ -20,6 +22,27 @@ DATE_FORMAT = "%m-%d-%y"
 TIME_FORMAT = "%I:%M%p"
 
 
+class TimeoutException(Exception):
+    pass
+
+
+class TimeoutContext():
+    def __init__(self, timeout: int) -> None:
+        self.timeout = timeout
+
+    def __enter__(self):
+        logger.info("Setting timeout to %s seconds", self.timeout)
+        signal.signal(signal.SIGALRM, self.handler)
+        signal.alarm(self.timeout)
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        signal.alarm(0)
+
+    def handler(self, signum, frame):
+        raise TimeoutException("Timeout ocurred")
+
+
 class FTPClient():
     def __init__(self) -> None:
         credentials_path = os.getenv("FTP_CREDENTIALS_FILEPATH")
@@ -33,7 +56,8 @@ class FTPClient():
         self.connection = None
 
     def __enter__(self):
-        self.connect()
+        with TimeoutContext(30):
+            self.connect()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
