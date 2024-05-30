@@ -82,6 +82,11 @@ class FTPClient():
                 if parsed:
                     parsed_files.append(parsed)
             return parsed_files
+        except error_perm as e:
+            logger.error(f"Error scanning {path}: {e}")
+            with open("permission_errors.txt", "a") as f:
+                f.write(f"{path}\n")
+            return []
         except Exception as e:
             logger.error(f"Error scanning {path}: {e}")
             return []
