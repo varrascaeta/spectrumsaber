@@ -73,9 +73,8 @@ class FTPClient():
     def get_dir_data(self, path: str) -> list[dict]:
         try:
             logger.info("Scanning %s", path)
-            self.connection.cwd(path)
             lines = []
-            self.connection.dir(lines.append)
+            self.connection.dir(path, lines.append)
             parsed_files = []
             for line in lines:
                 parsed = self.parse_line(path, line)
