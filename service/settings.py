@@ -34,6 +34,9 @@ os.environ.setdefault("DJANGO_ALLOW_ASYNC_UNSAFE", "True")
 
 # Application definition
 
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+
 DJANGO_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -87,11 +90,14 @@ WSGI_APPLICATION = 'service.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('POSTGRES_DB', 'spectral-db'),
+        'USER': os.getenv('POSTGRES_USER', 'spectral'),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'f2By8mO0m4'),
+        'HOST': os.getenv('POSTGRES_HOST', 'spectral-docker-db'),
+        'PORT': os.getenv('POSTGRES_PORT', '5432'),
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
