@@ -6,12 +6,34 @@ from airflow.decorators import dag, task
 # Django imports
 from django.utils import timezone
 # Project imports
-from resources.utils import get_campaign_ids
+from resources.utils import FTPClient, get_campaign_ids
 from dags.operators import DjangoOperator
 
 
 # Globals
 logger = logging.getLogger(__name__)
+
+
+def process_measurements(campaign_ids: list) -> None:
+    from resources.campaigns.models import Campaign
+    from resources.campaigns.measurement_creators import (
+        MeasurementCreator
+    )
+    with FTPClient() as ftp_client:
+        for idx, campaign_id in enumerate(campaign_ids):
+            logger.info("="*80)
+            logger.info(
+                "Processing %s/%s campaign measurements",
+                idx + 1,
+                len(campaign_ids)
+            )
+            campaign = Campaign.objects.get(id=campaign_id)
+            for data_point in campaign.data_points.all():
+                creator = MeasurementCreator(
+                    data_point_id=data_point.id,
+                    ftp_client=ftp_client
+                )
+                creator.process()
 
 
 @dag(
@@ -38,36 +60,15 @@ def process_hydro_measurements() -> None:
         return list(data_points.values_list("id", flat=True))
 
     @task()
-    def create_measurements(data_point_id: int) -> None:
-        from resources.campaigns.measurement_creators import MeasurementCreator
-        creator = MeasurementCreator(data_point_id=data_point_id)
-        creator.process()
-        global current_task, total_tasks
-        current_task += 1
-        logger.info("="*80)
-        logger.info(
-            "Processed %s/%s campaign measurements",
-            current_task,
-            total_tasks
-        )
+    def create_measurements() -> None:
+        campaign_ids = get_campaign_ids("HIDROLOGIA")
+        process_measurements(campaign_ids)
 
     # Define flow
     init_file = init_unmatched_file()
+    measurements = create_measurements()
 
-    setup_django >> init_file
-
-    campaign_ids = get_campaign_ids()
-    global total_tasks, current_task
-    total_tasks = len(campaign_ids)
-    current_task = 0
-    for campaign_id in campaign_ids:
-        data_point_ids = get_data_point_ids(
-            campaign_id=campaign_id
-        )
-        measurements = create_measurements.expand(
-            data_point_id=data_point_ids
-        )
-        init_file >> data_point_ids >> measurements
+    setup_django >> init_file >> measurements
 
 
 dag = process_hydro_measurements()

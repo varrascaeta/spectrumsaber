@@ -94,7 +94,7 @@ class CategoryType():
         TXT_REFLECTANCE: [
             "reflectanciatexto",
             "textoreflectancia",
-            "datoreflectanciatexto"
+            "datoreflectanciatexto",
             "datotextoreflectancia"
         ],
         TXT_AVG_REFLECTANCE: [

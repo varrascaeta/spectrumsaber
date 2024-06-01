@@ -6,13 +6,30 @@ from airflow.decorators import dag, task
 # Django imports
 from django.utils import timezone
 # Project imports
-from resources.utils import get_campaign_ids
+from resources.utils import get_campaign_ids, FTPClient
 
 
 # Globals
 logger = logging.getLogger(__name__)
-current_task = 0
-total_tasks = 0
+
+
+def process_data_points(campaign_ids: list) -> None:
+    from resources.campaigns.data_point_creators import (
+        HydroDataPointCreator
+    )
+    with FTPClient() as ftp_client:
+        for idx, campaign_id in enumerate(campaign_ids):
+            logger.info("="*80)
+            logger.info(
+                "Processing %s/%s campaign data points",
+                idx + 1,
+                len(campaign_ids)
+            )
+            creator = HydroDataPointCreator(
+                campaign_id=campaign_id,
+                ftp_client=ftp_client
+            )
+            creator.process()
 
 
 @dag(
@@ -32,33 +49,14 @@ def process_hydro_data_points() -> None:
             f.write(f"\nUnmatched data points on {run_date}\n")
 
     @task()
-    def create_data_points(campaign_id: int) -> None:
-        from resources.campaigns.data_point_creators import (
-            HydroDataPointCreator
-        )
-        creator = HydroDataPointCreator(
-            campaign_id=campaign_id,
-        )
-        creator.process()
-        global current_task, total_tasks
-        current_task += 1
-        logger.info("="*80)
-        logger.info(
-            "Processed %s/%s campaign data points",
-            current_task,
-            total_tasks
-        )
+    def create_data_points() -> None:
+        campaign_ids = get_campaign_ids("HIDROLOGIA")
+        process_data_points(campaign_ids)
 
     # Define flow
     init_file = init_unmatched_file()
-    campaign_ids = get_campaign_ids()
-    global total_tasks
-    total_tasks = len(campaign_ids)
-    for idx, campaign_id in enumerate(campaign_ids):
-        data_point_task = create_data_points(
-            campaign_id=campaign_id,
-        )
-        init_file >> data_point_task
+    data_points = create_data_points()
+    init_file >> data_points
 
 
 dag = process_hydro_data_points()

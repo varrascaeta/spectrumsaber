@@ -6,7 +6,7 @@ import abc
 # Django imports
 from django.utils import timezone
 # Project imports
-from dags.utils import FTPClient
+from resources.utils import FTPClient
 from resources.campaigns.models import Campaign, DataPoint
 
 
@@ -14,12 +14,12 @@ logger = logging.getLogger(__name__)
 
 
 class DataPointCreator(abc.ABC):
-    def __init__(self, campaign_id: str):
+    def __init__(self, campaign_id: str, ftp_client: FTPClient):
         self.campaign_id = campaign_id
         self.order_pattern = r"[0-9_ ]+"
         self.dirty_order = ""
         self.parsed_attrs = {}
-        self.ftp_client = FTPClient()
+        self.ftp_client = ftp_client
 
     @abc.abstractmethod
     def is_valid(self, filename: str) -> bool:
@@ -51,10 +51,9 @@ class DataPointCreator(abc.ABC):
 
     def process(self) -> None:
         campaign = Campaign.objects.get(id=self.campaign_id)
-        with self.ftp_client as ftp:
-            data_point_data = ftp.get_dir_data(campaign.path)
-            for data in data_point_data:
-                self.create_data_point(data)
+        data_point_data = self.ftp_client.get_dir_data(campaign.path)
+        for data in data_point_data:
+            self.create_data_point(data)
         campaign.updated_at = timezone.now()
         campaign.save()
 

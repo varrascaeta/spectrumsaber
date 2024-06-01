@@ -14,9 +14,9 @@ logger = logging.getLogger(__name__)
 
 
 class MeasurementCreator:
-    def __init__(self, data_point_id: str):
+    def __init__(self, data_point_id: str, ftp_client: FTPClient):
         self.data_point_id = data_point_id
-        self.ftp_client = FTPClient()
+        self.ftp_client = ftp_client
 
     def is_category(self, filename: str) -> bool:
         category_aliases = CategoryType.SLUG_ALIASES.values()
@@ -31,11 +31,10 @@ class MeasurementCreator:
             logger.info(f"{'Created' if created else 'Found'} {category}")
             return category
 
-    def get_measurement_data_recursive(self, path: str,
-                                       client: FTPClient) -> list:
+    def get_measurement_data_recursive(self, path: str) -> list:
         final_measurements = []
         category = None
-        children_data = client.get_dir_data(path)
+        children_data = self.ftp_client.get_dir_data(path)
         name = path.split("/")[-1].lower().replace(" ", "")
         if self.is_category(name):
             category = self.get_or_create_category(name)
@@ -51,19 +50,16 @@ class MeasurementCreator:
                     f.write(f"{data}\n")
             else:
                 measurements = self.get_measurement_data_recursive(
-                    child_data["path"],
-                    client
+                    child_data["path"]
                 )
                 final_measurements.extend(measurements)
         return final_measurements
 
     def process(self) -> None:
         data_point = DataPoint.objects.get(id=self.data_point_id)
-        with self.ftp_client as client:
-            measurement_data = self.get_measurement_data_recursive(
-                data_point.path,
-                client
-            )
+        measurement_data = self.get_measurement_data_recursive(
+            data_point.path
+        )
         for data in measurement_data:
             defaults = {
                 "ftp_created_at": data["created_at"],
