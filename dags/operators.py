@@ -1,17 +1,21 @@
 # Standard imports
 import os
 import sys
-import json
+import logging
 # Project imports
-from dags.utils import FTPClient
+from resources.utils import FTPClient
 # Airflow imports
 from airflow.models.baseoperator import BaseOperator
 from airflow.models.xcom_arg import PlainXComArg
 
 
+# Globals
+logger = logging.getLogger(__name__)
+
+
 class DjangoOperator(BaseOperator):
     def execute(self, *args, **kwargs):
-        sys.path.append('./spectral-pymg/')  # TODO: Change this to env var
+        sys.path.append("./spectral-pymg/")  # TODO: Change this to env var
         os.environ.setdefault("DJANGO_SETTINGS_MODULE", "service.settings")
         import django
         django.setup()
@@ -29,13 +33,8 @@ class FTPGetterOperator(BaseOperator):
             self.parent_data = task_instance.xcom_pull(
                 key=self.parent_data.key
             )
-        credentials_path = os.getenv("FTP_CREDENTIALS_FILEPATH")
-        if not credentials_path:
-            raise ValueError("FTP_CREDENTIALS_FILEPATH not set")
-        else:
-            credentials = json.load(open(credentials_path))
-        client = FTPClient(credentials=credentials)
-        children_data = client.get_dir_data(self.parent_data["path"])
+        with FTPClient() as client:
+            children_data = client.get_dir_data(self.parent_data["path"])
         for child in children_data:
             child["parent"] = {}
             for key in self.parent_keys:

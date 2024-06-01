@@ -28,15 +28,18 @@ def process_coverage():
     def process_coverage(coverage_data: dict, **kwargs) -> int:
         from resources.campaigns.models import Coverage
         if Coverage.matches_pattern(coverage_data["name"]):
-            coverage, created = Coverage.objects.get_or_create(
+            defaults = {
+                "ftp_created_at": coverage_data["created_at"],
+            }
+            coverage, created = Coverage.objects.update_or_create(
                 name=coverage_data["name"],
                 path=coverage_data["path"],
-                created_at=coverage_data["created_at"],
+                defaults=defaults,
             )
             logger.info(f"{'Created' if created else 'Found'} {coverage}")
         else:
             with open("unmatched_coverages.txt", "a") as f:
-                data = json.dumps(coverage_data, default=lambda x: x.__str__())
+                data = json.dumps(coverage_data, default=str)
                 f.write(f"{data}\n")
 
     # Define flow

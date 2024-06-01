@@ -1,13 +1,13 @@
 # Standard imports
-import functools
+import json
 import logging
 import os
 import re
+import sys
+import signal
 from datetime import datetime, UTC
 # Extra imports
-import inspect
-import pickle
-from ftplib import FTP
+from ftplib import FTP, error_perm
 
 
 logger = logging.getLogger(__name__)
@@ -19,13 +19,56 @@ DATE_FORMAT = "%m-%d-%y"
 TIME_FORMAT = "%I:%M%p"
 
 
+# Functions
+
+def get_campaign_ids(coverage_name: str) -> list:
+    with DatabaseContext():
+        from resources.campaigns.models import Campaign
+        campaigns = Campaign.objects.filter(coverage__name=coverage_name)
+        return list(campaigns.values_list("id", flat=True))
+
+
+# Class definitions
+class TimeoutException(Exception):
+    pass
+
+
+class TimeoutContext():
+    def __init__(self, timeout: int) -> None:
+        self.timeout = timeout
+
+    def __enter__(self):
+        logger.info("Setting timeout to %s seconds", self.timeout)
+        signal.signal(signal.SIGALRM, self.handler)
+        signal.alarm(self.timeout)
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        signal.alarm(0)
+
+    def handler(self, signum, frame):
+        raise TimeoutException("Timeout ocurred")
+
+
 class FTPClient():
-    def __init__(self, credentials: dict) -> None:
+    def __init__(self) -> None:
+        credentials_path = os.getenv("FTP_CREDENTIALS_FILEPATH")
+        if not credentials_path:
+            raise ValueError("FTP_CREDENTIALS_FILEPATH not set")
+        else:
+            credentials = json.load(open(credentials_path))
         self.host = credentials["host"]
         self.username = credentials["username"]
         self.password = credentials["password"]
         self.connection = None
-        self.connect()
+
+    def __enter__(self):
+        with TimeoutContext(30):
+            self.connect()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.connection.quit()
 
     def connect(self) -> FTP:
         logger.info("Connecting to %s", self.host)
@@ -34,18 +77,25 @@ class FTPClient():
         status = self.connection.login(self.username, self.password)
         logger.info("Status: %s", status)
 
+    def level_up(self) -> None:
+        self.connection.cwd("..")
+
     def get_dir_data(self, path: str) -> list[dict]:
         try:
             logger.info("Scanning %s", path)
-            self.connection.cwd(path)
             lines = []
-            self.connection.dir(lines.append)
+            self.connection.dir(path, lines.append)
             parsed_files = []
             for line in lines:
                 parsed = self.parse_line(path, line)
                 if parsed:
                     parsed_files.append(parsed)
             return parsed_files
+        except error_perm as e:
+            logger.error(f"Error scanning {path}: {e}")
+            with open("permission_errors.txt", "a") as f:
+                f.write(f"{path}\n")
+            return []
         except Exception as e:
             logger.error(f"Error scanning {path}: {e}")
             return []
@@ -71,36 +121,13 @@ class FTPClient():
         return f"FTP:{self.username}@{self.host}"
 
 
-def serialize(output=True, inputs=True):
-    def _wrapper(func):
-        parse_inputs = inputs
-        if inputs is True:
-            parse_inputs = list(inspect.signature(func).parameters)
-        elif inputs is False:
-            parse_inputs = []
+class DatabaseContext():
+    def __enter__(self):
+        sys.path.append('./spectral-pymg/')  # TODO: Change this to env var
+        os.environ.setdefault("DJANGO_SETTINGS_MODULE", "service.settings")
+        import django
+        django.setup()
+        return self
 
-        @functools.wraps(func)
-        def _dec(**kwargs):
-            final_kwargs = {}
-            for k, v in kwargs.items():
-                if k in parse_inputs:
-                    v = pickle.loads(v)
-                final_kwargs[k] = v
-            result = func(**final_kwargs)
-            result = pickle.dumps(result) if output else result
-            return result
-        return _dec
-    return _wrapper
-
-
-def serialize_model(serializer):
-    def _wrapper(func):
-        @functools.wraps(func)
-        def _dec(**kwargs):
-            result = func(**kwargs)
-            if result:
-                serialized = serializer(result).data
-                return serialized
-            return result
-        return _dec
-    return _wrapper
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
