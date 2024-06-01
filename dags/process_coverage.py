@@ -28,10 +28,13 @@ def process_coverage():
     def process_coverage(coverage_data: dict, **kwargs) -> int:
         from resources.campaigns.models import Coverage
         if Coverage.matches_pattern(coverage_data["name"]):
+            defaults = {
+                "ftp_created_at": coverage_data["created_at"],
+            }
             coverage, created = Coverage.objects.update_or_create(
                 name=coverage_data["name"],
                 path=coverage_data["path"],
-                ftp_created_at=coverage_data["created_at"],
+                defaults=defaults,
             )
             logger.info(f"{'Created' if created else 'Found'} {coverage}")
         else:
