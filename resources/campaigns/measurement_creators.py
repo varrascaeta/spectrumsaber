@@ -4,7 +4,7 @@ import logging
 # Django imports
 from django.utils import timezone
 # Project imports
-from dags.utils import FTPClient
+from resources.utils import FTPClient
 from resources.campaigns.models import (
     Category, CategoryType, DataPoint, Measurement
 )
