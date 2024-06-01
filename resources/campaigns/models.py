@@ -38,6 +38,8 @@ class BaseFile(models.Model):
 # Measurements
 class CategoryType():
     RAW_DATA = "Raw Data"
+    TXT_DATA = "Text Data"
+    PHOTOMETRY = "Photometry"
     RADIANCE = "Radiance"
     AVG_RADIANCE = "Average Radiance"
     TXT_RADIANCE = "Text Radiance"
@@ -46,33 +48,61 @@ class CategoryType():
     TXT_REFLECTANCE = "Text Reflectance"
     TXT_AVG_RADIANCE = "Text Average Radiance"
     TXT_AVG_REFLECTANCE = "Text Average Reflectance"
+    RAD_PAR_CORR = "Radiance Parabolic Correction"
+    TXT_RAD_PAR_CORR = "Text Radiance Parabolic Correction"
+    REF_PAR_CORR = "Reflectance Parabolic Correction"
+    TXT_REF_PAR_CORR = "Text Reflectance Parabolic Correction"
 
     CHOICES = (
         (RAW_DATA, RAW_DATA),
+        (TXT_DATA, TXT_DATA),
+        (PHOTOMETRY, PHOTOMETRY),
         # Radiance
         (RADIANCE, RADIANCE),
         (AVG_RADIANCE, AVG_RADIANCE),
         (TXT_RADIANCE, TXT_RADIANCE),
         (TXT_AVG_RADIANCE, TXT_AVG_RADIANCE),
+        (RAD_PAR_CORR, RAD_PAR_CORR),
+        (TXT_RAD_PAR_CORR, TXT_RAD_PAR_CORR),
         # Reflectance
         (REFLECTANCE, REFLECTANCE),
         (AVG_REFLECTANCE, AVG_REFLECTANCE),
         (TXT_REFLECTANCE, TXT_REFLECTANCE),
         (TXT_AVG_REFLECTANCE, TXT_AVG_REFLECTANCE),
+        (REF_PAR_CORR, REF_PAR_CORR),
+        (TXT_REF_PAR_CORR, TXT_REF_PAR_CORR),
     )
-
     SLUG_ALIASES = {
+        PHOTOMETRY: ["fotometria"],
         RAW_DATA: ["datocrudo"],
+        TXT_DATA: ["datotexto"],
         # Radiance aliases
-        RADIANCE: ["radiancia"],
-        AVG_RADIANCE: ["radianciapromedio"],
-        TXT_RADIANCE: ["radianciatexto", "textoradiancia"],
-        TXT_AVG_RADIANCE: ["textoradianciapromedio"],
+        RADIANCE: ["radiancia", "datoradiancia"],
+        RAD_PAR_CORR: ["radcorrpar", "radparcorr", "radianciacorrpar"],
+        TXT_RAD_PAR_CORR: ["textoradianciacorrpar", "textoradcorrpar"],
+        AVG_RADIANCE: ["radianciapromedio", "datoradianciapromedio"],
+        TXT_RADIANCE: [
+            "radianciatexto",
+            "textoradiancia",
+            "datoradianciatexto",
+            "datotextoradiancia"
+        ],
+        TXT_AVG_RADIANCE: ["textoradianciapromedio", "radianciapromediotexto"],
         # Reflectance aliases
-        REFLECTANCE: ["reflectancia"],
-        AVG_REFLECTANCE: ["reflectanciapromedio"],
-        TXT_REFLECTANCE: ["reflectanciatexto", "textoreflectancia"],
-        TXT_AVG_REFLECTANCE: ["textoreflectanciapromedio"],
+        REFLECTANCE: ["reflectancia", "datoreflectancia"],
+        AVG_REFLECTANCE: ["reflectanciapromedio", "datoreflectanciapromedio"],
+        TXT_REFLECTANCE: [
+            "reflectanciatexto",
+            "textoreflectancia",
+            "datoreflectanciatexto"
+            "datotextoreflectancia"
+        ],
+        TXT_AVG_REFLECTANCE: [
+            "textoreflectanciapromedio",
+            "reflectanciapromediotexto"
+        ],
+        REF_PAR_CORR: ["refcorrpar", "refparcorr", "reflectanciacorrpar"],
+        TXT_REF_PAR_CORR: ["textoreflectanciacorrpar", "textorefcorrpar"],
     }
 
     @classmethod
@@ -195,6 +225,10 @@ class Measurement(BaseFile):
     data_point = models.ForeignKey(
         "DataPoint", on_delete=models.CASCADE, related_name="measurements"
     )
+
+    def __str__(self) -> str:
+        name_str = f"{self.data_point} - {self.name}"
+        return f"{name_str} ({self.category if self.category else 'Unknown'})"
 
 
 # Spreadsheets
