@@ -1,16 +1,21 @@
 # Standard imports
 import os
 import sys
+import logging
 # Project imports
-from dags.utils import FTPClient
+from resources.utils import FTPClient
 # Airflow imports
 from airflow.models.baseoperator import BaseOperator
 from airflow.models.xcom_arg import PlainXComArg
 
 
+# Globals
+logger = logging.getLogger(__name__)
+
+
 class DjangoOperator(BaseOperator):
     def execute(self, *args, **kwargs):
-        sys.path.append('./spectral-pymg/')  # TODO: Change this to env var
+        sys.path.append("./spectral-pymg/")  # TODO: Change this to env var
         os.environ.setdefault("DJANGO_SETTINGS_MODULE", "service.settings")
         import django
         django.setup()
