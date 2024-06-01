@@ -28,8 +28,8 @@ class FTPGetterOperator(BaseOperator):
             self.parent_data = task_instance.xcom_pull(
                 key=self.parent_data.key
             )
-        client = FTPClient()
-        children_data = client.get_dir_data(self.parent_data["path"])
+        with FTPClient() as client:
+            children_data = client.get_dir_data(self.parent_data["path"])
         for child in children_data:
             child["parent"] = {}
             for key in self.parent_keys:
