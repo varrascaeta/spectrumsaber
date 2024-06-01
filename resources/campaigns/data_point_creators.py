@@ -78,3 +78,27 @@ class HydroDataPointCreator(DataPointCreator):
             order = self.dirty_order.split("_")[0]
             parsed_attrs["order"] = int(order)
         return parsed_attrs
+
+
+class UrbanDataPointCreator(DataPointCreator):
+    def is_valid(self, filename: str) -> bool:
+        prefix_pattern = r"L[0-9]+"
+        try:
+            cleaned_spaces = filename.replace(" ", "-")
+            splitted = cleaned_spaces.split("-")
+            right_prefix = re.findall(prefix_pattern, splitted[0]) != []
+            return right_prefix
+        except Exception as e:
+            logger.error(f"Error parsing {filename}: {e}")
+            return False
+
+    def parse(self, filename: str) -> dict:
+        parsed_attrs = {}
+        if self.is_valid(filename):
+            splitted = filename.split("-")
+            prefix = splitted[0]
+            order = prefix.split("L")[1].strip()
+            parsed_attrs = {
+                "order": int(order),
+            }
+        return parsed_attrs
