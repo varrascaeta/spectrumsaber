@@ -3,6 +3,8 @@ import json
 import logging
 import re
 import abc
+# Django imports
+from django.utils import timezone
 # Project imports
 from dags.utils import FTPClient
 from resources.campaigns.models import Campaign, DataPoint
@@ -30,12 +32,15 @@ class DataPointCreator(abc.ABC):
     def create_data_point(self, point_data: dict):
         parsed_attrs = self.parse(point_data["name"])
         if parsed_attrs:
-            data_point, created = DataPoint.objects.get_or_create(
+            defaults = {
+                "ftp_created_at": point_data["created_at"],
+                "order": parsed_attrs["order"],
+            }
+            data_point, created = DataPoint.objects.update_or_create(
                 name=point_data["name"],
                 path=point_data["path"],
-                created_at=point_data["created_at"],
                 campaign_id=self.campaign_id,
-                order=parsed_attrs["order"],
+                defaults=defaults,
             )
             logger.info(f"{'Created' if created else 'Found'} {data_point}")
         else:
@@ -50,6 +55,8 @@ class DataPointCreator(abc.ABC):
             data_point_data = ftp.get_dir_data(campaign.path)
             for data in data_point_data:
                 self.create_data_point(data)
+        campaign.updated_at = timezone.now()
+        campaign.save()
 
 
 class HydroDataPointCreator(DataPointCreator):

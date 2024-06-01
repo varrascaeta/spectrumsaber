@@ -1,6 +1,8 @@
 # Standard imports
 import json
 import logging
+# Django imports
+from django.utils import timezone
 # Project imports
 from dags.utils import FTPClient
 from resources.campaigns.models import (
@@ -63,11 +65,16 @@ class MeasurementCreator:
                 client
             )
         for data in measurement_data:
-            measurement, created = Measurement.objects.get_or_create(
+            defaults = {
+                "ftp_created_at": data["created_at"],
+                "category_id": data.get("category_id", None),
+            }
+            measurement, created = Measurement.objects.update_or_create(
                 name=data["name"],
                 path=data["path"],
-                ftp_created_at=data["created_at"],
                 data_point_id=self.data_point_id,
-                category_id=data.get("category_id", None),
+                defaults=defaults
             )
             logger.info(f"{'Created' if created else 'Found'} {measurement}")
+        data_point.updated_at = timezone.now()
+        data_point.save()

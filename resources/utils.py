@@ -1,5 +1,4 @@
 # Standard imports
-import functools
 import json
 import logging
 import os
@@ -8,8 +7,6 @@ import sys
 import signal
 from datetime import datetime, UTC
 # Extra imports
-import inspect
-import pickle
 from ftplib import FTP, error_perm
 
 
@@ -21,6 +18,18 @@ DIR_LIST_PATTERN = (
 DATE_FORMAT = "%m-%d-%y"
 TIME_FORMAT = "%I:%M%p"
 
+
+# Functions
+
+def get_campaign_ids() -> list:
+    with DatabaseContext():
+        from resources.campaigns.models import Campaign
+        campaigns = Campaign.objects.filter(coverage__name="HIDROLOGIA")
+        return list(campaigns.values_list("id", flat=True))
+
+
+
+# Class definitions
 
 class TimeoutException(Exception):
     pass
@@ -70,6 +79,9 @@ class FTPClient():
         status = self.connection.login(self.username, self.password)
         logger.info("Status: %s", status)
 
+    def level_up(self) -> None:
+        self.connection.cwd("..")
+
     def get_dir_data(self, path: str) -> list[dict]:
         try:
             logger.info("Scanning %s", path)
@@ -109,41 +121,6 @@ class FTPClient():
 
     def __str__(self) -> str:
         return f"FTP:{self.username}@{self.host}"
-
-
-def serialize(output=True, inputs=True):
-    def _wrapper(func):
-        parse_inputs = inputs
-        if inputs is True:
-            parse_inputs = list(inspect.signature(func).parameters)
-        elif inputs is False:
-            parse_inputs = []
-
-        @functools.wraps(func)
-        def _dec(**kwargs):
-            final_kwargs = {}
-            for k, v in kwargs.items():
-                if k in parse_inputs:
-                    v = pickle.loads(v)
-                final_kwargs[k] = v
-            result = func(**final_kwargs)
-            result = pickle.dumps(result) if output else result
-            return result
-        return _dec
-    return _wrapper
-
-
-def serialize_model(serializer):
-    def _wrapper(func):
-        @functools.wraps(func)
-        def _dec(**kwargs):
-            result = func(**kwargs)
-            if result:
-                serialized = serializer(result).data
-                return serialized
-            return result
-        return _dec
-    return _wrapper
 
 
 class DatabaseContext():
