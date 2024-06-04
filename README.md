@@ -47,16 +47,21 @@ This will create a new virtual environment named 'spectral'.
 ```bash
     sudo apt-get install docker-compose
 ```
-10. Run the following command to start the database:
+10. Run the following command to start the database and the admin:
 ```bash
     docker-compose -f containers/app/docker-compose.yml up
 ```
-
+Or, if you want to run only the database:
+```bash
+    docker-compose -f containers/app/docker-compose.yml up spectral-docker-db
+```
 11. Init the database
 ```bash
    python service/manage.py migrate
    python service/manage.py createsuperuser
-   python service/manage.py collectstatic
 ```
-
 12. Now you can access the admin at localhost:8000/admin
+13. If you want to rebuild, it is only necessary to rebuild the app. DO NOT delete the volume, otherwise you will lose all the data. To rebuild the app image, run the following command:
+```bash
+    docker-compose -f containers/app/docker-compose.yml up --build --no-deps spectral
+```
