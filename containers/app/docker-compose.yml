@@ -9,6 +9,8 @@ services:
     command: ["python", "service/manage.py", "runserver", "0.0.0.0:8000"]
     volumes:
       - ../../:/app/
+    env_file:
+      - ../../environments/production.env
     ports:
       - "8000:8000"
     depends_on:
@@ -26,11 +28,10 @@ services:
     image: postgres:16
     volumes:
       - spectral-docker-db-data:/var/lib/postgresql/data
+    env_file:
+      - ../../environments/production.env
     environment:
       POSTGRES_HOST_AUTH_METHOD: trust
-      POSTGRES_PASSWORD: f2By8mO0m4
-      POSTGRES_USER: spectral
-      POSTGRES_DB: spectral-db
     ports:
       - "5433:5432"
     networks:

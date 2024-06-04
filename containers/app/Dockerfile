@@ -11,9 +11,8 @@ RUN mkdir /app
 WORKDIR /app
 
 COPY requirements/local.txt /app
+COPY environments/production.env /app
 RUN pip install -r local.txt
 ENV PYTHONPATH="/:$PYTHONPATH"
-RUN echo $PYTHONPATH
-RUN echo $PWD
-
 COPY . /app/
+RUN echo yes | python service/manage.py collectstatic

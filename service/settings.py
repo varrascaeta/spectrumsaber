@@ -35,8 +35,12 @@ os.environ.setdefault("DJANGO_ALLOW_ASYNC_UNSAFE", "True")
 # Application definition
 
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+    # Add any other directories containing static files
+]
 DJANGO_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -91,11 +95,11 @@ WSGI_APPLICATION = 'service.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('POSTGRES_DB', 'spectral-db'),
-        'USER': os.getenv('POSTGRES_USER', 'spectral'),
-        'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'f2By8mO0m4'),
-        'HOST': os.getenv('POSTGRES_HOST', 'spectral-docker-db'),
-        'PORT': os.getenv('POSTGRES_PORT', '5432'),
+        'NAME': os.getenv('POSTGRES_DB'),
+        'USER': os.getenv('POSTGRES_USER'),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
+        'HOST': os.getenv('POSTGRES_HOST'),
+        'PORT': os.getenv('POSTGRES_PORT'),
     }
 }
 
