@@ -45,11 +45,16 @@ DJANGO_APPS = [
 ]
 
 LOCAL_APPS = [
-    "resources.campaigns.apps.CampaignsConfig",
-    "resources.places.apps.PlacesConfig",
+    'resources.campaigns.apps.CampaignsConfig',
+    'resources.places.apps.PlacesConfig',
 ]
 
-INSTALLED_APPS = DJANGO_APPS + LOCAL_APPS
+THIRD_PARTY_APPS = [
+    'rangefilter',
+    'admin_auto_filters',
+]
+
+INSTALLED_APPS = DJANGO_APPS + LOCAL_APPS + THIRD_PARTY_APPS
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
