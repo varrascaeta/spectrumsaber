@@ -1,0 +1,45 @@
+version: '3'
+
+services:
+  spectral:
+    container_name: spectral-app
+    build:
+      context: ../../
+      dockerfile: containers/app/Dockerfile
+    command: ["python", "service/manage.py", "runserver", "0.0.0.0:8000"]
+    volumes:
+      - ../../:/app/
+    env_file:
+      - ../../environments/production.env
+    ports:
+      - "8000:8000"
+    depends_on:
+      - spectral-docker-db
+    links:
+      - spectral-docker-db:spectral-docker-db
+    networks:
+      - spectralnetwork
+
+  spectral-docker-db:
+    container_name: spectral-db
+    build:
+      context: ../../
+      dockerfile: containers/database/Dockerfile
+    image: postgres:16
+    volumes:
+      - spectral-docker-db-data:/var/lib/postgresql/data
+    env_file:
+      - ../../environments/production.env
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5433:5432"
+    networks:
+      - spectralnetwork
+
+networks:
+  spectralnetwork:
+    driver: bridge
+
+volumes:
+  spectral-docker-db-data:
