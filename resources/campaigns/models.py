@@ -218,6 +218,9 @@ class DataPoint(BaseFile):
         else:
             return {}
 
+    def __str__(self) -> str:
+        return f"{self.name} | {self.campaign}"
+
 
 class Measurement(BaseFile):
     # Relationships
@@ -227,8 +230,7 @@ class Measurement(BaseFile):
     )
 
     def __str__(self) -> str:
-        name_str = f"{self.data_point} - {self.name}"
-        return f"{name_str} ({self.category if self.category else 'Unknown'})"
+        return self.name
 
 
 # Spreadsheets
