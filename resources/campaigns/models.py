@@ -165,7 +165,8 @@ class Campaign(BaseFile):
             splitted = filename.split("-")
             right_prefix = splitted[0].isdigit()
             right_date = len(splitted[1]) == 8
-            return right_prefix and right_date
+            has_suffix = len(splitted) >= 3
+            return right_prefix and right_date and has_suffix
         except Exception as e:
             logger.error(f"Error parsing {filename}: {e}")
             return False
