@@ -15,6 +15,8 @@ class Country(models.Model):
     def __str__(self) -> str:
         return f"{self.name} ({self.code})" if self.code else self.name
 
+    class Meta:
+        verbose_name_plural = "Countries"
 
 class City(models.Model):
     name = models.CharField(max_length=255)

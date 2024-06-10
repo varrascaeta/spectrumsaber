@@ -121,6 +121,9 @@ class Category(models.Model):
     def __str__(self) -> str:
         return self.get_name_display()  # pylint: disable=no-member
 
+    class Meta:
+        verbose_name_plural = "Categories"
+
 
 class MeasuringTool(models.Model):
     name = models.CharField(max_length=255)
@@ -183,9 +186,6 @@ class Campaign(BaseFile):
             }
         else:
             return {}
-
-    def __str__(self) -> str:
-        return f"{self.name} of {self.coverage}"
 
 
 class DataPoint(BaseFile):
