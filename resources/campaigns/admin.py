@@ -13,6 +13,8 @@ from resources.campaigns.models import (
     DataPoint,
     Measurement
 )
+from resources.places.models import District
+from resources.places.admin import DistrictFilter
 
 
 # Utils
@@ -131,7 +133,8 @@ class CampaignAdmin(BaseFileAdmin):
     search_fields = ("name", "path")
     list_filter = (
         ("date", DateRangeFilter),
-        CoverageFilter
+        CoverageFilter,
+        DistrictFilter
     )
     inlines = [
         DataPointInline
@@ -139,7 +142,7 @@ class CampaignAdmin(BaseFileAdmin):
 
     def get_list_display(self, request):
         base = super().get_list_display(request)
-        return base[:1] + ["get_coverage", "date"] + base[1:]
+        return base[:1] + ["get_coverage", "get_district", "date"] + base[1:]
 
     def get_fieldsets(self, request, obj):
         campaign_fieldsets = [
@@ -158,11 +161,16 @@ class CampaignAdmin(BaseFileAdmin):
         ]
         return campaign_fieldsets + super().get_fieldsets(request, obj)
 
+    def get_district(self, obj):
+        if obj.district:
+            return get_admin_link(obj.district, "places", District)
+
     def get_coverage(self, obj):
         if obj.coverage:
             return get_admin_link(obj.coverage, "campaigns", Coverage)
 
     get_coverage.short_description = "Coverage"
+    get_district.short_description = "District"
 
 
 @admin.register(DataPoint)
