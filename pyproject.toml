@@ -1,3 +1,6 @@
 [tool.black]
 line-length = 79
 target-version = ['py310', 'py311', 'py312']
+
+[tool.pylint.'MESSAGES CONTROL']
+disable = ["C0114", "C0115", "C0116"]
