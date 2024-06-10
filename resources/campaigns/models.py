@@ -21,7 +21,7 @@ class BaseFile(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self) -> str:
-        return self.name
+        return str(self.name)
 
     @classmethod
     def matches_pattern(cls, filename: str) -> bool:
@@ -119,7 +119,7 @@ class Category(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self) -> str:
-        return self.get_name_display()
+        return self.get_name_display()  # pylint: disable=no-member
 
 
 class MeasuringTool(models.Model):
@@ -138,6 +138,10 @@ class Coverage(BaseFile):
     @classmethod
     def matches_pattern(cls, filename: str) -> bool:
         return filename.isupper()
+
+    @classmethod
+    def get_attributes_from_name(cls, filename: str) -> dict:
+        return {}
 
 
 class Campaign(BaseFile):
@@ -161,14 +165,12 @@ class Campaign(BaseFile):
 
     @classmethod
     def matches_pattern(cls, filename: str) -> bool:
-        try:
-            splitted = filename.split("-")
+        splitted = filename.split("-")
+        if len(splitted) >= 3:
             right_prefix = splitted[0].isdigit()
             right_date = len(splitted[1]) == 8
             return right_prefix and right_date
-        except Exception as e:
-            logger.error(f"Error parsing {filename}: {e}")
-            return False
+        return False
 
     @classmethod
     def get_attributes_from_name(cls, filename: str) -> dict:
@@ -198,15 +200,13 @@ class DataPoint(BaseFile):
 
     @classmethod
     def matches_pattern(cls, filename: str) -> bool:
-        try:
-            cleaned_spaces = filename.replace(" ", "-")
-            splitted = cleaned_spaces.split("-")
+        cleaned_spaces = filename.replace(" ", "-")
+        splitted = cleaned_spaces.split("-")
+        if len(splitted) >= 2:
             right_prefix = splitted[0] == "Punto"
             right_order = splitted[1].isdigit()
             return right_prefix and right_order
-        except Exception as e:
-            logger.error(f"Error parsing {filename}: {e}")
-            return False
+        return False
 
     @classmethod
     def get_attributes_from_name(cls, filename: str) -> dict:
@@ -229,8 +229,13 @@ class Measurement(BaseFile):
         "DataPoint", on_delete=models.CASCADE, related_name="measurements"
     )
 
-    def __str__(self) -> str:
-        return self.name
+    @classmethod
+    def matches_pattern(cls, filename: str) -> bool:
+        return True
+
+    @classmethod
+    def get_attributes_from_name(cls, filename: str) -> dict:
+        return {}
 
 
 # Spreadsheets
@@ -247,3 +252,11 @@ class SheetType():
 class Spreadsheet(BaseFile):
     sheet_type = models.CharField(max_length=16, choices=SheetType.CHOICES)
     delimiter = models.CharField(max_length=1, default=";")
+
+    @classmethod
+    def matches_pattern(cls, filename: str) -> bool:
+        return True
+
+    @classmethod
+    def get_attributes_from_name(cls, filename: str) -> dict:
+        return {}

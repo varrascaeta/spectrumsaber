@@ -1,8 +1,11 @@
+# Python
+pytest==8.2.2
 # Django modules
 django==5.0.4
 django-extensions==3.2.3
 django-admin-rangefilter==0.13.0
 django-admin-autocomplete-filter==0.7.1
+pytest-django==4.8.0
 # Integrations
 apache-airflow==2.9.0
 # Linting
