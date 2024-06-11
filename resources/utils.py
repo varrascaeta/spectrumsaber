@@ -19,15 +19,6 @@ DATE_FORMAT = "%m-%d-%y"
 TIME_FORMAT = "%I:%M%p"
 
 
-# Functions
-
-def get_campaign_ids(coverage_name: str) -> list:
-    with DatabaseContext():
-        from resources.campaigns.models import Campaign
-        campaigns = Campaign.objects.filter(coverage__name=coverage_name)
-        return list(campaigns.values_list("id", flat=True))
-
-
 # Class definitions
 class TimeoutException(Exception):
     pass

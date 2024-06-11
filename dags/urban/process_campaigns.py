@@ -1,14 +1,12 @@
 # Standard imports
 import logging
-import json
 from datetime import datetime
 # Airflow imports
 from airflow.decorators import dag, task
-from airflow import XComArg
 # Django imports
 from django.utils import timezone
 # Project imports
-from dags.operators import DjangoOperator, FTPGetterOperator
+from dags.operators import DjangoOperator
 
 
 # Globals
@@ -46,46 +44,20 @@ def process_urban_campaigns() -> None:
             )
 
     @task()
-    def create_campaign(campaign_data: dict) -> dict:
-        from resources.campaigns.models import Campaign
-        parsed_attrs = Campaign.get_attributes_from_name(campaign_data["name"])
-        if parsed_attrs:
-            date = datetime.strptime(parsed_attrs["date_str"], "%Y%m%d").date()
-            defaults = {
-                "name": campaign_data["name"],
-                "ftp_created_at": campaign_data["created_at"],
-                "date": date,
-                "external_id": parsed_attrs["external_id"],
-            }
-            campaign, created = Campaign.objects.get_or_create(
-                path=campaign_data["path"],
-                coverage_id=campaign_data["parent"]["id"],
-                defaults=defaults
-            )
-            logger.info(f"{'Created' if created else 'Found'} {campaign}")
-        else:
-            logger.info(f"Skipping {campaign_data['name']}")
-            with open("unmatched_campaigns_urban.txt", "a") as f:
-                data = json.dumps(campaign_data, default=str)
-                f.write(f"{data}\n")
+    def create_campaigns(coverage_data: dict) -> None:
+        from resources.campaigns.campaign_creators import process_objects
+        process_objects(
+            coverage_tag="urban",
+            creator_key="campaigns",
+            parent_ids=[coverage_data["id"]],
+        )
 
     # Define flow
     coverage_data = get_coverage_data()
-
-    get_urban_campaigns = FTPGetterOperator(
-        task_id="get_urban_campaings",
-        parent_data=coverage_data,
-        parent_keys=["id"]
-    )
-
     init_file = init_unmatched_file()
+    campaigns = create_campaigns(coverage_data=coverage_data)
 
-    # Branch for each campaign
-    create_campaigns = create_campaign.expand(
-        campaign_data=XComArg(get_urban_campaigns)
-    )
-    setup_django >> coverage_data >> get_urban_campaigns >> init_file
-    init_file >> create_campaigns
+    setup_django >> coverage_data >> init_file >> campaigns
 
 
 dag = process_urban_campaigns()
