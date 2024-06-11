@@ -6,34 +6,11 @@ from airflow.decorators import dag, task
 # Django imports
 from django.utils import timezone
 # Project imports
-from resources.utils import FTPClient, get_campaign_ids
 from dags.operators import DjangoOperator
 
 
 # Globals
 logger = logging.getLogger(__name__)
-
-
-def process_measurements(campaign_ids: list) -> None:
-    from resources.campaigns.models import Campaign
-    from resources.campaigns.measurement_creators import (
-        MeasurementCreator
-    )
-    with FTPClient() as ftp_client:
-        for idx, campaign_id in enumerate(campaign_ids):
-            logger.info("="*80)
-            logger.info(
-                "Processing %s/%s campaign measurements",
-                idx + 1,
-                len(campaign_ids)
-            )
-            campaign = Campaign.objects.get(id=campaign_id)
-            for data_point in campaign.data_points.all():
-                creator = MeasurementCreator(
-                    data_point_id=data_point.id,
-                    ftp_client=ftp_client
-                )
-                creator.process()
 
 
 @dag(
@@ -61,6 +38,10 @@ def process_hydro_measurements() -> None:
 
     @task()
     def create_measurements() -> None:
+        from resources.campaigns.campaign_creators import get_campaign_ids
+        from resources.campaigns.measurement_creators import (
+            process_measurements
+        )
         campaign_ids = get_campaign_ids("HIDROLOGIA")
         process_measurements(campaign_ids)
 
