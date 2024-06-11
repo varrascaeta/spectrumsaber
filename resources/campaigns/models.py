@@ -153,7 +153,7 @@ class Campaign(BaseFile):
     external_id = models.CharField(max_length=255, null=True)
     # Relationships
     coverage = models.ForeignKey(
-        Coverage, on_delete=models.CASCADE, related_name="coverage_campaigns"
+        Coverage, on_delete=models.CASCADE, related_name="campaigns"
     )
     district = models.ForeignKey(
         District, null=True, on_delete=models.SET_NULL
