@@ -6,7 +6,6 @@ import abc
 # Django imports
 from django.utils import timezone
 # Project imports
-from resources.utils import FTPClient
 from resources.campaigns.models import Campaign, DataPoint
 
 
@@ -14,11 +13,11 @@ logger = logging.getLogger(__name__)
 
 
 class DataPointCreator(abc.ABC):
-    def __init__(self, campaign_id: str, ftp_client: FTPClient):
-        self.campaign_id = campaign_id
+    from resources.utils import FTPClient
+
+    def __init__(self, parent_id: str, ftp_client: FTPClient):
+        self.campaign_id = parent_id
         self.order_pattern = r"[0-9_ ]+"
-        self.dirty_order = ""
-        self.parsed_attrs = {}
         self.ftp_client = ftp_client
 
     @abc.abstractmethod
@@ -42,32 +41,47 @@ class DataPointCreator(abc.ABC):
                 campaign_id=self.campaign_id,
                 defaults=defaults,
             )
-            logger.info(f"{'Created' if created else 'Found'} {data_point}")
+            return data_point, created
         else:
             logger.info(f"Skipping {point_data['name']}")
             with open("unmatched_datapoints_hydro.txt", "a") as f:
                 data = json.dumps(point_data, default=str)
                 f.write(f"{data}\n")
+            return None, False
 
     def process(self) -> None:
         campaign = Campaign.objects.get(id=self.campaign_id)
         data_point_data = self.ftp_client.get_dir_data(campaign.path)
-        for data in data_point_data:
-            self.create_data_point(data)
+        for idx, data in enumerate(data_point_data):
+            data_point, created = self.create_data_point(data)
+            if data_point:
+                logger.info(
+                    "%s %s (%s/%s)", "Created" if created else "Found",
+                    data_point, idx+1, len(data_point_data)
+                )
+            else:
+                logger.info(
+                    "Skipping %s (%s/%s)", data['name'], idx+1,
+                    len(data_point_data)
+                )
         campaign.updated_at = timezone.now()
         campaign.save()
 
 
 class HydroDataPointCreator(DataPointCreator):
+    def get_order(self, name: str) -> str:
+        order_match = re.findall(self.order_pattern, name)
+        dirty_order = order_match[0] if order_match else None
+        order = dirty_order.split("_")[0] if dirty_order else None
+        return order
+
     def is_valid(self, filename: str) -> bool:
         try:
             cleaned_spaces = filename.replace(" ", "-")
             splitted = cleaned_spaces.split("-")
             right_prefix = splitted[0] == "Punto"
-            order_match = re.findall(self.order_pattern, splitted[1])
-            self.dirty_order = order_match[0] if order_match else ""
-            right_order = len(order_match) > 0
-            return right_prefix and right_order
+            right_order = self.get_order(splitted[1])
+            return right_prefix and right_order is not None
         except Exception as e:
             logger.error(f"Error parsing {filename}: {e}")
             return False
@@ -75,7 +89,7 @@ class HydroDataPointCreator(DataPointCreator):
     def parse(self, filename: str) -> dict:
         parsed_attrs = {}
         if self.is_valid(filename):
-            order = self.dirty_order.split("_")[0]
+            order = self.get_order(filename)
             parsed_attrs["order"] = int(order)
         return parsed_attrs
 
@@ -95,7 +109,8 @@ class UrbanDataPointCreator(DataPointCreator):
     def parse(self, filename: str) -> dict:
         parsed_attrs = {}
         if self.is_valid(filename):
-            splitted = filename.split("-")
+            cleaned_spaces = filename.replace(" ", "-")
+            splitted = cleaned_spaces.split("-")
             prefix = splitted[0]
             order = prefix.split("L")[1].strip()
             parsed_attrs = {

@@ -6,30 +6,11 @@ from airflow.decorators import dag, task
 # Django imports
 from django.utils import timezone
 # Project imports
-from resources.utils import get_campaign_ids, FTPClient
+from dags.operators import DjangoOperator
 
 
 # Globals
 logger = logging.getLogger(__name__)
-
-
-def process_data_points(campaign_ids: list) -> None:
-    from resources.campaigns.data_point_creators import (
-        HydroDataPointCreator
-    )
-    with FTPClient() as ftp_client:
-        for idx, campaign_id in enumerate(campaign_ids):
-            logger.info("="*80)
-            logger.info(
-                "Processing %s/%s campaign data points",
-                idx + 1,
-                len(campaign_ids)
-            )
-            creator = HydroDataPointCreator(
-                campaign_id=campaign_id,
-                ftp_client=ftp_client
-            )
-            creator.process()
 
 
 @dag(
@@ -41,6 +22,8 @@ def process_data_points(campaign_ids: list) -> None:
     tags=["data_points", "hydro"],
 )
 def process_hydro_data_points() -> None:
+    setup_django = DjangoOperator(task_id="setup_django")
+
     @task()
     def init_unmatched_file() -> None:
         run_date = timezone.now().strftime("%Y-%m-%d %H:%M:%s")
@@ -50,13 +33,22 @@ def process_hydro_data_points() -> None:
 
     @task()
     def create_data_points() -> None:
+        from resources.campaigns.campaign_creators import (
+            process_objects,
+            get_campaign_ids
+        )
         campaign_ids = get_campaign_ids("HIDROLOGIA")
-        process_data_points(campaign_ids)
+        process_objects(
+            coverage_tag="hydro",
+            creator_key="data_points",
+            parent_ids=campaign_ids,
+        )
 
     # Define flow
     init_file = init_unmatched_file()
     data_points = create_data_points()
-    init_file >> data_points
+
+    setup_django >> init_file >> data_points
 
 
 dag = process_hydro_data_points()
