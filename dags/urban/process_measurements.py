@@ -14,19 +14,19 @@ logger = logging.getLogger(__name__)
 
 
 @dag(
-    dag_id="process_hydro_measurements",
+    dag_id="process_urban_measurements",
     schedule=None,
     start_date=datetime(2024, 4, 1),
     catchup=False,
-    tags=["measurements", "hydro"],
+    tags=["measurements", "urban"],
 )
-def process_hydro_measurements() -> None:
+def process_urban_measurements() -> None:
     setup_django = DjangoOperator(task_id="setup_django")
 
     @task()
     def init_unmatched_file() -> None:
         run_date = timezone.now().strftime("%Y-%m-%d %H:%M:%s")
-        with open("unmatched_categories_hydro.txt", "a") as f:
+        with open("unmatched_categories_urban.txt", "a") as f:
             f.write("="*80)
             f.write(f"\nUnmatched categories on {run_date}\n")
 
@@ -42,7 +42,7 @@ def process_hydro_measurements() -> None:
         from resources.campaigns.measurement_creators import (
             process_measurements
         )
-        campaign_ids = get_campaign_ids("HIDROLOGIA")
+        campaign_ids = get_campaign_ids("URBANO")
         process_measurements(campaign_ids)
 
     # Define flow
@@ -52,7 +52,7 @@ def process_hydro_measurements() -> None:
     setup_django >> init_file >> measurements
 
 
-dag = process_hydro_measurements()
+dag = process_urban_measurements()
 
 
 if __name__ == "__main__":

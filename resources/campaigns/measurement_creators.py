@@ -6,11 +6,35 @@ from django.utils import timezone
 # Project imports
 from resources.utils import FTPClient
 from resources.campaigns.models import (
-    Category, CategoryType, DataPoint, Measurement
+    Category, CategoryType, DataPoint, Measurement, Campaign
 )
 
 
 logger = logging.getLogger(__name__)
+
+
+def process_measurements(campaign_ids: list) -> None:
+    from resources.utils import FTPClient
+    with FTPClient() as ftp_client:
+        for idx, campaign_id in enumerate(campaign_ids):
+            logger.info("="*80)
+            logger.info(
+                "Processing %s/%s campaign measurements",
+                idx + 1,
+                len(campaign_ids)
+            )
+            campaign = Campaign.objects.filter(id=campaign_id)
+            campaign = campaign.prefetch_related('data_points').last()
+            for pidx, data_point in enumerate(campaign.data_points.all()):
+                logger.info(
+                    "Processing %s (%s/%s)",
+                    data_point, pidx + 1, len(campaign_ids)
+                )
+                creator = MeasurementCreator(
+                    data_point_id=data_point.id,
+                    ftp_client=ftp_client
+                )
+                creator.process()
 
 
 class MeasurementCreator:
@@ -28,7 +52,7 @@ class MeasurementCreator:
             category, created = Category.objects.get_or_create(
                 name=category_name
             )
-            logger.info(f"{'Created' if created else 'Found'} {category}")
+            logger.debug(f"{'Created' if created else 'Found'} {category}")
             return category
 
     def get_measurement_data_recursive(self, path: str) -> list:
@@ -60,6 +84,8 @@ class MeasurementCreator:
         measurement_data = self.get_measurement_data_recursive(
             data_point.path
         )
+        total_created = 0
+        total_found = 0
         for data in measurement_data:
             defaults = {
                 "ftp_created_at": data["created_at"],
@@ -71,6 +97,12 @@ class MeasurementCreator:
                 data_point_id=self.data_point_id,
                 defaults=defaults
             )
-            logger.info(f"{'Created' if created else 'Found'} {measurement}")
+            if created:
+                total_created += 1
+            elif measurement:
+                total_found += 1
+        logger.info(
+            "Finished. Created: %s. Found: %s", total_created, total_found
+        )
         data_point.updated_at = timezone.now()
         data_point.save()
