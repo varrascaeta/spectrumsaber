@@ -13,7 +13,10 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 import os
 from pathlib import Path
 from django.utils.log import DEFAULT_LOGGING
+from django.contrib.admin.sites import AdminSite
 
+AdminSite.index_title = "Spectral Administration"
+AdminSite.enable_nav_sidebar = False
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -42,13 +45,15 @@ STATICFILES_DIRS = [
     # Add any other directories containing static files
 ]
 DJANGO_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'django_extensions',
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.sites",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "django.contrib.admin",
+    "django.forms",
+    "django_extensions"
 ]
 
 LOCAL_APPS = [

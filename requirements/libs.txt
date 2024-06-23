@@ -1,0 +1,3 @@
+# Admin shortcuts
+# ------------------------------------------------------------------------------
+-e git+https://github.com/alesdotio/django-admin-shortcuts.git@master#egg=django-admin-shortcuts
