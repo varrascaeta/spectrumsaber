@@ -163,3 +163,4 @@ credentials/*.json
 
 # Static files
 static/
+staticfiles/
