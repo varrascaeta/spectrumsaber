@@ -49,11 +49,11 @@ This will create a new virtual environment named 'spectral'.
 ```
 10. Run the following command to start the database and the admin:
 ```bash
-    docker-compose -f containers/app/docker-compose.yml up
+    docker compose -f containers/app/docker-compose.yml up spectral
 ```
 Or, if you want to run only the database:
 ```bash
-    docker-compose -f containers/app/docker-compose.yml up spectral-docker-db
+    docker compose -f containers/app/docker-compose.yml up spectral-docker-db
 ```
 11. Init the database
 ```bash
