@@ -37,6 +37,28 @@ services:
     networks:
       - spectralnetwork
 
+  test-db:
+    image: 'postgres:16'
+    restart: always
+    environment:
+    - POSTGRES_PASSWORD=postgres
+    ports:
+    - '9432:5432'
+
+  spectral-test:
+    container_name: spectral-test
+    network_mode: "host"
+    build:
+      context: ../../
+      dockerfile: containers/app/Dockerfile
+    volumes:
+      - ../../:/app/
+    env_file:
+      - ../../environments/testing.env
+    depends_on:
+      - test-db
+    entrypoint: bash ../../app/containers/compose/tests.sh
+
 networks:
   spectralnetwork:
     driver: bridge
