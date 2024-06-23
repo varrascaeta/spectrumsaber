@@ -90,6 +90,7 @@ class ProvinceAdmin(admin.ModelAdmin):
     search_fields = ("name", "code")
     list_display = ("name", "code")
     inlines = [DistrictInline]
+    list_filter = (CountryFilter,)
 
     fieldsets = [
         (
@@ -109,7 +110,7 @@ class ProvinceAdmin(admin.ModelAdmin):
 class DistrictAdmin(admin.ModelAdmin):
     search_fields = ("name", "code")
     list_display = ("name", "code", "province")
-    list_filter = (CountryFilter, ProvinceFilter)
+    list_filter = (ProvinceFilter,)
 
     fieldsets = [
         (

@@ -125,7 +125,6 @@ class CoverageAdmin(BaseFileAdmin):
             ),
         ]
         return coverage_fieldsets + super().get_fieldsets(request, obj)
-    pass
 
 
 @admin.register(Campaign)
