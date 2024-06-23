@@ -1,6 +1,7 @@
 # Django imports
 from django.contrib import admin
 from django.urls import reverse
+from django.urls.resolvers import URLResolver
 from django.utils.safestring import mark_safe
 # Extra imports
 from rangefilter.filters import DateRangeFilter
@@ -81,6 +82,11 @@ class DataPointFilter(AutocompleteFilter):
 
 
 # Admins
+class SpectraAdminSite(admin.AdminSite):
+    index_title = "Spectral Administration"
+    enable_nav_sidebar = False
+
+
 class BaseFileAdmin(admin.ModelAdmin):
     list_display = [
         "__str__", "ftp_created_at", "updated_at"
