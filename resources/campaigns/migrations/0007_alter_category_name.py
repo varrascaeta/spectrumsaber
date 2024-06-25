@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('campaigns', '0006_alter_campaign_created_at_alter_coverage_created_at_and_more'),
+        ('campaigns', '0006_created_at_auto_add'),
     ]
 
     operations = [

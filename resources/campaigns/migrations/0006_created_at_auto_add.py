@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('campaigns', '0005_campaign_ftp_created_at_coverage_ftp_created_at_and_more'),
+        ('campaigns', '0005_add_ftp_created_at'),
     ]
 
     operations = [
