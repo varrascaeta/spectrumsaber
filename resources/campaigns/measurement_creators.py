@@ -28,7 +28,7 @@ def process_measurements(campaign_ids: list) -> None:
             for pidx, data_point in enumerate(campaign.data_points.all()):
                 logger.info(
                     "Processing %s (%s/%s)",
-                    data_point, pidx + 1, len(campaign_ids)
+                    data_point, pidx + 1, campaign.data_points.count()
                 )
                 creator = MeasurementCreator(
                     data_point_id=data_point.id,
