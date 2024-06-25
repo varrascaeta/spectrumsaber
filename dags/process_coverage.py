@@ -1,7 +1,6 @@
 # Standard imports
 import datetime
 import logging
-import json
 # Project imports
 from dags.operators import DjangoOperator, FTPGetterOperator
 # Airflow imports
@@ -27,20 +26,17 @@ def process_coverage():
     @task()
     def process_coverage(coverage_data: dict, **kwargs) -> int:
         from resources.campaigns.models import Coverage
-        if Coverage.matches_pattern(coverage_data["name"]):
-            defaults = {
-                "ftp_created_at": coverage_data["created_at"],
-            }
-            coverage, created = Coverage.objects.update_or_create(
-                name=coverage_data["name"],
-                path=coverage_data["path"],
-                defaults=defaults,
-            )
-            logger.info(f"{'Created' if created else 'Found'} {coverage}")
-        else:
-            with open("unmatched_coverages.txt", "a") as f:
-                data = json.dumps(coverage_data, default=str)
-                f.write(f"{data}\n")
+        is_valid = Coverage.matches_pattern(coverage_data["name"])
+        defaults = {
+            "is_valid": is_valid,
+            "ftp_created_at": coverage_data["created_at"],
+        }
+        coverage, created = Coverage.objects.update_or_create(
+            name=coverage_data["name"],
+            path=coverage_data["path"],
+            defaults=defaults
+        )
+        logger.info(f"{'Created' if created else 'Found'} {coverage}")
 
     # Define flow
     coverage_data = FTPGetterOperator(

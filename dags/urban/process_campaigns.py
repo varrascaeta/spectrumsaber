@@ -3,8 +3,6 @@ import logging
 from datetime import datetime
 # Airflow imports
 from airflow.decorators import dag, task
-# Django imports
-from django.utils import timezone
 # Project imports
 from dags.operators import DjangoOperator
 
@@ -24,13 +22,6 @@ total_tasks = 0
 )
 def process_urban_campaigns() -> None:
     setup_django = DjangoOperator(task_id="setup_django")
-
-    @task()
-    def init_unmatched_file() -> None:
-        run_date = timezone.now().strftime("%Y-%m-%d %H:%M:%s")
-        with open("unmatched_campaigns_urban.txt", "a") as f:
-            f.write("="*80)
-            f.write(f"\nUnmatched campaigns on {run_date}\n")
 
     @task()
     def get_coverage_data() -> dict:
@@ -54,10 +45,9 @@ def process_urban_campaigns() -> None:
 
     # Define flow
     coverage_data = get_coverage_data()
-    init_file = init_unmatched_file()
     campaigns = create_campaigns(coverage_data=coverage_data)
 
-    setup_django >> coverage_data >> init_file >> campaigns
+    setup_django >> coverage_data >> campaigns
 
 
 dag = process_urban_campaigns()

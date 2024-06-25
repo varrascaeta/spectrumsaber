@@ -3,8 +3,6 @@ import logging
 from datetime import datetime
 # Airflow imports
 from airflow.decorators import dag, task
-# Django imports
-from django.utils import timezone
 # Project imports
 from dags.operators import DjangoOperator
 
@@ -26,13 +24,6 @@ def process_hydro_campaigns() -> None:
     setup_django = DjangoOperator(task_id="setup_django")
 
     @task()
-    def init_unmatched_file() -> None:
-        run_date = timezone.now().strftime("%Y-%m-%d %H:%M:%s")
-        with open("unmatched_campaigns_hydro.txt", "a") as f:
-            f.write("="*80)
-            f.write(f"\nUnmatched campaigns on {run_date}\n")
-
-    @task()
     def get_coverage_data() -> dict:
         from resources.campaigns.models import Coverage
         try:
@@ -46,18 +37,18 @@ def process_hydro_campaigns() -> None:
     @task()
     def create_campaigns(coverage_data: dict) -> None:
         from resources.campaigns.campaign_creators import process_objects
-        process_objects(
-            coverage_tag="hydro",
-            creator_key="campaigns",
-            parent_ids=[coverage_data["id"]],
-        )
+        if coverage_data:
+            process_objects(
+                coverage_tag="hydro",
+                creator_key="campaigns",
+                parent_ids=[coverage_data["id"]],
+            )
 
     # Define flow
     coverage_data = get_coverage_data()
-    init_file = init_unmatched_file()
     campaigns = create_campaigns(coverage_data=coverage_data)
 
-    setup_django >> coverage_data >> init_file >> campaigns
+    setup_django >> coverage_data >> campaigns
 
 
 dag = process_hydro_campaigns()

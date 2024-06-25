@@ -3,8 +3,6 @@ import logging
 from datetime import datetime
 # Airflow imports
 from airflow.decorators import dag, task
-# Django imports
-from django.utils import timezone
 # Project imports
 from dags.operators import DjangoOperator
 
@@ -24,19 +22,6 @@ def process_urban_measurements() -> None:
     setup_django = DjangoOperator(task_id="setup_django")
 
     @task()
-    def init_unmatched_file() -> None:
-        run_date = timezone.now().strftime("%Y-%m-%d %H:%M:%s")
-        with open("unmatched_categories_urban.txt", "a") as f:
-            f.write("="*80)
-            f.write(f"\nUnmatched categories on {run_date}\n")
-
-    @task()
-    def get_data_point_ids(campaign_id: int) -> list:
-        from resources.campaigns.models import DataPoint
-        data_points = DataPoint.objects.filter(campaign_id=campaign_id)
-        return list(data_points.values_list("id", flat=True))
-
-    @task()
     def create_measurements() -> None:
         from resources.campaigns.campaign_creators import get_campaign_ids
         from resources.campaigns.measurement_creators import (
@@ -46,10 +31,9 @@ def process_urban_measurements() -> None:
         process_measurements(campaign_ids)
 
     # Define flow
-    init_file = init_unmatched_file()
     measurements = create_measurements()
 
-    setup_django >> init_file >> measurements
+    setup_django >> measurements
 
 
 dag = process_urban_measurements()

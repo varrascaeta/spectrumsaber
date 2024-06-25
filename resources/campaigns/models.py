@@ -12,7 +12,8 @@ logger = logging.getLogger(__name__)
 # Common utils
 class BaseFile(models.Model):
     name = models.CharField(max_length=255)
-    path = models.CharField(max_length=255)
+    path = models.CharField(max_length=255, unique=True)
+    is_valid = models.BooleanField(default=True)
     description = models.TextField(null=True)
     metadata = models.JSONField(null=True)
     ftp_created_at = models.DateTimeField(null=True)

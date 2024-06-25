@@ -1,5 +1,4 @@
 # Standard imports
-import json
 import logging
 import re
 import abc
@@ -30,24 +29,20 @@ class DataPointCreator(abc.ABC):
 
     def create_data_point(self, point_data: dict):
         parsed_attrs = self.parse(point_data["name"])
-        if parsed_attrs:
-            defaults = {
-                "ftp_created_at": point_data["created_at"],
-                "order": parsed_attrs["order"],
-            }
-            data_point, created = DataPoint.objects.update_or_create(
-                name=point_data["name"],
-                path=point_data["path"],
-                campaign_id=self.campaign_id,
-                defaults=defaults,
-            )
-            return data_point, created
-        else:
-            logger.info(f"Skipping {point_data['name']}")
-            with open("unmatched_datapoints_hydro.txt", "a") as f:
-                data = json.dumps(point_data, default=str)
-                f.write(f"{data}\n")
-            return None, False
+        is_valid = bool(parsed_attrs != {})
+        defaults = {
+            "name": point_data["name"],
+            "ftp_created_at": point_data["created_at"],
+            "is_valid": is_valid,
+        }
+        if is_valid:
+            defaults["order"] = parsed_attrs["order"]
+        data_point, created = DataPoint.objects.update_or_create(
+            path=point_data["path"],
+            campaign_id=self.campaign_id,
+            defaults=defaults,
+        )
+        return data_point, created
 
     def process(self) -> None:
         campaign = Campaign.objects.get(id=self.campaign_id)

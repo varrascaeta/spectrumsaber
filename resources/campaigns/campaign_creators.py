@@ -1,6 +1,5 @@
 # Standard imports
 import abc
-import json
 import logging
 from datetime import datetime
 # Django imports
@@ -63,30 +62,27 @@ class CampaignCreator(abc.ABC):
 
     def create_campaign(self, campaign_data: dict):
         parsed_attrs = self.parse(campaign_data["name"])
-        if parsed_attrs:
+        is_valid = bool(parsed_attrs != {})
+        defaults = {
+            "is_valid": is_valid,
+            "name": campaign_data["name"],
+            "ftp_created_at": campaign_data["created_at"],
+        }
+        if is_valid:
             date = datetime.strptime(parsed_attrs["date_str"], "%Y%m%d").date()
             district = District.objects.filter(
                 code=parsed_attrs["geo_code"]
             ).last()
-            defaults = {
-                "name": campaign_data["name"],
-                "ftp_created_at": campaign_data["created_at"],
-                "date": date,
-                "external_id": parsed_attrs["external_id"],
-            }
             if district:
                 defaults["district"] = district
-            campaign, created = Campaign.objects.update_or_create(
-                path=campaign_data["path"],
-                coverage_id=self.coverage_id,
-                defaults=defaults
-            )
-            return campaign, created
-        else:
-            with open("unmatched_campaigns_hydro.txt", "a") as f:
-                data = json.dumps(campaign_data, default=str)
-                f.write(f"{data}\n")
-            return None, False
+            defaults["external_id"] = parsed_attrs["external_id"]
+            defaults["date"] = date
+        campaign, created = Campaign.objects.update_or_create(
+            path=campaign_data["path"],
+            coverage_id=self.coverage_id,
+            defaults=defaults
+        )
+        return campaign, created
 
     def process(self) -> None:
         coverage = Coverage.objects.get(id=self.coverage_id)
