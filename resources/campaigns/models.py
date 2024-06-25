@@ -10,6 +10,16 @@ logger = logging.getLogger(__name__)
 
 
 # Common utils
+class InvalidFileManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(is_valid=False)
+
+
+class ValidFileManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(is_valid=True)
+
+
 class BaseFile(models.Model):
     name = models.CharField(max_length=255)
     path = models.CharField(max_length=255, unique=True)
@@ -20,6 +30,8 @@ class BaseFile(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    objects = ValidFileManager()
 
     def __str__(self) -> str:
         return str(self.name)
@@ -148,6 +160,13 @@ class Coverage(BaseFile):
         return {}
 
 
+class InvalidCoverage(Coverage):
+    objects = InvalidFileManager()
+
+    class Meta:
+        proxy = True
+
+
 class Campaign(BaseFile):
     # Fields
     date = models.DateField(null=True)
@@ -189,9 +208,16 @@ class Campaign(BaseFile):
             return {}
 
 
+class InvalidCampaign(Campaign):
+    objects = InvalidFileManager()
+
+    class Meta:
+        proxy = True
+
+
 class DataPoint(BaseFile):
     # Fields
-    order = models.IntegerField()
+    order = models.IntegerField(null=True)
     latitude = models.FloatField(null=True)
     longitude = models.FloatField(null=True)
     # Relationships
@@ -223,6 +249,13 @@ class DataPoint(BaseFile):
         return f"{self.name} | {self.campaign}"
 
 
+class InvalidDataPoint(DataPoint):
+    objects = InvalidFileManager()
+
+    class Meta:
+        proxy = True
+
+
 class Measurement(BaseFile):
     # Relationships
     category = models.ForeignKey(Category, on_delete=models.CASCADE, null=True)
@@ -237,6 +270,13 @@ class Measurement(BaseFile):
     @classmethod
     def get_attributes_from_name(cls, filename: str) -> dict:
         return {}
+
+
+class InvalidMeasurement(Measurement):
+    objects = InvalidFileManager()
+
+    class Meta:
+        proxy = True
 
 
 # Spreadsheets
