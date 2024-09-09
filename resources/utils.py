@@ -114,7 +114,7 @@ class FTPClient():
 
 class DatabaseContext():
     def __enter__(self):
-        sys.path.append('./spectral-pymg/')  # TODO: Change this to env var
+        sys.path.append('./spectrumsaber/')  # TODO: Change this to env var
         os.environ.setdefault("DJANGO_SETTINGS_MODULE", "service.settings")
         import django
         django.setup()

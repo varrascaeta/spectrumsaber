@@ -83,7 +83,7 @@ class DataPointFilter(AutocompleteFilter):
 
 # Admins
 class SpectraAdminSite(admin.AdminSite):
-    index_title = "Spectral Administration"
+    index_title = "SpectrumSaber Administration"
     enable_nav_sidebar = False
 
 

@@ -1,5 +1,5 @@
 """
-ASGI config for spectral-pymg project.
+ASGI config for spectrumsaber project.
 
 It exposes the ASGI callable as a module-level variable named ``application``.
 

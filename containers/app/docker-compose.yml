@@ -1,8 +1,8 @@
 version: '3'
 
 services:
-  spectral:
-    container_name: spectral-app
+  spectrumsaber:
+    container_name: spectrumsaber-app
     build:
       context: ../../
       dockerfile: containers/app/Dockerfile
@@ -14,20 +14,20 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      - spectral-docker-db
+      - spectrumsaber-docker-db
     links:
-      - spectral-docker-db:spectral-docker-db
+      - spectrumsaber-docker-db:spectrumsaber-docker-db
     networks:
-      - spectralnetwork
+      - spectrumsabernetwork
 
-  spectral-docker-db:
-    container_name: spectral-db
+  spectrumsaber-docker-db:
+    container_name: spectrumsaber-db
     build:
       context: ../../
       dockerfile: containers/database/Dockerfile
     image: postgres:16
     volumes:
-      - spectral-docker-db-data:/var/lib/postgresql/data
+      - spectrumsaber-docker-db-data:/var/lib/postgresql/data
     env_file:
       - ../../environments/production.env
     environment:
@@ -35,7 +35,7 @@ services:
     ports:
       - "5433:5432"
     networks:
-      - spectralnetwork
+      - spectrumsabernetwork
 
   test-db:
     image: 'postgres:16'
@@ -45,8 +45,8 @@ services:
     ports:
     - '9432:5432'
 
-  spectral-test:
-    container_name: spectral-test
+  spectrumsaber-test:
+    container_name: spectrumsaber-test
     network_mode: "host"
     build:
       context: ../../
@@ -60,8 +60,8 @@ services:
     entrypoint: bash ../../app/containers/compose/tests.sh
 
 networks:
-  spectralnetwork:
+  spectrumsabernetwork:
     driver: bridge
 
 volumes:
-  spectral-docker-db-data:
+  spectrumsaber-docker-db-data:

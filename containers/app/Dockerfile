@@ -15,4 +15,3 @@ RUN pip install -r local.txt
 ENV PYTHONPATH="/:$PYTHONPATH"
 COPY . /app/
 RUN echo yes | python service/manage.py collectstatic
-# RUN python service/manage.py migrate
