@@ -43,11 +43,15 @@ This will create a new virtual environment named 'spectrumsaber'.
 ```bash
     pip install -r requirements/local.txt
 ```
-9. Install docker-compose
+9. Install Airflow
+```bash
+    pip install "apache-airflow[celery]==2.10.2" --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.10.2/constraints-3.8.txt"
+```
+10. Install docker-compose
 ```bash
     sudo apt-get install docker-compose
 ```
-10. Run the following command to start the database and the admin:
+11. Run the following command to start the database and the admin:
 ```bash
     docker compose -f containers/app/docker-compose.yml up spectrumsaber
 ```
@@ -55,13 +59,13 @@ Or, if you want to run only the database:
 ```bash
     docker compose -f containers/app/docker-compose.yml up spectrumsaber-docker-db
 ```
-11. Init the database
+12. Init the database
 ```bash
    python service/manage.py migrate
    python service/manage.py createsuperuser
 ```
-12. Now you can access the admin at localhost:8000/admin
-13. If you want to rebuild, it is only necessary to rebuild the app. DO NOT delete the volume, otherwise you will lose all the data. To rebuild the app image, run the following command:
+13. Now you can access the admin at localhost:8000/admin
+14. If you want to rebuild, it is only necessary to rebuild the app. DO NOT delete the volume, otherwise you will lose all the data. To rebuild the app image, run the following command:
 ```bash
     docker-compose -f containers/app/docker-compose.yml up --build --no-deps spectrumsaber
 ```
