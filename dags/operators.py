@@ -109,17 +109,47 @@ class ProcessObjectsOperator(DjangoOperator):
 
     def execute(self, *args, **kwargs) -> None:
         module, name = self.creator_module.rsplit(".", 1)
-        self.creator = dynamic_import(module, name)
+        creator = dynamic_import(module, name)
         parent_ids = self.get_ids_from_context(kwargs["context"])
         with FTPClient() as ftp_client:
             for idx, parent_id in enumerate(parent_ids):
                 logger.info("="*80)
-                creator_instance = self.creator(
+                creator_instance = creator(
                     parent_id=parent_id,
                     ftp_client=ftp_client
                 )
                 logger.info("Starting %s process", name)
                 creator_instance.process()
+
+
+class ProcessMeasurementOperator(ProcessObjectsOperator):
+    def execute(self, *args, **kwargs) -> None:
+        from resources.utils import FTPClient
+        from resources.campaigns.models import Campaign
+        module, name = self.creator_module.rsplit(".", 1)
+        creator = dynamic_import(module, name)
+        campaign_ids = self.get_ids_from_context(kwargs["context"])
+        campaigns = Campaign.objects.filter(id__in=campaign_ids)
+        campaigns = campaigns.prefetch_related('data_points')
+        with FTPClient() as ftp_client:
+            for idx, campaign in enumerate(campaigns):
+                logger.info("="*80)
+                logger.info(
+                    "Processing %s/%s campaign measurements",
+                    idx + 1,
+                    len(campaign_ids)
+                )
+                data_points = list(campaign.data_points.all())
+                for pidx, data_point in enumerate(data_points):
+                    logger.info(
+                        "Processing %s (%s/%s)",
+                        data_point, pidx + 1, len(data_points)
+                    )
+                    creator_instance = creator(
+                        data_point_id=data_point.id,
+                        ftp_client=ftp_client
+                    )
+                    creator_instance.process()
 
 
 class FTPGetterOperator(BaseOperator):

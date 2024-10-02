@@ -6,35 +6,11 @@ from django.utils import timezone
 # Project imports
 from resources.utils import FTPClient
 from resources.campaigns.models import (
-    Category, CategoryType, DataPoint, Measurement, Campaign
+    Category, CategoryType, DataPoint, Measurement
 )
 
 
 logger = logging.getLogger(__name__)
-
-
-def process_measurements(campaign_ids: list) -> None:
-    from resources.utils import FTPClient
-    with FTPClient() as ftp_client:
-        for idx, campaign_id in enumerate(campaign_ids):
-            logger.info("="*80)
-            logger.info(
-                "Processing %s/%s campaign measurements",
-                idx + 1,
-                len(campaign_ids)
-            )
-            campaign = Campaign.objects.filter(id=campaign_id)
-            campaign = campaign.prefetch_related('data_points').last()
-            for pidx, data_point in enumerate(campaign.data_points.all()):
-                logger.info(
-                    "Processing %s (%s/%s)",
-                    data_point, pidx + 1, len(campaign_ids)
-                )
-                creator = MeasurementCreator(
-                    data_point_id=data_point.id,
-                    ftp_client=ftp_client
-                )
-                creator.process()
 
 
 class MeasurementCreator:
