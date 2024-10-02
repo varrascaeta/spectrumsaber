@@ -105,8 +105,8 @@ class CategoryType():
         TXT_REF_PAR_CORR: ["textoreflectanciacorrpar", "textorefcorrpar"],
     }
 
-    @staticmethod
-    def get_by_alias(alias: str) -> str:
+    @classmethod
+    def get_by_alias(cls, alias: str) -> str:
         slug_alias = alias.lower().replace(" ", "")
         for category, aliases in cls.SLUG_ALIASES.items():
             if slug_alias in aliases:
