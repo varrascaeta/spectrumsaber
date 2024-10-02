@@ -1,4 +1,5 @@
 # Standard imports
+import importlib
 import json
 import logging
 import os
@@ -122,3 +123,8 @@ class DatabaseContext():
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
+
+
+def dynamic_import(module: str, name: str):
+    module = importlib.import_module(module)
+    return getattr(module, name)
