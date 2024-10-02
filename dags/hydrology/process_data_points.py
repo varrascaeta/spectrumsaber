@@ -2,11 +2,9 @@
 import logging
 from datetime import datetime
 # Airflow imports
-from airflow.decorators import dag, task
-# Django imports
-from django.utils import timezone
+from airflow.decorators import dag
 # Project imports
-from dags.operators import DjangoOperator
+from dags.operators import DatabaseFilterOperator, ProcessObjectsOperator
 
 
 # Globals
@@ -22,33 +20,22 @@ logger = logging.getLogger(__name__)
     tags=["data_points", "hydro"],
 )
 def process_hydro_data_points() -> None:
-    setup_django = DjangoOperator(task_id="setup_django")
+    campaigns = DatabaseFilterOperator(
+        task_id="get_campaigns_data",
+        model_path="resources.campaigns.models.Campaign",
+        field="coverage__name",
+        value="HIDROLOGIA",
+    )
 
-    @task()
-    def init_unmatched_file() -> None:
-        run_date = timezone.now().strftime("%Y-%m-%d %H:%M:%s")
-        with open("unmatched_datapoints_hydro.txt", "a") as f:
-            f.write("="*80)
-            f.write(f"\nUnmatched data points on {run_date}\n")
+    data_points = ProcessObjectsOperator(
+        task_id="create_data_points",
+        creator_module=(
+            "resources.campaigns.campaign_creators.HydroDataPointCreator"
+        ),
+        parent_data=campaigns.output,
+    )
 
-    @task()
-    def create_data_points() -> None:
-        from resources.campaigns.campaign_creators import (
-            process_objects,
-            get_campaign_ids
-        )
-        campaign_ids = get_campaign_ids("HIDROLOGIA")
-        process_objects(
-            coverage_tag="hydro",
-            creator_key="data_points",
-            parent_ids=campaign_ids,
-        )
-
-    # Define flow
-    init_file = init_unmatched_file()
-    data_points = create_data_points()
-
-    setup_django >> init_file >> data_points
+    campaigns >> data_points
 
 
 dag = process_hydro_data_points()
