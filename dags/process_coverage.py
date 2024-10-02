@@ -2,16 +2,38 @@
 import datetime
 import logging
 import json
-# Project imports
-from dags.operators import DjangoOperator, FTPGetterOperator
 # Airflow imports
-from airflow.decorators import dag, task
-from airflow import XComArg
+from airflow.decorators import dag
 # Django imports
 from django.conf import settings
+# Project imports
+from dags.operators import DjangoOperator, FTPGetterOperator
 
 
 logger = logging.getLogger(__name__)
+
+
+class CreateCoverageOperator(DjangoOperator):
+    def __init__(self, coverage_data, **kwargs):
+        super().__init__(**kwargs)
+        self.coverage_data = coverage_data
+
+    def execute(self, context):
+        from resources.campaigns.models import Coverage
+        if Coverage.matches_pattern(self.coverage_data["name"]):
+            defaults = {
+                "ftp_created_at": self.coverage_data["created_at"],
+            }
+            coverage, created = Coverage.objects.update_or_create(
+                name=self.coverage_data["name"],
+                path=self.coverage_data["path"],
+                defaults=defaults,
+            )
+            logger.info(f"{'Created' if created else 'Found'} {coverage}")
+        else:
+            with open("unmatched_coverages.txt", "a") as f:
+                data = json.dumps(self.coverage_data, default=str)
+                f.write(f"{data}\n")
 
 
 @dag(
@@ -22,26 +44,6 @@ logger = logging.getLogger(__name__)
     tags=["ftp_scanner"],
 )
 def process_coverage():
-    setup_django = DjangoOperator(task_id="setup_django")
-
-    @task()
-    def process_coverage(coverage_data: dict, **kwargs) -> int:
-        from resources.campaigns.models import Coverage
-        if Coverage.matches_pattern(coverage_data["name"]):
-            defaults = {
-                "ftp_created_at": coverage_data["created_at"],
-            }
-            coverage, created = Coverage.objects.update_or_create(
-                name=coverage_data["name"],
-                path=coverage_data["path"],
-                defaults=defaults,
-            )
-            logger.info(f"{'Created' if created else 'Found'} {coverage}")
-        else:
-            with open("unmatched_coverages.txt", "a") as f:
-                data = json.dumps(coverage_data, default=str)
-                f.write(f"{data}\n")
-
     # Define flow
     coverage_data = FTPGetterOperator(
         task_id="get_coverage_data",
@@ -49,10 +51,13 @@ def process_coverage():
         parent_keys=["id"],
     )
     # Branch for each coverage
-    create_coverages = process_coverage.expand(
-        coverage_data=XComArg(coverage_data)
+    create_coverages = CreateCoverageOperator.partial(
+        task_id="create_coverage"
+    ).expand(
+        coverage_data=coverage_data.output
     )
-    setup_django >> coverage_data >> create_coverages
+
+    coverage_data >> create_coverages
 
 
 dag = process_coverage()
