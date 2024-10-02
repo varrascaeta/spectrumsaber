@@ -16,7 +16,6 @@ logger = logging.getLogger(__name__)
     schedule=None,
     start_date=datetime(2024, 4, 1),
     catchup=False,
-    max_active_tasks=4,
     tags=["data_points", "hydro"],
 )
 def process_hydro_data_points() -> None:
