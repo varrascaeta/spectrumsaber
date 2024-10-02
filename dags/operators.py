@@ -23,29 +23,25 @@ class DjangoOperator(BaseOperator):
         django.setup()
 
 
-class GetObjectDataOperator(DjangoOperator):
-    def __init__(self, model_path, obj_name: str, **kwargs):
+class DatabaseFilterOperator(DjangoOperator):
+    def __init__(self, model_path, field: str, value: str, **kwargs):
         super().__init__(**kwargs)
-        self.name = obj_name
+        self.field = field
+        self.value = value
         self.model_path = model_path
 
     def execute(self, context: Context) -> dict:
         module, model_name = self.model_path.rsplit(".", 1)
         model = dynamic_import(module, model_name)
-        try:
-            file_obj = model.objects.get(name=self.name)
-            return {
-                "id": file_obj.id,
-                "path": file_obj.path,
+        file_obj = model.objects.filter(**{self.field: self.value})
+        result = [
+            {
+                "id": obj.id,
+                "path": obj.path,
             }
-        except model.DoesNotExist:
-            file_obj = None
-            parent_key = model.get_parent_key()
-            logger.info(
-                "%s not found. Try to get %s first...",
-                model_name, parent_key
-            )
-        return None
+            for obj in file_obj
+        ]
+        return result
 
 
 class CreateObjectOperator(DjangoOperator):

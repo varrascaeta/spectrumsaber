@@ -4,7 +4,7 @@ from datetime import datetime
 # Airflow imports
 from airflow.decorators import dag
 # Project imports
-from dags.operators import ProcessObjectsOperator, GetObjectDataOperator
+from dags.operators import ProcessObjectsOperator, DatabaseFilterOperator
 
 
 # Globals
@@ -19,10 +19,11 @@ logger = logging.getLogger(__name__)
     tags=["campaigns", "urban"],
 )
 def process_hydro_campaigns() -> None:
-    coverage_data = GetObjectDataOperator(
+    coverage_data = DatabaseFilterOperator(
         task_id="get_coverage_data",
         model_path="resources.campaigns.models.Coverage",
-        obj_name="URBANO",
+        field="name",
+        value="URBANO"
     )
 
     campaigns = ProcessObjectsOperator(
