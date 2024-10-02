@@ -23,12 +23,12 @@ class BaseFile(models.Model):
     def __str__(self) -> str:
         return str(self.name)
 
-    @classmethod
-    def matches_pattern(cls, filename: str) -> bool:
+    @staticmethod
+    def matches_pattern(filename: str) -> bool:
         raise NotImplementedError
 
-    @classmethod
-    def get_attributes_from_name(cls, filename: str) -> dict:
+    @staticmethod
+    def get_attributes_from_name(filename: str) -> dict:
         raise NotImplementedError
 
     class Meta:
@@ -105,8 +105,8 @@ class CategoryType():
         TXT_REF_PAR_CORR: ["textoreflectanciacorrpar", "textorefcorrpar"],
     }
 
-    @classmethod
-    def get_by_alias(cls, alias: str) -> str:
+    @staticmethod
+    def get_by_alias(alias: str) -> str:
         slug_alias = alias.lower().replace(" ", "")
         for category, aliases in cls.SLUG_ALIASES.items():
             if slug_alias in aliases:
@@ -138,12 +138,12 @@ class MeasuringTool(models.Model):
 
 # Campaigns
 class Coverage(BaseFile):
-    @classmethod
-    def matches_pattern(cls, filename: str) -> bool:
+    @staticmethod
+    def matches_pattern(filename: str) -> bool:
         return filename.isupper()
 
-    @classmethod
-    def get_attributes_from_name(cls, filename: str) -> dict:
+    @staticmethod
+    def get_attributes_from_name(filename: str) -> dict:
         return {}
 
 
@@ -166,8 +166,8 @@ class Campaign(BaseFile):
         "Spreadsheet", blank=True, related_name="campaigns"
     )
 
-    @classmethod
-    def matches_pattern(cls, filename: str) -> bool:
+    @staticmethod
+    def matches_pattern(filename: str) -> bool:
         splitted = filename.split("-")
         if len(splitted) >= 3:
             right_prefix = splitted[0].isdigit()
@@ -175,9 +175,9 @@ class Campaign(BaseFile):
             return right_prefix and right_date
         return False
 
-    @classmethod
-    def get_attributes_from_name(cls, filename: str) -> dict:
-        if cls.matches_pattern(filename):
+    @staticmethod
+    def get_attributes_from_name(filename: str) -> dict:
+        if Campaign.matches_pattern(filename):
             splitted = filename.split("-")
             return {
                 "external_id": splitted[0],
@@ -198,8 +198,8 @@ class DataPoint(BaseFile):
         Campaign, on_delete=models.CASCADE, related_name="data_points"
     )
 
-    @classmethod
-    def matches_pattern(cls, filename: str) -> bool:
+    @staticmethod
+    def matches_pattern(filename: str) -> bool:
         cleaned_spaces = filename.replace(" ", "-")
         splitted = cleaned_spaces.split("-")
         if len(splitted) >= 2:
@@ -208,9 +208,9 @@ class DataPoint(BaseFile):
             return right_prefix and right_order
         return False
 
-    @classmethod
-    def get_attributes_from_name(cls, filename: str) -> dict:
-        if cls.matches_pattern(filename):
+    @staticmethod
+    def get_attributes_from_name(filename: str) -> dict:
+        if DataPoint.matches_pattern(filename):
             splitted = filename.split("-")
             return {
                 "order": int(splitted[1])
@@ -229,12 +229,12 @@ class Measurement(BaseFile):
         "DataPoint", on_delete=models.CASCADE, related_name="measurements"
     )
 
-    @classmethod
-    def matches_pattern(cls, filename: str) -> bool:
+    @staticmethod
+    def matches_pattern(filename: str) -> bool:
         return True
 
-    @classmethod
-    def get_attributes_from_name(cls, filename: str) -> dict:
+    @staticmethod
+    def get_attributes_from_name(filename: str) -> dict:
         return {}
 
 
@@ -253,10 +253,10 @@ class Spreadsheet(BaseFile):
     sheet_type = models.CharField(max_length=16, choices=SheetType.CHOICES)
     delimiter = models.CharField(max_length=1, default=";")
 
-    @classmethod
-    def matches_pattern(cls, filename: str) -> bool:
+    @staticmethod
+    def matches_pattern(filename: str) -> bool:
         return True
 
-    @classmethod
-    def get_attributes_from_name(cls, filename: str) -> dict:
+    @staticmethod
+    def get_attributes_from_name(filename: str) -> dict:
         return {}
