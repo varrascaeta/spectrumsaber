@@ -158,7 +158,7 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-LOGGING = {
+""" LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
@@ -181,6 +181,6 @@ DEFAULT_LOGGING["loggers"][""] = {
     "handlers": ["console"],
     "level": "DEBUG",
     "propagate": True,
-}
+} """
 
 BASE_FTP_PATH = os.getenv("BASE_FTP_PATH")
