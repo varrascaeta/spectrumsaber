@@ -158,29 +158,4 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "formatters": {
-        "verbose": {
-            "format": "%(levelname)s %(asctime)s %(module)s %(funcName)s:%(lineno)s> %(message)s"
-        }
-    },
-    "handlers": {
-        "console": {
-            "level": "DEBUG",
-            "class": "logging.StreamHandler",
-            "formatter": "verbose",
-        }
-    },
-    "root": {"level": "INFO", "handlers": ["console"]},
-}
-
-
-DEFAULT_LOGGING["loggers"][""] = {
-    "handlers": ["console"],
-    "level": "DEBUG",
-    "propagate": True,
-}
-
 BASE_FTP_PATH = os.getenv("BASE_FTP_PATH")
