@@ -7,7 +7,10 @@ from airflow.decorators import dag
 # Django imports
 from django.conf import settings
 # Project imports
-from dags.operators import DjangoOperator, FTPGetterOperator
+from resources.airflow.dags.operators import (
+    DjangoOperator,
+    FTPGetterOperator
+)
 
 
 logger = logging.getLogger(__name__)

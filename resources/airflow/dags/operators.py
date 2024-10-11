@@ -174,3 +174,4 @@ class FTPGetterOperator(BaseOperator):
                 else:
                     child["parent"][key] = self.parent_data[key]
         return children_data
+       

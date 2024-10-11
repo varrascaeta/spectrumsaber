@@ -108,6 +108,26 @@ class FTPClient():
         else:
             logger.error(f"Line {line} does not match FTP pattern")
             return {}
+    
+    def recursive_scan(self, start_path: str) -> dict:
+        result = {}
+        subdirs = self.get_dir_data(start_path)
+        for subdir in subdirs:
+            filename = subdir["name"]
+            if subdir["is_dir"]:
+                result[filename] = self.map_to_json(subdir["path"])
+            else:
+                if result.get(filename):
+                    result[filename].append(subdir["path"])
+                else:
+                    result[filename] = [filename]
+        return result
+
+    def map_to_json(self, start_path: str) -> list[dict]:
+        ftp_structure = self.recursive_scan(start_path)
+        with open("ftp_structure.json", "w") as f:
+            json.dump(ftp_structure, f, default=str)
+        logger.info("FTP structure saved to ftp_structure.json")
 
     def __str__(self) -> str:
         return f"FTP:{self.username}@{self.host}"
