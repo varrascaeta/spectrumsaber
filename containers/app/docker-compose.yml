@@ -52,8 +52,6 @@ services:
       context: ../../
       dockerfile: containers/app/Dockerfile
     command: ["python", "service/manage.py", "runserver", "0.0.0.0:8000"]
-    # volumes:
-    #   - ../../:/app/
     env_file:
       - ../../environments/production.env
     ports:
