@@ -148,3 +148,8 @@ class DatabaseContext():
 def dynamic_import(module: str, name: str):
     module = importlib.import_module(module)
     return getattr(module, name)
+
+
+def get_dirs_to_process(self, filepath: str) -> list[str]:
+    with open(filepath) as f:
+        return json.load(f)

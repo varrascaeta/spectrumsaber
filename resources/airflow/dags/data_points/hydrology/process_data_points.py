@@ -4,7 +4,7 @@ from datetime import datetime
 # Airflow imports
 from airflow.decorators import dag
 # Project imports
-from resources.airflow.dags.operators import (
+from resources.airflow.operators import (
     DatabaseFilterOperator,
     ProcessObjectsOperator
 )

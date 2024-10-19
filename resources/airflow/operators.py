@@ -4,6 +4,7 @@ import sys
 import logging
 import json
 # Project imports
+from resources.constants import DIR_SCAN_FOLDER
 from resources.utils import FTPClient, dynamic_import
 # Airflow imports
 from airflow.utils.context import Context
@@ -174,4 +175,16 @@ class FTPGetterOperator(BaseOperator):
                 else:
                     child["parent"][key] = self.parent_data[key]
         return children_data
-       
+
+
+class ScanFTPDirectory(BaseOperator):
+    def __init__(self, folder_data: dict, **kwargs):
+        super().__init__(**kwargs)
+        self.path = folder_data["path"]
+        self.is_dir = folder_data["is_dir"]
+
+    def execute(self, *args, **kwargs) -> list[dict]:
+        if self.is_dir:
+            with FTPClient() as client:
+                children_data = client.get_dir_data(self.path)
+            return children_data

@@ -4,9 +4,9 @@ from datetime import datetime
 # Airflow imports
 from airflow.decorators import dag
 # Project imports
-from resources.airflow.dags.operators import (
+from resources.airflow.operators import (
     DatabaseFilterOperator,
-    ProcessMeasurementOperator
+    ProcessObjectsOperator
 )
 
 
@@ -15,13 +15,13 @@ logger = logging.getLogger(__name__)
 
 
 @dag(
-    dag_id="process_urban_measurements",
+    dag_id="process_urban_data_points",
     schedule=None,
     start_date=datetime(2024, 4, 1),
     catchup=False,
-    tags=["measurements", "urban"],
+    tags=["data_points", "urban"],
 )
-def process_urban_measurements() -> None:
+def process_urban_data_points() -> None:
     campaigns = DatabaseFilterOperator(
         task_id="get_campaigns_data",
         model_path="resources.campaigns.models.Campaign",
@@ -29,18 +29,18 @@ def process_urban_measurements() -> None:
         value="URBANO",
     )
 
-    measurements = ProcessMeasurementOperator(
-        task_id="create_urban_measurements",
+    data_points = ProcessObjectsOperator(
+        task_id="create_data_points",
         creator_module=(
-            "resources.campaigns.measurement_creators.MeasurementCreator"
+            "resources.campaigns.campaign_creators.UrbanDataPointCreator"
         ),
         parent_data=campaigns.output,
     )
 
-    campaigns >> measurements
+    campaigns >> data_points
 
 
-dag = process_urban_measurements()
+dag = process_urban_data_points()
 
 if __name__ == "__main__":
     dag.test()
