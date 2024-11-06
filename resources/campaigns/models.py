@@ -12,13 +12,15 @@ logger = logging.getLogger(__name__)
 # Common utils
 class BaseFile(models.Model):
     name = models.CharField(max_length=255)
-    path = models.CharField(max_length=255)
+    path = models.CharField(max_length=255, unique=True)
     description = models.TextField(null=True)
     metadata = models.JSONField(null=True)
     ftp_created_at = models.DateTimeField(null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    scan_complete = models.BooleanField(default=False)
+    last_synced_at = models.DateTimeField(null=True)
 
     def __str__(self) -> str:
         return str(self.name)
@@ -210,8 +212,9 @@ class DataPoint(BaseFile):
 
     @staticmethod
     def get_attributes_from_name(filename: str) -> dict:
-        if DataPoint.matches_pattern(filename):
-            splitted = filename.split("-")
+        cleaned_spaces = filename.replace(" ", "-")
+        splitted = cleaned_spaces.split("-")
+        if splitted and splitted[1].isdigit():
             return {
                 "order": int(splitted[1])
             }
