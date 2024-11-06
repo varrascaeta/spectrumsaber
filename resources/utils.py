@@ -108,7 +108,7 @@ class FTPClient():
         else:
             logger.error(f"Line {line} does not match FTP pattern")
             return {}
-    
+
     def recursive_scan(self, start_path: str) -> dict:
         result = {}
         subdirs = self.get_dir_data(start_path)
