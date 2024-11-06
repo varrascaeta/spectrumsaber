@@ -186,8 +186,7 @@ class Campaign(BaseFile):
                 "date_str": splitted[1],
                 "geo_code": splitted[2],
             }
-        else:
-            return {}
+        return {}
 
 
 class DataPoint(BaseFile):
@@ -218,8 +217,7 @@ class DataPoint(BaseFile):
             return {
                 "order": int(splitted[1])
             }
-        else:
-            return {}
+        return {}
 
     def __str__(self) -> str:
         return f"{self.name} | {self.campaign}"
