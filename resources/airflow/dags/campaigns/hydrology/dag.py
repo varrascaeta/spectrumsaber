@@ -16,7 +16,7 @@ from resources.airflow.operators import (
 # Globals
 logger = logging.getLogger(__name__)
 
-
+def create_campaign_dag()
 @dag(
     dag_id="process_hydro_campaigns",
     schedule=None,

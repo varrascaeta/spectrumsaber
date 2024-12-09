@@ -21,10 +21,11 @@ class SetupDjango(BaseOperator):
 
 
 class ScanFTPDirectory(BaseOperator):
-    def __init__(self, folder_data: dict, **kwargs):
+    def __init__(self, folder_data: dict, depth: int = 1, **kwargs):
         super().__init__(**kwargs)
         self.path = folder_data["path"]
         self.is_dir = folder_data["is_dir"]
+        self.depth = depth
 
     def execute(self, *args, **kwargs) -> list[dict]:
         if self.is_dir:

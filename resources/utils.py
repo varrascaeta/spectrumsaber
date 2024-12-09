@@ -109,6 +109,19 @@ class FTPClient():
             logger.error(f"Line {line} does not match FTP pattern")
             return {}
 
+    def get_files_at_depth(self, path: str, depth: int) -> list[dict]:
+        current_depth = 0
+        files = []
+        while current_depth < depth:
+            current_files = self.get_dir_data(path) 
+            for file in current_files:
+                if file["is_dir"]:
+                    files.extend(self.get_files_at_depth(file["path"], depth))
+                else:
+                    files.append(file)
+            current_depth += 1
+        return files
+
     def recursive_scan(self, start_path: str) -> dict:
         result = {}
         subdirs = self.get_dir_data(start_path)
