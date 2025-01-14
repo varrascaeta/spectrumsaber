@@ -1,4 +1,4 @@
-FROM python:3.12-slim-bullseye
+FROM python:3.12.8-slim-bullseye
 SHELL ["/bin/bash", "-c"]
 EXPOSE 8000
 ENV PYTHONUNBUFFERED 1
