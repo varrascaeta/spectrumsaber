@@ -6,7 +6,7 @@ x-airflow-common:
   # image: ${AIRFLOW_IMAGE_NAME:-apache/airflow:2.10.2}
   build:
     context: ../
-    dockerfile: containers/airflow/Dockerfile
+    dockerfile: containers/airflow.Dockerfile
   environment:
     &airflow-common-env
     AIRFLOW__CORE__EXECUTOR: CeleryExecutor
@@ -48,38 +48,66 @@ services:
       - app
       - spectrumsaber
     container_name: spectrumsaber-app
-    build:
-      context: ../
-      dockerfile: containers/app/Dockerfile
-    command: ["python", "service/manage.py", "runserver", "0.0.0.0:8000"]
+    image: spectrumsaber:latest
+    command: bash -c "python service/manage.py runserver 0.0.0.0:8000"
     env_file:
       - ../environments/production.env
+    volumes:
+      - ../:/app/
     ports:
       - "8000:8000"
     depends_on:
-      - spectrumsaber-docker-db
+      - spectrumsaber-db
+      - spectrumsaber-setup
     links:
-      - spectrumsaber-docker-db:spectrumsaber-docker-db
+      - spectrumsaber-db:spectrumsaber-db
+    networks:
+      - spectrumsabernetwork
+    
+  spectrumsaber-setup:
+    profiles:
+      - app
+      - spectrumsaber
+    container_name: spectrumsaber-setup
+    image: spectrumsaber:latest
+    build:
+      context: ../
+      dockerfile: containers/app.Dockerfile
+    command: bash -c "python service/manage.py migrate"
+    env_file:
+      - ../environments/production.env
+    volumes:
+      - ../:/app/
+    environment:
+      - PYTHONPATH=/app
+    depends_on:
+      - spectrumsaber-db
+    links:
+      - spectrumsaber-db:spectrumsaber-db
     networks:
       - spectrumsabernetwork
 
   # Spectrumsaber Database
-  spectrumsaber-docker-db:
+  spectrumsaber-db:
     profiles:
       - app
       - db
       - spectrumsaber
     container_name: spectrumsaber-db
+    image: spectrumsaber-db:latest
     build:
       context: ../
-      dockerfile: containers/database/Dockerfile
-    image: postgres:16
+      dockerfile: containers/db.Dockerfile
     volumes:
-      - spectrumsaber-docker-db-data:/var/lib/postgresql/data
-    env_file:
-      - ../environments/production.env
+      - spectrumsaber-db-data:/var/lib/postgresql/data
+      - ../:/app/
     environment:
       POSTGRES_HOST_AUTH_METHOD: trust
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: spectrumsaber
+      POSTGRES_HOST: spectrumsaber-db
+      POSTGRES_PORT: 5432
     ports:
       - "5433:5432"
     networks:
@@ -102,9 +130,7 @@ services:
       - testing
     container_name: spectrumsaber-test
     network_mode: "host"
-    build:
-      context: ../
-      dockerfile: containers/app/Dockerfile
+    image: spectrumsaber:latest
     volumes:
       - ../:/app/
     env_file:
@@ -352,5 +378,5 @@ networks:
     driver: bridge
 
 volumes:
-  spectrumsaber-docker-db-data:
+  spectrumsaber-db-data:
   postgres-db-volume:
