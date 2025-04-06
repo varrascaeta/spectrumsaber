@@ -16,7 +16,7 @@ from resources.airflow.operators import (
 # Globals
 logger = logging.getLogger(__name__)
 
-def create_campaign_dag()
+
 @dag(
     dag_id="process_hydro_campaigns",
     schedule=None,
@@ -53,7 +53,7 @@ def process_hydro_campaigns():
 
     @task
     def build_campaign(campaign_data):
-        from resources.airflow.dags.builder import CampaignBuilder
+        from resources.campaigns.dags.builder import CampaignBuilder
         builder = CampaignBuilder(campaign_data)
         builder.build()
         if not builder.result:

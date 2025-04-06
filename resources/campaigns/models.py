@@ -13,8 +13,8 @@ logger = logging.getLogger(__name__)
 class BaseFile(models.Model):
     name = models.CharField(max_length=255)
     path = models.CharField(max_length=255, unique=True)
-    description = models.TextField(null=True)
-    metadata = models.JSONField(null=True)
+    description = models.TextField(null=True, blank=True)
+    metadata = models.JSONField(null=True, blank=True)
     ftp_created_at = models.DateTimeField(null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -158,14 +158,22 @@ class Campaign(BaseFile):
         Coverage, on_delete=models.CASCADE, related_name="campaigns"
     )
     district = models.ForeignKey(
-        District, null=True, on_delete=models.SET_NULL
+        District,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL
     )
     measuring_tool = models.ForeignKey(
-        MeasuringTool, null=True, related_name="campaigns",
+        MeasuringTool,
+        null=True,
+        blank=True,
+        related_name="campaigns",
         on_delete=models.SET_NULL
     )
     spreadsheets = models.ManyToManyField(
-        "Spreadsheet", blank=True, related_name="campaigns"
+        "Spreadsheet",
+        blank=True,
+        related_name="campaigns"
     )
 
     @staticmethod

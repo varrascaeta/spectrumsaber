@@ -36,7 +36,7 @@ def process_coverage():
 
     @task
     def build_coverage(coverage_data):
-        from resources.airflow.dags.builder import CoverageBuilder
+        from resources.campaigns.dags.builder import CoverageBuilder
         builder = CoverageBuilder(coverage_data)
         builder.build()
         if not builder.result:

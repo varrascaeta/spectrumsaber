@@ -4,7 +4,13 @@ import abc
 import logging
 from dateutil.parser import parse
 # Project imports
-from resources.campaigns.models import BaseFile, Campaign, Coverage, DataPoint, Measurement
+from resources.campaigns.models import (
+    BaseFile,
+    Campaign,
+    Coverage,
+    DataPoint,
+    Measurement
+)
 from resources.places.models import District
 
 
