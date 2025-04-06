@@ -2,40 +2,46 @@
 import logging
 import pickle
 import base64
-from itertools import chain
 from datetime import datetime, timedelta
 # Airflow imports
 from airflow.decorators import dag, task
-# Django imports
-from django.conf import settings
+from airflow.models.param import Param
+from airflow.operators.python import get_current_context
 # Project imports
 from resources.airflow.operators import (
     ScanFTPDirectory,
     SetupDjango
 )
+from resources.utils import get_param_from_context
 
 
 # Globals
 logger = logging.getLogger(__name__)
+coverage_param = "{{ params.coverage_name }}"
 
 
 @dag(
-    dag_id="process_hydro_data_points",
+    dag_id="process_data_points",
     schedule=None,
     start_date=datetime(2021, 1, 1),
     catchup=False,
-    tags=["data_points", "hydrology"],
-)
-def process_hydro_campaigns():
-    setup_django = SetupDjango(
-        task_id="setup_django"
-    )
+    tags=["data_points"],
+    params={
+        "coverage_name": Param(
+            description="Name of the coverage to process",
+            default="HIDROLOGIA"
+        )
+    }
 
+)
+def process_data_points():
     @task
     def get_campaings_to_scan():
         from resources.campaigns.models import Campaign
+        context = get_current_context()
+        coverage_name = get_param_from_context(context, "coverage_name")
         campaigns = Campaign.objects.filter(
-            coverage__name="HIDROLOGIA",
+            coverage__name=coverage_name,
             scan_complete=False
         )
         folder_data = [
@@ -44,16 +50,6 @@ def process_hydro_campaigns():
         ]
         logger.info("Found %s campaigns to scan", len(folder_data))
         return folder_data
-
-    campaigns_to_scan = get_campaings_to_scan()
-
-    scan_hydro_data_points = ScanFTPDirectory.partial(
-        task_id="scan_hydro_campaigns",
-        retries=3,
-        retry_delay=timedelta(seconds=30)
-    ).expand(
-        folder_data=campaigns_to_scan
-    )
 
     @task(trigger_rule="all_done")
     def get_data_points_to_process(dp_data):
@@ -71,7 +67,7 @@ def process_hydro_campaigns():
 
     @task(trigger_rule="all_done")
     def build_data_points(data_points_data):
-        from resources.airflow.dags.builder import DataPointBuilder
+        from resources.campaigns.dags.builder import DataPointBuilder
         builders = []
         for dp_data in data_points_data:
             builder = DataPointBuilder(dp_data)
@@ -90,15 +86,38 @@ def process_hydro_campaigns():
 
     @task(trigger_rule="all_done")
     def save_data_points(dp_builders):
+        from resources.campaigns.models import DataPoint
+        file_ids_to_update = []
         for dp_builder in dp_builders:
             encoded_data = dp_builder.encode('utf-8')
             pickled_data = base64.b64decode(encoded_data)
             builder = pickle.loads(pickled_data)
             builder.save_to_db()
-            logger.info("Saved data point %s", builder.result["name"])
+            if builder.file:
+                file_ids_to_update.append(builder.file.id)
+                logger.info("Saved data point %s", builder.result["name"])
+
+        DataPoint.objects.filter(
+            id__in=file_ids_to_update
+        ).update(scan_complete=True)
+
+    # Define task flow
+    setup_django = SetupDjango(
+        task_id="setup_django"
+    )
+
+    campaigns_to_scan = get_campaings_to_scan()
+
+    scan_data_points = ScanFTPDirectory.partial(
+        task_id="scan_campaigns",
+        retries=3,
+        retry_delay=timedelta(seconds=30)
+    ).expand(
+        folder_data=campaigns_to_scan
+    )
 
     data_points_to_process = get_data_points_to_process.expand(
-        dp_data=scan_hydro_data_points.output
+        dp_data=scan_data_points.output
     )
 
     build_dps = build_data_points.expand(
@@ -106,14 +125,14 @@ def process_hydro_campaigns():
     )
 
     save_dps = save_data_points.expand(
-        dp_builder=build_dps
+        dp_builders=build_dps
     )
 
-    setup_django >> campaigns_to_scan >> scan_hydro_data_points
-    scan_hydro_data_points >> data_points_to_process >> build_dps >> save_dps
+    setup_django >> campaigns_to_scan >> scan_data_points
+    scan_data_points >> data_points_to_process >> build_dps >> save_dps
 
 
-dag = process_hydro_campaigns()
+dag = process_data_points()
 
 if __name__ == "__main__":
     dag.test()
