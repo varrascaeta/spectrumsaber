@@ -21,17 +21,20 @@ class SetupDjango(BaseOperator):
 
 
 class ScanFTPDirectory(BaseOperator):
+    template_fields = ("folder_data",)
+
     def __init__(self, folder_data: dict, depth: int = 1, **kwargs):
-        super().__init__(**kwargs)
-        self.path = folder_data["path"]
-        self.is_dir = folder_data["is_dir"]
+        self.folder_data = folder_data
         self.depth = depth
+        super().__init__(**kwargs)
 
     def execute(self, *args, **kwargs) -> list[dict]:
-        if self.is_dir:
+        path = self.folder_data["path"]
+        is_dir = self.folder_data["is_dir"]
+        if is_dir:
             with FTPClient() as client:
-                logger.info("Scanning %s", self.path)
-                children_data = client.get_dir_data(self.path)
+                logger.info("Scanning %s", path)
+                children_data = client.get_dir_data(path)
                 for cd in children_data:
-                    cd["parent"] = self.path
+                    cd["parent"] = path
             return children_data

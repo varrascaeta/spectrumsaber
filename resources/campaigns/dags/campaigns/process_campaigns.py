@@ -6,6 +6,7 @@ from datetime import datetime
 # Airflow imports
 from airflow.decorators import dag, task
 from airflow.models.param import Param
+from airflow.operators.python import get_current_context
 # Django imports
 from django.conf import settings
 # Project imports
@@ -17,7 +18,7 @@ from resources.airflow.operators import (
 
 # Globals
 logger = logging.getLogger(__name__)
-campaign_param = "{{params.campaign_name}}"
+coverage_param = "{{ params.coverage_name }}"
 
 
 @dag(
@@ -40,11 +41,11 @@ def process_campaigns():
     )
 
     scan_hydro_campaigns = ScanFTPDirectory(
-        task_id="scan_hydro_campaigns",
         folder_data={
-            "path": settings.BASE_FTP_PATH + "/" + campaign_param,
+            "path": settings.BASE_FTP_PATH + "/" + coverage_param,
             "is_dir": True,
-        }
+        },
+        task_id="scan_hydro_campaigns",
     )
 
     @task
@@ -64,12 +65,15 @@ def process_campaigns():
     @task
     def build_campaign(campaign_data):
         from resources.campaigns.dags.builder import CampaignBuilder
+        logger.info("Building campaign from data %s", campaign_data)
         builder = CampaignBuilder(campaign_data)
         builder.build()
         if not builder.result:
             logger.info("Invalid data for campaign %s", campaign_data["name"])
             return None
-        builder.build_parent(campaign_param)
+        context = get_current_context()
+        coverage_name = context["dag_run"].conf.get("coverage_name")
+        builder.build_parent(coverage_name)
         builder.build_metadata()
         builder.build_date()
         builder.build_external_id()
