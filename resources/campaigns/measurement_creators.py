@@ -3,6 +3,7 @@ import json
 import logging
 # Django imports
 from django.utils import timezone
+from django.db import IntegrityError
 # Project imports
 from resources.utils import FTPClient
 from resources.campaigns.models import (
@@ -24,11 +25,20 @@ class MeasurementCreator:
 
     def get_or_create_category(self, normalized_name: str) -> Category:
         category_name = CategoryType.get_by_alias(normalized_name)
+        logger.info(
+            "Category name: %s. Normalized name: %s",
+            category_name,
+            normalized_name
+        )
         if category_name:
-            category, created = Category.objects.get_or_create(
-                name=category_name
-            )
-            logger.debug(f"{'Created' if created else 'Found'} {category}")
+            try:
+                category, created = Category.objects.get_or_create(
+                    name=category_name
+                )
+            except IntegrityError:
+                category = Category.objects.get(name=category_name)
+                created = False
+            logger.info(f"{'Created' if created else 'Found'} {category}")
             return category
 
     def get_measurement_data_recursive(self, path: str) -> list:
@@ -44,8 +54,9 @@ class MeasurementCreator:
                 child_data["category_id"] = category.id
                 final_measurements.append(child_data)
             elif not child_data["is_dir"]:
+                child_data["is_unmatched"] = True
                 final_measurements.append(child_data)
-                with open("unmatched_categories_hydro.txt", "a") as f:
+                with open("unmatched_categories.txt", "a") as f:
                     data = json.dumps(path, default=str)
                     f.write(f"{data}\n")
             else:
@@ -66,6 +77,7 @@ class MeasurementCreator:
             defaults = {
                 "ftp_created_at": data["created_at"],
                 "category_id": data.get("category_id", None),
+                "is_unmatched": data.get("is_unmatched", False),
             }
             measurement, created = Measurement.objects.update_or_create(
                 name=data["name"],

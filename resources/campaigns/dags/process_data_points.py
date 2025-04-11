@@ -42,7 +42,8 @@ def process_data_points():
         coverage_name = get_param_from_context(context, "coverage_name")
         campaigns = Campaign.objects.filter(
             coverage__name=coverage_name,
-            scan_complete=False
+            scan_complete=False,
+            is_unmatched=False
         )
         folder_data = [
             {"path": campaign.path, "is_dir": True}
@@ -86,20 +87,11 @@ def process_data_points():
 
     @task(trigger_rule="all_done")
     def save_data_points(dp_builders):
-        from resources.campaigns.models import DataPoint
-        file_ids_to_update = []
         for dp_builder in dp_builders:
             encoded_data = dp_builder.encode('utf-8')
             pickled_data = base64.b64decode(encoded_data)
             builder = pickle.loads(pickled_data)
             builder.save_to_db()
-            if builder.file:
-                file_ids_to_update.append(builder.file.id)
-                logger.info("Saved data point %s", builder.result["name"])
-
-        DataPoint.objects.filter(
-            id__in=file_ids_to_update
-        ).update(scan_complete=True)
 
     # Define task flow
     setup_django = SetupDjango(

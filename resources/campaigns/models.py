@@ -20,6 +20,7 @@ class BaseFile(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     scan_complete = models.BooleanField(default=False)
+    is_unmatched = models.BooleanField(default=False)
     last_synced_at = models.DateTimeField(null=True)
 
     def __str__(self) -> str:
@@ -117,7 +118,11 @@ class CategoryType():
 
 
 class Category(models.Model):
-    name = models.CharField(max_length=128, choices=CategoryType.CHOICES)
+    name = models.CharField(
+        max_length=128,
+        unique=True,
+        choices=CategoryType.CHOICES
+    )
     created_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self) -> str:
@@ -265,6 +270,24 @@ class Spreadsheet(BaseFile):
     @staticmethod
     def matches_pattern(filename: str) -> bool:
         return True
+
+    @staticmethod
+    def get_attributes_from_name(filename: str) -> dict:
+        return {}
+
+
+class ComplimentaryData(BaseFile):
+    # Relationships
+    campaign = models.ForeignKey(
+        Campaign,
+        on_delete=models.CASCADE,
+        related_name="complimentary_data"
+    )
+
+    @staticmethod
+    def matches_pattern(filename: str) -> bool:
+        cleaned_name = filename.lower().strip().replace(" ", "")
+        return cleaned_name == 'datoscomplementarios'
 
     @staticmethod
     def get_attributes_from_name(filename: str) -> dict:
