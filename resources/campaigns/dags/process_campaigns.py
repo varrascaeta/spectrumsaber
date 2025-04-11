@@ -41,7 +41,10 @@ def process_campaigns():
     def get_campaigns_to_process(campaigns_data):
         from resources.campaigns.models import Campaign
         paths = [campaign_data["path"] for campaign_data in campaigns_data]
-        existing = Campaign.objects.filter(path__in=paths).values_list(
+        existing = Campaign.objects.filter(
+            scan_complete=True,
+            path__in=paths
+        ).values_list(
             "path",
             flat=True
         )
