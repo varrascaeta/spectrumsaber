@@ -1,5 +1,4 @@
 # Standard imports
-import json
 import logging
 # Django imports
 from django.utils import timezone
@@ -56,9 +55,6 @@ class MeasurementCreator:
             elif not child_data["is_dir"]:
                 child_data["is_unmatched"] = True
                 final_measurements.append(child_data)
-                with open("unmatched_categories.txt", "a") as f:
-                    data = json.dumps(path, default=str)
-                    f.write(f"{data}\n")
             else:
                 measurements = self.get_measurement_data_recursive(
                     child_data["path"]
