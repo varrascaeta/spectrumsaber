@@ -10,6 +10,11 @@ logger = logging.getLogger(__name__)
 
 
 # Common utils
+class MatchedObjectManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(is_unmatched=False)
+
+
 class BaseFile(models.Model):
     name = models.CharField(max_length=255)
     path = models.CharField(max_length=255, unique=True)
@@ -22,6 +27,8 @@ class BaseFile(models.Model):
     scan_complete = models.BooleanField(default=False)
     is_unmatched = models.BooleanField(default=False)
     last_synced_at = models.DateTimeField(null=True)
+
+    objects = MatchedObjectManager()
 
     def __str__(self) -> str:
         return str(self.name)
@@ -292,3 +299,35 @@ class ComplimentaryData(BaseFile):
     @staticmethod
     def get_attributes_from_name(filename: str) -> dict:
         return {}
+
+
+class UnmatchedObjectManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(is_unmatched=True)
+
+
+class UnmatchedCampaign(Campaign):
+    objects = UnmatchedObjectManager()
+
+    class Meta:
+        verbose_name = "Unmatched Campaign"
+        verbose_name_plural = "Unmatched Campaigns"
+        proxy = True
+
+
+class UnmatchedDataPoint(DataPoint):
+    objects = UnmatchedObjectManager()
+
+    class Meta:
+        verbose_name = "Unmatched Data Point"
+        verbose_name_plural = "Unmatched Data Points"
+        proxy = True
+
+
+class UnmatchedMeasurement(Measurement):
+    objects = UnmatchedObjectManager()
+
+    class Meta:
+        verbose_name = "Unmatched Measurement"
+        verbose_name_plural = "Unmatched Measurements"
+        proxy = True
