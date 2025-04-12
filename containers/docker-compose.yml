@@ -5,8 +5,8 @@ x-airflow-common:
   # and uncomment the "build" line below, Then run `docker-compose build` to build the images.
   # image: ${AIRFLOW_IMAGE_NAME:-apache/airflow:2.10.2}
   build:
-    context: ../../
-    dockerfile: containers/app/Airflow
+    context: ../
+    dockerfile: containers/airflow.Dockerfile
   environment:
     &airflow-common-env
     AIRFLOW__CORE__EXECUTOR: CeleryExecutor
@@ -27,11 +27,11 @@ x-airflow-common:
     _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
     # The following line can be used to set a custom config file, stored in the local config folder
     # If you want to use it, outcomment it and replace airflow.cfg with the name of your config file
-    AIRFLOW_CONFIG: '/opt/airflow/config/airflow.cfg'
+    AIRFLOW_CONFIG: '/app/resources/airflow/config/airflow.cfg'
   volumes:
-    - ../../:/opt/airflow/
+    - ../:/app/
   env_file:
-    - ../../environments/production.env
+    - ../environments/production.env
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on
@@ -48,38 +48,66 @@ services:
       - app
       - spectrumsaber
     container_name: spectrumsaber-app
-    build:
-      context: ../../
-      dockerfile: containers/app/Dockerfile
-    command: ["python", "service/manage.py", "runserver", "0.0.0.0:8000"]
+    image: spectrumsaber:latest
+    command: bash -c "python service/manage.py runserver 0.0.0.0:8000"
     env_file:
-      - ../../environments/production.env
+      - ../environments/production.env
+    volumes:
+      - ../:/app/
     ports:
       - "8000:8000"
     depends_on:
-      - spectrumsaber-docker-db
+      - spectrumsaber-db
+      - spectrumsaber-setup
     links:
-      - spectrumsaber-docker-db:spectrumsaber-docker-db
+      - spectrumsaber-db:spectrumsaber-db
+    networks:
+      - spectrumsabernetwork
+    
+  spectrumsaber-setup:
+    profiles:
+      - app
+      - spectrumsaber
+    container_name: spectrumsaber-setup
+    image: spectrumsaber:latest
+    build:
+      context: ../
+      dockerfile: containers/app.Dockerfile
+    command: bash -c "python service/manage.py migrate"
+    env_file:
+      - ../environments/production.env
+    volumes:
+      - ../:/app/
+    environment:
+      - PYTHONPATH=/app
+    depends_on:
+      - spectrumsaber-db
+    links:
+      - spectrumsaber-db:spectrumsaber-db
     networks:
       - spectrumsabernetwork
 
   # Spectrumsaber Database
-  spectrumsaber-docker-db:
+  spectrumsaber-db:
     profiles:
       - app
       - db
       - spectrumsaber
     container_name: spectrumsaber-db
+    image: spectrumsaber-db:latest
     build:
-      context: ../../
-      dockerfile: containers/database/Dockerfile
-    image: postgres:16
+      context: ../
+      dockerfile: containers/db.Dockerfile
     volumes:
-      - spectrumsaber-docker-db-data:/var/lib/postgresql/data
-    env_file:
-      - ../../environments/production.env
+      - spectrumsaber-db-data:/var/lib/postgresql/data
+      - ../:/app/
     environment:
       POSTGRES_HOST_AUTH_METHOD: trust
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: spectrumsaber
+      POSTGRES_HOST: spectrumsaber-db
+      POSTGRES_PORT: 5432
     ports:
       - "5433:5432"
     networks:
@@ -102,16 +130,14 @@ services:
       - testing
     container_name: spectrumsaber-test
     network_mode: "host"
-    build:
-      context: ../../
-      dockerfile: containers/app/Dockerfile
+    image: spectrumsaber:latest
     volumes:
-      - ../../:/app/
+      - ../:/app/
     env_file:
-      - ../../environments/testing.env
+      - ../environments/testing.env
     depends_on:
       - test-db
-    entrypoint: bash ../../app/containers/tests/tests.sh
+    entrypoint: bash ../app/containers/tests/tests.sh
 
   # Airflow database
   postgres:
@@ -168,6 +194,8 @@ services:
       retries: 5
       start_period: 30s
     restart: always
+    env_file:
+      - ../environments/production.env
     depends_on:
       <<: *airflow-common-depends-on
       airflow-init:
@@ -191,6 +219,8 @@ services:
       retries: 5
       start_period: 30s
     restart: always
+    env_file:
+      - ../environments/production.env
     depends_on:
       <<: *airflow-common-depends-on
       airflow-init:
@@ -220,6 +250,8 @@ services:
       # See https://airflow.apache.org/docs/docker-stack/entrypoint.html#signal-propagation
       DUMB_INIT_SETSID: "0"
     restart: always
+    env_file:
+      - ../environments/production.env
     depends_on:
       <<: *airflow-common-depends-on
       airflow-init:
@@ -241,6 +273,8 @@ services:
       retries: 5
       start_period: 30s
     restart: always
+    env_file:
+      - ../environments/production.env
     depends_on:
       <<: *airflow-common-depends-on
       airflow-init:
@@ -257,6 +291,8 @@ services:
       <<: *airflow-common-env
       CONNECTION_CHECK_MAX_COUNT: "0"
     # Workaround for entrypoint issue. See: https://github.com/apache/airflow/issues/16252
+    env_file:
+      - ../environments/production.env
     command:
       - bash
       - -c
@@ -328,6 +364,8 @@ services:
       _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-airflow}
       _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
       _PIP_ADDITIONAL_REQUIREMENTS: ''
+    env_file:
+      - ../environments/production.env
     user: "0:0"
     volumes:
       - ${AIRFLOW_PROJ_DIR:-.}:/sources
@@ -340,5 +378,5 @@ networks:
     driver: bridge
 
 volumes:
-  spectrumsaber-docker-db-data:
+  spectrumsaber-db-data:
   postgres-db-volume:

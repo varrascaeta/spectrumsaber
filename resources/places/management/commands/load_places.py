@@ -41,6 +41,6 @@ class Command(BaseCommand):
             code=line["Código"],
         )
         logger.info("District %s created: %s", district, created)
-        campaigns = Campaign.objects.filter(name__contains=district.code)
+        campaigns = Campaign.objects.filter(metadata__geo_code=district.code)
         logger.info("Updating %s campaigns", campaigns.count())
         campaigns.update(district=district)

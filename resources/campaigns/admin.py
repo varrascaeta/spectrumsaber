@@ -1,7 +1,6 @@
 # Django imports
 from django.contrib import admin
 from django.urls import reverse
-from django.urls.resolvers import URLResolver
 from django.utils.safestring import mark_safe
 # Extra imports
 from rangefilter.filters import DateRangeFilter
@@ -12,7 +11,10 @@ from resources.campaigns.models import (
     Coverage,
     Campaign,
     DataPoint,
-    Measurement
+    Measurement,
+    UnmatchedCampaign,
+    UnmatchedDataPoint,
+    UnmatchedMeasurement
 )
 from resources.places.models import District
 from resources.places.admin import DistrictFilter
@@ -66,6 +68,24 @@ class MeasurementInline(admin.TabularInline):
 
 
 # Filters
+class DataPointCoverageFilter(admin.SimpleListFilter):
+    title = "Coverage"
+    parameter_name = "campaign__coverage"
+
+    def lookups(self, request, model_admin):
+        return [
+            (coverage.id, coverage.name)
+            for coverage in Coverage.objects.all()
+        ]
+
+    def queryset(self, request, queryset):
+        if self.value():
+            return queryset.filter(
+                campaign__coverage_id=self.value()
+            )
+        return queryset
+
+
 class CoverageFilter(AutocompleteFilter):
     title = "Coverage"
     field_name = "coverage"
@@ -82,7 +102,7 @@ class DataPointFilter(AutocompleteFilter):
 
 
 # Admins
-class SpectraAdminSite(admin.AdminSite):
+class SpectrumsaberAdmin(admin.AdminSite):
     index_title = "SpectrumSaber Administration"
     enable_nav_sidebar = False
 
@@ -101,6 +121,17 @@ class BaseFileAdmin(admin.ModelAdmin):
                     "fields": (
                         "path",
                         "ftp_created_at"
+                    )
+                }
+            ),
+            (
+                "Scan Data",
+                {
+                    "fields": (
+                        "created_at",
+                        "updated_at",
+                        "is_unmatched",
+                        "last_synced_at"
                     )
                 }
             ),
@@ -139,7 +170,7 @@ class CampaignAdmin(BaseFileAdmin):
     list_filter = (
         ("date", DateRangeFilter),
         CoverageFilter,
-        DistrictFilter
+        DistrictFilter,
     )
     inlines = [
         DataPointInline
@@ -183,6 +214,7 @@ class DataPointAdmin(BaseFileAdmin):
     search_fields = ("name", "path", "campaign__name")
     list_filter = (
         CampaignFilter,
+        DataPointCoverageFilter,
     )
     ordering = ("campaign", "order")
 
@@ -283,3 +315,18 @@ class CategoryAdmin(admin.ModelAdmin):
     list_display = [
         "__str__", "created_at",
     ]
+
+
+@admin.register(UnmatchedCampaign)
+class UnmatchedCampaignAdmin(CampaignAdmin):
+    pass
+
+
+@admin.register(UnmatchedDataPoint)
+class UnmatchedDataPointAdmin(DataPointAdmin):
+    pass
+
+
+@admin.register(UnmatchedMeasurement)
+class UnmatchedMeasurementAdmin(MeasurementAdmin):
+    pass

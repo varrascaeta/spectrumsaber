@@ -10,25 +10,35 @@ logger = logging.getLogger(__name__)
 
 
 # Common utils
+class MatchedObjectManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(is_unmatched=False)
+
+
 class BaseFile(models.Model):
     name = models.CharField(max_length=255)
-    path = models.CharField(max_length=255)
-    description = models.TextField(null=True)
-    metadata = models.JSONField(null=True)
+    path = models.CharField(max_length=255, unique=True)
+    description = models.TextField(null=True, blank=True)
+    metadata = models.JSONField(null=True, blank=True)
     ftp_created_at = models.DateTimeField(null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    scan_complete = models.BooleanField(default=False)
+    is_unmatched = models.BooleanField(default=False)
+    last_synced_at = models.DateTimeField(null=True)
+
+    objects = MatchedObjectManager()
 
     def __str__(self) -> str:
         return str(self.name)
 
-    @classmethod
-    def matches_pattern(cls, filename: str) -> bool:
+    @staticmethod
+    def matches_pattern(filename: str) -> bool:
         raise NotImplementedError
 
-    @classmethod
-    def get_attributes_from_name(cls, filename: str) -> dict:
+    @staticmethod
+    def get_attributes_from_name(filename: str) -> dict:
         raise NotImplementedError
 
     class Meta:
@@ -115,7 +125,11 @@ class CategoryType():
 
 
 class Category(models.Model):
-    name = models.CharField(max_length=128, choices=CategoryType.CHOICES)
+    name = models.CharField(
+        max_length=128,
+        unique=True,
+        choices=CategoryType.CHOICES
+    )
     created_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self) -> str:
@@ -138,12 +152,12 @@ class MeasuringTool(models.Model):
 
 # Campaigns
 class Coverage(BaseFile):
-    @classmethod
-    def matches_pattern(cls, filename: str) -> bool:
+    @staticmethod
+    def matches_pattern(filename: str) -> bool:
         return filename.isupper()
 
-    @classmethod
-    def get_attributes_from_name(cls, filename: str) -> dict:
+    @staticmethod
+    def get_attributes_from_name(filename: str) -> dict:
         return {}
 
 
@@ -156,18 +170,26 @@ class Campaign(BaseFile):
         Coverage, on_delete=models.CASCADE, related_name="campaigns"
     )
     district = models.ForeignKey(
-        District, null=True, on_delete=models.SET_NULL
+        District,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL
     )
     measuring_tool = models.ForeignKey(
-        MeasuringTool, null=True, related_name="campaigns",
+        MeasuringTool,
+        null=True,
+        blank=True,
+        related_name="campaigns",
         on_delete=models.SET_NULL
     )
     spreadsheets = models.ManyToManyField(
-        "Spreadsheet", blank=True, related_name="campaigns"
+        "Spreadsheet",
+        blank=True,
+        related_name="campaigns"
     )
 
-    @classmethod
-    def matches_pattern(cls, filename: str) -> bool:
+    @staticmethod
+    def matches_pattern(filename: str) -> bool:
         splitted = filename.split("-")
         if len(splitted) >= 3:
             right_prefix = splitted[0].isdigit()
@@ -175,17 +197,16 @@ class Campaign(BaseFile):
             return right_prefix and right_date
         return False
 
-    @classmethod
-    def get_attributes_from_name(cls, filename: str) -> dict:
-        if cls.matches_pattern(filename):
+    @staticmethod
+    def get_attributes_from_name(filename: str) -> dict:
+        if Campaign.matches_pattern(filename):
             splitted = filename.split("-")
             return {
                 "external_id": splitted[0],
                 "date_str": splitted[1],
                 "geo_code": splitted[2],
             }
-        else:
-            return {}
+        return {}
 
 
 class DataPoint(BaseFile):
@@ -198,8 +219,8 @@ class DataPoint(BaseFile):
         Campaign, on_delete=models.CASCADE, related_name="data_points"
     )
 
-    @classmethod
-    def matches_pattern(cls, filename: str) -> bool:
+    @staticmethod
+    def matches_pattern(filename: str) -> bool:
         cleaned_spaces = filename.replace(" ", "-")
         splitted = cleaned_spaces.split("-")
         if len(splitted) >= 2:
@@ -208,15 +229,15 @@ class DataPoint(BaseFile):
             return right_prefix and right_order
         return False
 
-    @classmethod
-    def get_attributes_from_name(cls, filename: str) -> dict:
-        if cls.matches_pattern(filename):
-            splitted = filename.split("-")
+    @staticmethod
+    def get_attributes_from_name(filename: str) -> dict:
+        cleaned_spaces = filename.replace(" ", "-")
+        splitted = cleaned_spaces.split("-")
+        if splitted and splitted[1].isdigit():
             return {
                 "order": int(splitted[1])
             }
-        else:
-            return {}
+        return {}
 
     def __str__(self) -> str:
         return f"{self.name} | {self.campaign}"
@@ -229,12 +250,12 @@ class Measurement(BaseFile):
         "DataPoint", on_delete=models.CASCADE, related_name="measurements"
     )
 
-    @classmethod
-    def matches_pattern(cls, filename: str) -> bool:
+    @staticmethod
+    def matches_pattern(filename: str) -> bool:
         return True
 
-    @classmethod
-    def get_attributes_from_name(cls, filename: str) -> dict:
+    @staticmethod
+    def get_attributes_from_name(filename: str) -> dict:
         return {}
 
 
@@ -253,10 +274,60 @@ class Spreadsheet(BaseFile):
     sheet_type = models.CharField(max_length=16, choices=SheetType.CHOICES)
     delimiter = models.CharField(max_length=1, default=";")
 
-    @classmethod
-    def matches_pattern(cls, filename: str) -> bool:
+    @staticmethod
+    def matches_pattern(filename: str) -> bool:
         return True
 
-    @classmethod
-    def get_attributes_from_name(cls, filename: str) -> dict:
+    @staticmethod
+    def get_attributes_from_name(filename: str) -> dict:
         return {}
+
+
+class ComplimentaryData(BaseFile):
+    # Relationships
+    campaign = models.ForeignKey(
+        Campaign,
+        on_delete=models.CASCADE,
+        related_name="complimentary_data"
+    )
+
+    @staticmethod
+    def matches_pattern(filename: str) -> bool:
+        cleaned_name = filename.lower().strip().replace(" ", "")
+        return cleaned_name == 'datoscomplementarios'
+
+    @staticmethod
+    def get_attributes_from_name(filename: str) -> dict:
+        return {}
+
+
+class UnmatchedObjectManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(is_unmatched=True)
+
+
+class UnmatchedCampaign(Campaign):
+    objects = UnmatchedObjectManager()
+
+    class Meta:
+        verbose_name = "Unmatched Campaign"
+        verbose_name_plural = "Unmatched Campaigns"
+        proxy = True
+
+
+class UnmatchedDataPoint(DataPoint):
+    objects = UnmatchedObjectManager()
+
+    class Meta:
+        verbose_name = "Unmatched Data Point"
+        verbose_name_plural = "Unmatched Data Points"
+        proxy = True
+
+
+class UnmatchedMeasurement(Measurement):
+    objects = UnmatchedObjectManager()
+
+    class Meta:
+        verbose_name = "Unmatched Measurement"
+        verbose_name_plural = "Unmatched Measurements"
+        proxy = True
