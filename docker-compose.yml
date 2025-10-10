@@ -5,7 +5,7 @@ x-airflow-common:
   # and uncomment the "build" line below, Then run `docker-compose build` to build the images.
   # image: ${AIRFLOW_IMAGE_NAME:-apache/airflow:2.10.2}
   build:
-    context: ../
+    context: .
     dockerfile: containers/airflow.Dockerfile
   environment:
     &airflow-common-env
@@ -27,11 +27,11 @@ x-airflow-common:
     _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
     # The following line can be used to set a custom config file, stored in the local config folder
     # If you want to use it, outcomment it and replace airflow.cfg with the name of your config file
-    AIRFLOW_CONFIG: '/app/resources/airflow/config/airflow.cfg'
+    AIRFLOW_CONFIG: '/app/project/src/airflow/config/airflow.cfg'
   volumes:
-    - ../:/app/
+    - .:/app/project/
   env_file:
-    - ../environments/production.env
+    - environments/production.env
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on
@@ -51,9 +51,9 @@ services:
     image: spectrumsaber:latest
     command: bash -c "python service/manage.py runserver 0.0.0.0:8000"
     env_file:
-      - ../environments/production.env
+      - environments/production.env
     volumes:
-      - ../:/app/
+      - .:/app/project/
     ports:
       - "8000:8000"
     depends_on:
@@ -71,15 +71,13 @@ services:
     container_name: spectrumsaber-setup
     image: spectrumsaber:latest
     build:
-      context: ../
+      context: .
       dockerfile: containers/app.Dockerfile
-    command: bash -c "python service/manage.py migrate"
+    command: bash -c "sleep 5 && python service/manage.py migrate"
     env_file:
-      - ../environments/production.env
+      - environments/production.env
     volumes:
-      - ../:/app/
-    environment:
-      - PYTHONPATH=/app
+      - .:/app/project/
     depends_on:
       - spectrumsaber-db
     links:
@@ -96,18 +94,18 @@ services:
     container_name: spectrumsaber-db
     image: spectrumsaber-db:latest
     build:
-      context: ../
+      context: .
       dockerfile: containers/db.Dockerfile
     volumes:
       - spectrumsaber-db-data:/var/lib/postgresql/data
-      - ../:/app/
+      - .:/app/project/
     environment:
-      POSTGRES_HOST_AUTH_METHOD: trust
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: spectrumsaber
-      POSTGRES_HOST: spectrumsaber-db
-      POSTGRES_PORT: 5432
+      - POSTGRES_HOST_AUTH_METHOD=trust
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_DB
+      - POSTGRES_HOST
+      - POSTGRES_PORT
     ports:
       - "5433:5432"
     networks:
@@ -132,12 +130,12 @@ services:
     network_mode: "host"
     image: spectrumsaber:latest
     volumes:
-      - ../:/app/
+      - .:/app/project/
     env_file:
-      - ../environments/testing.env
+      - environments/testing.env
     depends_on:
       - test-db
-    entrypoint: bash ../app/containers/tests/tests.sh
+    entrypoint: bash .app/containers/tests/tests.sh
 
   # Airflow database
   postgres:
@@ -195,7 +193,7 @@ services:
       start_period: 30s
     restart: always
     env_file:
-      - ../environments/production.env
+      - environments/production.env
     depends_on:
       <<: *airflow-common-depends-on
       airflow-init:
@@ -220,7 +218,7 @@ services:
       start_period: 30s
     restart: always
     env_file:
-      - ../environments/production.env
+      - environments/production.env
     depends_on:
       <<: *airflow-common-depends-on
       airflow-init:
@@ -251,7 +249,7 @@ services:
       DUMB_INIT_SETSID: "0"
     restart: always
     env_file:
-      - ../environments/production.env
+      - environments/production.env
     depends_on:
       <<: *airflow-common-depends-on
       airflow-init:
@@ -274,7 +272,7 @@ services:
       start_period: 30s
     restart: always
     env_file:
-      - ../environments/production.env
+      - environments/production.env
     depends_on:
       <<: *airflow-common-depends-on
       airflow-init:
@@ -292,7 +290,7 @@ services:
       CONNECTION_CHECK_MAX_COUNT: "0"
     # Workaround for entrypoint issue. See: https://github.com/apache/airflow/issues/16252
     env_file:
-      - ../environments/production.env
+      - environments/production.env
     command:
       - bash
       - -c
@@ -311,6 +309,7 @@ services:
     command:
       - -c
       - |
+        echo "Starting Airflow with UID: ${AIRFLOW_UID}"
         if [[ -z "${AIRFLOW_UID}" ]]; then
           echo
           echo -e "\033[1;33mWARNING!!!: AIRFLOW_UID not set!\e[0m"
@@ -365,7 +364,7 @@ services:
       _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
       _PIP_ADDITIONAL_REQUIREMENTS: ''
     env_file:
-      - ../environments/production.env
+      - environments/production.env
     user: "0:0"
     volumes:
       - ${AIRFLOW_PROJ_DIR:-.}:/sources

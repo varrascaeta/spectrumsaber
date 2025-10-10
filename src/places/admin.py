@@ -5,7 +5,7 @@ from django.utils.safestring import mark_safe
 # Extra imports
 from admin_auto_filters.filters import AutocompleteFilter
 # Project imports
-from resources.places.models import (
+from src.places.models import (
     Country,
     Province,
     District

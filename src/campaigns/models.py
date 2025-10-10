@@ -4,7 +4,7 @@ import logging
 from django.db import models
 from django.utils import timezone
 # Project imports
-from resources.places.models import District
+from src.places.models import District
 
 logger = logging.getLogger(__name__)
 

@@ -1,7 +1,7 @@
 # Standard imports
 import pytest
 # Project imports
-from resources.campaigns.models import Campaign
+from src.campaigns.models import Campaign
 
 
 @pytest.mark.django_db

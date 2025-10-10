@@ -4,8 +4,8 @@ import pandas as pd
 # Django imports
 from django.core.management.base import BaseCommand, CommandParser
 # Project imports
-from resources.campaigns.models import Campaign
-from resources.places.models import Country, District, Province
+from src.campaigns.models import Campaign
+from src.places.models import Country, District, Province
 
 
 logger = logging.getLogger(__name__)

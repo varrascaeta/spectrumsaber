@@ -3,7 +3,7 @@
 import graphene
 from graphene_django import DjangoObjectType
 # Project imports
-from resources.campaigns.models import (
+from src.campaigns.models import (
     Campaign,
     Category,
     Coverage,

@@ -8,7 +8,7 @@ from airflow.decorators import dag, task
 # Django imports
 from django.conf import settings
 # Project imports
-from resources.airflow.operators import ScanFTPDirectory, SetupDjango
+from src.airflow.operators import ScanFTPDirectory, SetupDjango
 
 
 logger = logging.getLogger(__name__)
@@ -36,7 +36,7 @@ def process_coverage():
 
     @task
     def build_coverage(coverage_data):
-        from resources.campaigns.dags.builder import CoverageBuilder
+        from src.campaigns.dags.builder import CoverageBuilder
         builder = CoverageBuilder(coverage_data)
         builder.build()
         if not builder.result:

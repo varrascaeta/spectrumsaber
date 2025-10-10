@@ -21,7 +21,7 @@ AdminSite.enable_nav_sidebar = False
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-APPS_DIR = BASE_DIR / "resources"
+APPS_DIR = BASE_DIR / "src"
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
@@ -59,8 +59,8 @@ DJANGO_APPS = [
 ]
 
 LOCAL_APPS = [
-    'resources.campaigns.apps.CampaignsConfig',
-    'resources.places.apps.PlacesConfig',
+    'src.campaigns.apps.CampaignsConfig',
+    'src.places.apps.PlacesConfig',
 ]
 
 THIRD_PARTY_APPS = [

@@ -10,11 +10,11 @@ from airflow.operators.python import get_current_context
 # Django imports
 from django.conf import settings
 # Project imports
-from resources.airflow.operators import (
+from src.airflow.operators import (
     ScanFTPDirectory,
     SetupDjango
 )
-from resources.utils import get_param_from_context
+from src.utils import get_param_from_context
 
 
 # Globals
@@ -39,7 +39,7 @@ coverage_param = "{{ params.coverage_name }}"
 def process_campaigns():
     @task
     def get_campaigns_to_process(campaigns_data):
-        from resources.campaigns.models import Campaign
+        from src.campaigns.models import Campaign
         paths = [campaign_data["path"] for campaign_data in campaigns_data]
         existing = Campaign.objects.filter(
             scan_complete=True,
@@ -56,7 +56,7 @@ def process_campaigns():
 
     @task
     def build_campaign(campaign_data):
-        from resources.campaigns.dags.builder import CampaignBuilder
+        from src.campaigns.dags.builder import CampaignBuilder
         logger.info("Building campaign from data %s", campaign_data)
         builder = CampaignBuilder(campaign_data)
         builder.build()

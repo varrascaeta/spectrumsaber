@@ -1,6 +1,6 @@
 from airflow import DAG
 
-from resources.utils import get_dirs_to_process
+from src.utils import get_dirs_to_process
 
 def dynamic_scan_dag(dag_id, schedule_interval, start_date, ftp_path):
     dag = DAG(dag_id, schedule_interval=schedule_interval, start_date=start_date)

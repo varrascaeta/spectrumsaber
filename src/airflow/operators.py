@@ -3,7 +3,7 @@ import os
 import sys
 import logging
 # Project imports
-from resources.utils import FTPClient
+from src.utils import FTPClient
 # Airflow imports
 from airflow.models.baseoperator import BaseOperator
 
