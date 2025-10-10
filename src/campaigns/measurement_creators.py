@@ -4,8 +4,8 @@ import logging
 from django.utils import timezone
 from django.db import IntegrityError
 # Project imports
-from resources.utils import FTPClient
-from resources.campaigns.models import (
+from src.utils import FTPClient
+from src.campaigns.models import (
     Category, CategoryType, DataPoint, Measurement
 )
 

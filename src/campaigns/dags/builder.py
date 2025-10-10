@@ -5,14 +5,14 @@ import logging
 from dateutil.parser import parse
 from datetime import datetime, timezone
 # Project imports
-from resources.campaigns.models import (
+from src.campaigns.models import (
     BaseFile,
     Campaign,
     Coverage,
     DataPoint,
     ComplimentaryData
 )
-from resources.places.models import District
+from src.places.models import District
 
 
 # Globals

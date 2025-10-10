@@ -27,7 +27,7 @@ x-airflow-common:
     _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
     # The following line can be used to set a custom config file, stored in the local config folder
     # If you want to use it, outcomment it and replace airflow.cfg with the name of your config file
-    AIRFLOW_CONFIG: '/app/resources/airflow/config/airflow.cfg'
+    AIRFLOW_CONFIG: '/app/src/airflow/config/airflow.cfg'
   volumes:
     - ../:/app/
   env_file:
@@ -73,7 +73,7 @@ services:
     build:
       context: ../
       dockerfile: containers/app.Dockerfile
-    command: bash -c "python service/manage.py migrate"
+    command: bash -c "sleep 5 && python service/manage.py migrate"
     env_file:
       - ../environments/production.env
     volumes:
@@ -102,12 +102,12 @@ services:
       - spectrumsaber-db-data:/var/lib/postgresql/data
       - ../:/app/
     environment:
-      POSTGRES_HOST_AUTH_METHOD: trust
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: spectrumsaber
-      POSTGRES_HOST: spectrumsaber-db
-      POSTGRES_PORT: 5432
+      - POSTGRES_HOST_AUTH_METHOD=trust
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_DB
+      - POSTGRES_HOST
+      - POSTGRES_PORT
     ports:
       - "5433:5432"
     networks:
@@ -311,6 +311,7 @@ services:
     command:
       - -c
       - |
+        echo "Starting Airflow with UID: ${AIRFLOW_UID}"
         if [[ -z "${AIRFLOW_UID}" ]]; then
           echo
           echo -e "\033[1;33mWARNING!!!: AIRFLOW_UID not set!\e[0m"

@@ -6,8 +6,8 @@ from airflow.decorators import dag, task
 from airflow.models.param import Param
 from airflow.operators.python import get_current_context
 # Project imports
-from resources.airflow.operators import SetupDjango
-from resources.utils import FTPClient, get_param_from_context
+from src.airflow.operators import SetupDjango
+from src.utils import FTPClient, get_param_from_context
 
 
 # Globals
@@ -32,7 +32,7 @@ coverage_param = "{{ params.coverage_name }}"
 def process_measurements():
     @task
     def get_data_points_to_scan():
-        from resources.campaigns.models import DataPoint
+        from src.campaigns.models import DataPoint
         context = get_current_context()
         coverage_name = get_param_from_context(context, "coverage_name")
         data_points_ids = DataPoint.objects.filter(
@@ -49,8 +49,8 @@ def process_measurements():
 
     @task(trigger_rule="all_done")
     def scan_and_process_measurements(data_point_id: int):
-        from resources.campaigns.measurement_creators import MeasurementCreator
-        from resources.campaigns.models import DataPoint
+        from src.campaigns.measurement_creators import MeasurementCreator
+        from src.campaigns.models import DataPoint
         with FTPClient() as ftp_client:
             creator = MeasurementCreator(data_point_id, ftp_client)
             creator.process()
@@ -60,8 +60,8 @@ def process_measurements():
 
     @task(trigger_rule="all_done")
     def mark_completed_campaigns():
-        from resources.campaigns.models import Campaign
-        from resources.campaigns.models import DataPoint
+        from src.campaigns.models import Campaign
+        from src.campaigns.models import DataPoint
         context = get_current_context()
         coverage_name = get_param_from_context(context, "coverage_name")
         campaigns = Campaign.objects.filter(

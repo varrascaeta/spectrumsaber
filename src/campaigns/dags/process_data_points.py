@@ -8,11 +8,11 @@ from airflow.decorators import dag, task
 from airflow.models.param import Param
 from airflow.operators.python import get_current_context
 # Project imports
-from resources.airflow.operators import (
+from src.airflow.operators import (
     ScanFTPDirectory,
     SetupDjango
 )
-from resources.utils import get_param_from_context
+from src.utils import get_param_from_context
 
 
 # Globals
@@ -37,7 +37,7 @@ coverage_param = "{{ params.coverage_name }}"
 def process_data_points():
     @task
     def get_campaings_to_scan():
-        from resources.campaigns.models import Campaign
+        from src.campaigns.models import Campaign
         context = get_current_context()
         coverage_name = get_param_from_context(context, "coverage_name")
         campaigns = Campaign.objects.filter(
@@ -54,7 +54,7 @@ def process_data_points():
 
     @task(trigger_rule="all_done")
     def get_data_points_to_process(dp_data):
-        from resources.campaigns.models import DataPoint
+        from src.campaigns.models import DataPoint
         paths = [data["path"] for data in dp_data]
         existing = DataPoint.objects.filter(path__in=paths).values_list(
             "path",
@@ -68,7 +68,7 @@ def process_data_points():
 
     @task(trigger_rule="all_done")
     def build_data_points(data_points_data):
-        from resources.campaigns.dags.builder import DataPointBuilder
+        from src.campaigns.dags.builder import DataPointBuilder
         builders = []
         for dp_data in data_points_data:
             builder = DataPointBuilder(dp_data)

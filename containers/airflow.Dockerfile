@@ -16,6 +16,16 @@ RUN apt-get update && apt-get install -y \
     curl \
     ca-certificates
 
+# Create user
+ARG UID=1001
+ARG USERNAME=airflow
+
+RUN useradd -m -u ${UID} -s /bin/bash ${USERNAME}
+RUN mkdir -p /app && chown -R ${USERNAME}:${USERNAME} /app
+USER ${USERNAME}
+ENV HOME=/home/${USERNAME}
+WORKDIR /app/project
+
 # Download the latest installer
 ADD https://astral.sh/uv/install.sh /uv-installer.sh
 
@@ -25,10 +35,7 @@ RUN sh /uv-installer.sh && rm /uv-installer.sh
 # Ensure the installed binary is on the `PATH`
 ENV PATH="/root/.local/bin/:$PATH"
 
-
-COPY pyproject.toml /app/
-WORKDIR /app
-ENV PYTHONPATH=/app
+COPY pyproject.toml /app/project/pyproject.toml
+ENV PYTHONPATH=/app/project:$PYTHONPATH
 RUN uv export > requirements.txt
-USER airflow
-RUN pip install --no-cache-dir "apache-airflow==2.10.2" -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt

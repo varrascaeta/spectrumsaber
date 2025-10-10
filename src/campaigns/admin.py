@@ -6,7 +6,7 @@ from django.utils.safestring import mark_safe
 from rangefilter.filters import DateRangeFilter
 from admin_auto_filters.filters import AutocompleteFilter
 # Project imports
-from resources.campaigns.models import (
+from src.campaigns.models import (
     Category,
     Coverage,
     Campaign,
@@ -16,8 +16,8 @@ from resources.campaigns.models import (
     UnmatchedDataPoint,
     UnmatchedMeasurement
 )
-from resources.places.models import District
-from resources.places.admin import DistrictFilter
+from src.places.models import District
+from src.places.admin import DistrictFilter
 
 
 # Utils
