@@ -161,6 +161,7 @@ cython_debug/
 *.pid
 *.log*
 *logs/*
+*/logs/scheduler/*
 *.db
 
 

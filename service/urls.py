@@ -5,9 +5,10 @@ from django.contrib import admin
 from django.urls import path
 from django.views.generic import TemplateView
 # Extra imports
-from graphene_django.views import GraphQLView
+from strawberry.django.views import GraphQLView
+
 # Project imports
-from core_schema import schema
+from src.campaigns.schema import schema
 
 
 urlpatterns = [
@@ -18,5 +19,6 @@ urlpatterns = [
     ),
     # Django Admin, use {% url 'admin:index' %}
     path("admin/", admin.site.urls),
-    path("graphql/", GraphQLView.as_view(graphiql=True, schema=schema)),
+    path('graphql', GraphQLView.as_view(schema=schema)),
+    
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
