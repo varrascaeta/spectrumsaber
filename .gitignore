@@ -166,7 +166,7 @@ cython_debug/
 
 
 # Credentials
-credentials/*.json
+secrets.env
 
 # Static files
 static/

@@ -45,14 +45,16 @@ class TimeoutContext():
 
 class FTPClient():
     def __init__(self) -> None:
-        credentials_path = os.getenv("FTP_CREDENTIALS_FILEPATH")
-        if not credentials_path:
-            raise ValueError("FTP_CREDENTIALS_FILEPATH not set")
-        else:
-            credentials = json.load(open(credentials_path))
-        self.host = credentials["host"]
-        self.username = credentials["username"]
-        self.password = credentials["password"]
+        ftp_user = os.getenv("FTP_USER")
+        ftp_password = os.getenv("FTP_PASSWORD")
+        ftp_host = os.getenv("FTP_HOST")
+        if not ftp_host:
+            raise ValueError("FTP_HOST not set")
+        if not ftp_user or not ftp_password:
+            raise ValueError("FTP_USER or FTP_PASSWORD not set")
+        self.host = ftp_host
+        self.username = ftp_user
+        self.password = ftp_password
         self.connection = None
 
     def __enter__(self):

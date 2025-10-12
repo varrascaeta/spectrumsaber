@@ -21,24 +21,17 @@ RUN apt-get update && apt-get install -y \
     ca-certificates
 
 # Create user
-ARG UID=1001
-ARG USERNAME=appuser
+ARG GID=0
+ARG UID=1000
+# This should match the POSTGRES_USER in secrets.env
+ARG USERNAME=spectrumsaber
 
-RUN useradd -m -u ${UID} -s /bin/bash ${USERNAME}
-
-RUN mkdir -p /app && chown -R ${USERNAME}:${USERNAME} /app
-
+RUN useradd -m -s /bin/bash -u ${UID} -g ${GID} ${USERNAME}
+RUN mkdir -p /app && chown -R ${USERNAME}:${GID} /app
+RUN chown -R ${USERNAME}:${GID} /home/${USERNAME}
 ENV HOME=/home/${USERNAME}
-WORKDIR /app/project
 
-# Download and install uv package manager
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-    
-# Ensure the installed binary is on the `PATH`
-ENV PATH="$HOME/.local/bin:$PATH"
-COPY pyproject.toml /app/project/pyproject.toml
-WORKDIR /app/project
-ENV PYTHONPATH=/app/project:$PYTHONPATH
-RUN uv export > requirements.txt
-RUN uv pip install --system -r requirements.txt
+COPY requirements.txt .
 USER ${USERNAME}
+RUN pip install -r requirements.txt
+WORKDIR /app/project
