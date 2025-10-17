@@ -3,7 +3,6 @@ import re
 # Django imports
 from django.db import models
 from django.utils import timezone
-from django.db.models import F, Func, Value, JSONField
 from django.apps import apps
 # Project imports
 from src.places.models import District
@@ -20,6 +19,21 @@ PATH_LEVELS = [
     ("category", "category"),
     ("measurement", "measurement")
 ]
+
+PATH_LEVELS_MODELS = {
+    "coverage": "Coverage",
+    "campaign": "Campaign",
+    "data_point": "DataPoint",
+    "category": "Category",
+    "measurement": "Measurement"
+}
+
+PARENT_MAP = {
+    "campaign": ("Coverage", "coverage_id"),
+    "data_point": ("Campaign", "campaign_id"),
+    "measurement": ("DataPoint", "data_point_id")
+}
+
 
 class BaseFile(models.Model):
     name = models.CharField(max_length=255)
@@ -238,6 +252,7 @@ class PathRule(models.Model):
     name = models.CharField(max_length=255)
     order = models.PositiveIntegerField()
     pattern = models.CharField(max_length=255)
+    date_format = models.CharField(max_length=255, null=True, blank=True)
     level = models.CharField(max_length=255, choices=PATH_LEVELS)
 
     def match_pattern(self, filename: str):
@@ -261,15 +276,31 @@ class PathRule(models.Model):
     def apply(self):
         model_class = self.get_model()
         unmatched_objects = model_class.objects.all()
-        objects_to_update = []
         for obj in unmatched_objects:
             attributes = self.match_pattern(obj.name)
             if attributes:
-                for attr, value in attributes.items():
-                    setattr(obj, attr, value)
-                obj.is_unmatched = False
-                objects_to_update.append(obj)
-        model_class.objects.bulk_update(objects_to_update, fields=list(attributes.keys()) + ["is_unmatched"])
+                obj.create_matched_file(attributes)
+
+    @classmethod
+    def match_files(cls, files: list, level: str) -> list:
+        rules = cls.objects.filter(level=level).order_by("order")
+        matched_files = []
+        unmatched_files = []
+        for file_data in files:
+            for rule in rules:
+                attributes = rule.match_pattern(file_data["name"])
+                if attributes:
+                    file_data.update(attributes)
+                    file_data["rule_id"] = rule.id
+                    file_data["is_unmatched"] = False
+                    matched_files.append(file_data)
+                    break
+            if file_data.get("is_unmatched", True):
+                file_data["is_unmatched"] = True
+                file_data["level"] = level
+                logger.info("File %s is unmatched at level %s", file_data["name"], level)
+                unmatched_files.append(file_data)
+        return matched_files, unmatched_files
 
     def __str__(self) -> str:
         return str(self.name)
@@ -281,5 +312,32 @@ class UnmatchedObjectManager(models.Manager):
 
 
 class UnmatchedFile(BaseFile):
-    parent_path = models.CharField(max_length=255, unique=True)
+    parent_path = models.CharField(max_length=255)
+    level = models.CharField(max_length=255, choices=PATH_LEVELS)
     objects = UnmatchedObjectManager()
+
+    def create_matched_file(self, attributes: dict) -> BaseFile:
+        model_name = PATH_LEVELS_MODELS.get(self.level)
+        parent_model_name, parent_id_field = PARENT_MAP.get(self.level)
+        file, created = None, False
+        file_model = apps.get_model("campaigns", model_name)
+        parent_model = apps.get_model("campaigns", parent_model_name)
+        if attributes:
+            parent_id = parent_model.objects.filter(
+                path=self.parent_path
+            ).first().id
+            defaults = {
+                "name": self.name,
+                "description": self.description,
+                "metadata": self.metadata,
+                "ftp_created_at": self.ftp_created_at,
+                "is_unmatched": False,
+                parent_id_field: parent_id
+            }
+            defaults.update(attributes)
+            file, created = file_model.objects.update_or_create(
+                path=self.path,
+                defaults=defaults
+            )
+            logger.info("UnmatchedFile %s matched to %s", self.name, model_name)
+        return file, created
