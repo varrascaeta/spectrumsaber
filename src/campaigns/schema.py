@@ -9,29 +9,29 @@ from src.campaigns.types import *
 @strawberry.type
 class Query:
     # Coverage
-    coverage: CoverageType = strawberry_django.field()
-    coverages: list[CoverageType] = strawberry_django.field()
+    coverage: CoverageType = strawberry_django.field(filters=CoverageFilter)
+    coverages: list[CoverageType] = strawberry_django.field(filters=CoverageFilter)
     # Campaign
-    campaign: CampaignType = strawberry_django.field()
-    campaigns: list[CampaignType] = strawberry_django.field()
+    campaign: CampaignType = strawberry_django.field(filters=CampaignFilter)
+    campaigns: list[CampaignType] = strawberry_django.field(filters=CampaignFilter)
     # Data Point
-    data_point: DataPointType = strawberry_django.field()
-    data_points: list[DataPointType] = strawberry_django.field()
+    data_point: DataPointType = strawberry_django.field(filters=DataPointFilter)
+    data_points: list[DataPointType] = strawberry_django.field(filters=DataPointFilter)
     # Category
-    category: CategoryType = strawberry_django.field()
-    categories: list[CategoryType] = strawberry_django.field()
+    category: CategoryType = strawberry_django.field(filters=CategoryFilter)
+    categories: list[CategoryType] = strawberry_django.field(filters=CategoryFilter)
     # Measurement
-    measurement: MeasurementType = strawberry_django.field()
-    measurements: list[MeasurementType] = strawberry_django.field()
+    measurement: MeasurementType = strawberry_django.field(filters=MeasurementFilter)
+    measurements: list[MeasurementType] = strawberry_django.field(filters=MeasurementFilter)
     # District
-    district: DistrictType = strawberry_django.field()
-    districts: list[DistrictType] = strawberry_django.field()
+    district: DistrictType = strawberry_django.field(filters=DistrictFilter)
+    districts: list[DistrictType] = strawberry_django.field(filters=DistrictFilter)
     # Measuring Tool
-    measuring_tool: MeasuringToolType = strawberry_django.field()
-    measuring_tools: list[MeasuringToolType] = strawberry_django.field()
+    measuring_tool: MeasuringToolType = strawberry_django.field(filters=MeasuringToolFilter)
+    measuring_tools: list[MeasuringToolType] = strawberry_django.field(filters=MeasuringToolFilter)
     # Spreadsheet
-    spreadsheet: SpreadsheetType = strawberry_django.field()
-    spreadsheets: list[SpreadsheetType] = strawberry_django.field()
+    spreadsheet: SpreadsheetType = strawberry_django.field(filters=SpreadsheetFilter)
+    spreadsheets: list[SpreadsheetType] = strawberry_django.field(filters=SpreadsheetFilter )
 
 schema = strawberry.Schema(
     query=Query,
