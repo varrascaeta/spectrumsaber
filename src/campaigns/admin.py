@@ -5,6 +5,7 @@ from django.utils.safestring import mark_safe
 # Extra imports
 from rangefilter.filters import DateRangeFilter
 from admin_auto_filters.filters import AutocompleteFilter
+import django_filters
 # Project imports
 from src.campaigns.models import (
     Category,
@@ -13,7 +14,8 @@ from src.campaigns.models import (
     DataPoint,
     Measurement,
     UnmatchedFile,
-    PathRule
+    PathRule,
+    PATH_LEVELS
 )
 from src.places.models import District
 from src.places.admin import DistrictFilter
@@ -98,6 +100,23 @@ class CampaignFilter(AutocompleteFilter):
 class DataPointFilter(AutocompleteFilter):
     title = "Data Point"
     field_name = "data_point"
+
+
+class LevelFilter(admin.SimpleListFilter):
+    title = "Level"  # título que aparece en el sidebar del admin
+    parameter_name = "level"  # el nombre del parámetro en la URL
+
+    def lookups(self, request, model_admin):
+        # Muestra las opciones en el sidebar del admin
+        # PATH_LEVELS debe ser una lista de tuplas, ej: [('root', 'Root'), ('sub', 'Subfolder')]
+        return PATH_LEVELS
+
+    def queryset(self, request, queryset):
+        # Aplica el filtro cuando se selecciona una opción
+        if self.value():
+            return queryset.filter(level=self.value())
+        return queryset
+
 
 
 # Admins
@@ -320,9 +339,21 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(UnmatchedFile)
 class UnmatchedFileAdmin(BaseFileAdmin):
-    pass
+    list_display = [
+        "name", "level", "ftp_created_at", "last_synced_at"
+    ]
+
+    list_filter = [
+        LevelFilter,
+    ]
 
 
 @admin.register(PathRule)
 class PathRuleAdmin(admin.ModelAdmin):
-    pass
+    list_display = [
+        "name", "pattern", "level", "order"
+    ]
+
+    list_filter = [
+        LevelFilter,
+    ]
