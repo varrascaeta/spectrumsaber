@@ -61,8 +61,12 @@ class CampaignDirector(BaseDirector):
 
     def construct(self, file_data: dict):
         super().construct(file_data)
+        logger.info("Building Campaign: %s", file_data)
         # Campaign attributes
-        self._builder.build_date(file_data.get("rule_id", ""), file_data.get("date", ""))
+        self._builder.build_date(
+            rule_id=file_data.get("rule_id", ""),
+            date_str=file_data.get("date", "")
+        )
         self._builder.build_external_id(file_data.get("external_id", ""))
         self._builder.build_district()
         self._builder.build_measuring_tool()

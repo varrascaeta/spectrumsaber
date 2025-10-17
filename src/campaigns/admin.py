@@ -127,7 +127,7 @@ class SpectrumsaberAdmin(admin.AdminSite):
 
 class BaseFileAdmin(admin.ModelAdmin):
     list_display = [
-        "__str__", "ftp_created_at", "updated_at"
+        "__str__", "ftp_created_at", "last_synced_at"
     ]
     readonly_fields = ("created_at", "updated_at")
 

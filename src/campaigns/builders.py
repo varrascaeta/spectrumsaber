@@ -21,6 +21,21 @@ from src.campaigns.models import PATH_LEVELS
 # Globals
 logger = logging.getLogger(__name__)
 
+DATE_TRANSLATE = {
+    "ene": "jan",
+    "feb": "feb",
+    "mar": "mar",
+    "abr": "apr",
+    "may": "may",
+    "jun": "jun",
+    "jul": "jul",
+    "ago": "aug",
+    "set": "sep",
+    "oct": "oct",
+    "nov": "nov",
+    "dic": "dec",
+}
+
 
 class BaseBuilder(abc.ABC):
     def __init__(self):
@@ -113,21 +128,28 @@ class CampaignBuilder(BaseBuilder):
     def _get_model(self):
         return Campaign
 
+    def _translate_date_str(self, date_str: str) -> str:
+        date_str = date_str.lower()
+        for es_month, en_month in DATE_TRANSLATE.items():
+            date_str = date_str.replace(es_month, en_month)
+        return date_str
+
     def build_date(self, rule_id: int, date_str: str):
         date = None
         if date_str:
+            date_str = self._translate_date_str(date_str)
             try:
                 rule = PathRule.objects.get(id=rule_id)
                 if rule.date_format:
                     date = datetime.strptime(date_str, rule.date_format)
                 else:
-                    date = datetime.strptime(date_str, "%Y-%m-%d")
-            except ValueError:
+                    date = parse(date_str)
+            except ValueError as e:
                 try:
                     date = parse(date_str)
-                except ValueError as e:
+                except Exception as e:
                     logger.warning("Failed to parse date '%s': %s", date_str, e)
-        return date
+        self.instance.date = date
 
     def build_external_id(self, external_id: str):
         self.instance.external_id = external_id
