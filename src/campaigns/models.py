@@ -1,19 +1,25 @@
 # Standard imports
-import logging
+import re
 # Django imports
 from django.db import models
 from django.utils import timezone
+from django.db.models import F, Func, Value, JSONField
+from django.apps import apps
 # Project imports
 from src.places.models import District
+from src.logging_cfg import setup_logger
 
-logger = logging.getLogger(__name__)
 
+logger = setup_logger(__name__)
 
-# Common utils
-class MatchedObjectManager(models.Manager):
-    def get_queryset(self):
-        return super().get_queryset().filter(is_unmatched=False)
-
+# Path Levels
+PATH_LEVELS = [
+    ("coverage", "coverage"),
+    ("campaign", "campaign"),
+    ("data_point", "data_point"),
+    ("category", "category"),
+    ("measurement", "measurement")
+]
 
 class BaseFile(models.Model):
     name = models.CharField(max_length=255)
@@ -28,18 +34,17 @@ class BaseFile(models.Model):
     is_unmatched = models.BooleanField(default=False)
     last_synced_at = models.DateTimeField(null=True)
 
-    objects = MatchedObjectManager()
-
     def __str__(self) -> str:
         return str(self.name)
 
-    @staticmethod
-    def matches_pattern(filename: str) -> bool:
-        raise NotImplementedError
-
-    @staticmethod
-    def get_attributes_from_name(filename: str) -> dict:
-        raise NotImplementedError
+    def match_pattern(self) -> dict:
+        rule_name = self._meta.model.__name__.lower()
+        rules = PathRule.objects.filter(level=rule_name).order_by("order")
+        for rule in rules:
+            attributes = rule.match_pattern(self.name)
+            if attributes:
+                return attributes
+        return None
 
     class Meta:
         abstract = True
@@ -152,13 +157,7 @@ class MeasuringTool(models.Model):
 
 # Campaigns
 class Coverage(BaseFile):
-    @staticmethod
-    def matches_pattern(filename: str) -> bool:
-        return filename.isupper()
-
-    @staticmethod
-    def get_attributes_from_name(filename: str) -> dict:
-        return {}
+    pass
 
 
 class Campaign(BaseFile):
@@ -188,27 +187,6 @@ class Campaign(BaseFile):
         related_name="campaigns"
     )
 
-    @staticmethod
-    def matches_pattern(filename: str) -> bool:
-        splitted = filename.split("-")
-        if len(splitted) >= 3:
-            right_prefix = splitted[0].isdigit()
-            right_date = len(splitted[1]) == 8
-            return right_prefix and right_date
-        return False
-
-    @staticmethod
-    def get_attributes_from_name(filename: str) -> dict:
-        if Campaign.matches_pattern(filename):
-            splitted = filename.split("-")
-            return {
-                "external_id": splitted[0],
-                "date_str": splitted[1],
-                "geo_code": splitted[2],
-            }
-        return {}
-
-
 class DataPoint(BaseFile):
     # Fields
     order = models.IntegerField()
@@ -218,26 +196,6 @@ class DataPoint(BaseFile):
     campaign = models.ForeignKey(
         Campaign, on_delete=models.CASCADE, related_name="data_points"
     )
-
-    @staticmethod
-    def matches_pattern(filename: str) -> bool:
-        cleaned_spaces = filename.replace(" ", "-")
-        splitted = cleaned_spaces.split("-")
-        if len(splitted) >= 2:
-            right_prefix = splitted[0] == "Punto"
-            right_order = splitted[1].isdigit()
-            return right_prefix and right_order
-        return False
-
-    @staticmethod
-    def get_attributes_from_name(filename: str) -> dict:
-        cleaned_spaces = filename.replace(" ", "-")
-        splitted = cleaned_spaces.split("-")
-        if splitted and splitted[1].isdigit():
-            return {
-                "order": int(splitted[1])
-            }
-        return {}
 
     def __str__(self) -> str:
         return f"{self.name} | {self.campaign}"
@@ -249,14 +207,6 @@ class Measurement(BaseFile):
     data_point = models.ForeignKey(
         "DataPoint", on_delete=models.CASCADE, related_name="measurements"
     )
-
-    @staticmethod
-    def matches_pattern(filename: str) -> bool:
-        return True
-
-    @staticmethod
-    def get_attributes_from_name(filename: str) -> dict:
-        return {}
 
 
 # Spreadsheets
@@ -274,14 +224,6 @@ class Spreadsheet(BaseFile):
     sheet_type = models.CharField(max_length=16, choices=SheetType.CHOICES)
     delimiter = models.CharField(max_length=1, default=";")
 
-    @staticmethod
-    def matches_pattern(filename: str) -> bool:
-        return True
-
-    @staticmethod
-    def get_attributes_from_name(filename: str) -> dict:
-        return {}
-
 
 class ComplimentaryData(BaseFile):
     # Relationships
@@ -291,14 +233,46 @@ class ComplimentaryData(BaseFile):
         related_name="complimentary_data"
     )
 
-    @staticmethod
-    def matches_pattern(filename: str) -> bool:
-        cleaned_name = filename.lower().strip().replace(" ", "")
-        return cleaned_name == 'datoscomplementarios'
 
-    @staticmethod
-    def get_attributes_from_name(filename: str) -> dict:
-        return {}
+class PathRule(models.Model):
+    name = models.CharField(max_length=255)
+    order = models.PositiveIntegerField()
+    pattern = models.CharField(max_length=255)
+    level = models.CharField(max_length=255, choices=PATH_LEVELS)
+
+    def match_pattern(self, filename: str):
+        match = re.match(self.pattern, filename)
+        if match:
+            groups = match.groupdict()
+            result = {"metadata": {}}
+            for key in groups:
+                if key.startswith("metadata__"):
+                    subkey = key.split("__")[1]
+                    result["metadata"][subkey] = groups[key]
+                else:
+                    result[key] = groups[key]
+            return result
+        return None
+
+    def get_model(self):
+        model_name = str(self.level).capitalize()
+        return apps.get_model("campaigns", model_name)
+
+    def apply(self):
+        model_class = self.get_model()
+        unmatched_objects = model_class.objects.all()
+        objects_to_update = []
+        for obj in unmatched_objects:
+            attributes = self.match_pattern(obj.name)
+            if attributes:
+                for attr, value in attributes.items():
+                    setattr(obj, attr, value)
+                obj.is_unmatched = False
+                objects_to_update.append(obj)
+        model_class.objects.bulk_update(objects_to_update, fields=list(attributes.keys()) + ["is_unmatched"])
+
+    def __str__(self) -> str:
+        return str(self.name)
 
 
 class UnmatchedObjectManager(models.Manager):
@@ -306,28 +280,6 @@ class UnmatchedObjectManager(models.Manager):
         return super().get_queryset().filter(is_unmatched=True)
 
 
-class UnmatchedCampaign(Campaign):
+class UnmatchedFile(BaseFile):
+    parent_path = models.CharField(max_length=255, unique=True)
     objects = UnmatchedObjectManager()
-
-    class Meta:
-        verbose_name = "Unmatched Campaign"
-        verbose_name_plural = "Unmatched Campaigns"
-        proxy = True
-
-
-class UnmatchedDataPoint(DataPoint):
-    objects = UnmatchedObjectManager()
-
-    class Meta:
-        verbose_name = "Unmatched Data Point"
-        verbose_name_plural = "Unmatched Data Points"
-        proxy = True
-
-
-class UnmatchedMeasurement(Measurement):
-    objects = UnmatchedObjectManager()
-
-    class Meta:
-        verbose_name = "Unmatched Measurement"
-        verbose_name_plural = "Unmatched Measurements"
-        proxy = True

@@ -12,9 +12,8 @@ from src.campaigns.models import (
     Campaign,
     DataPoint,
     Measurement,
-    UnmatchedCampaign,
-    UnmatchedDataPoint,
-    UnmatchedMeasurement
+    UnmatchedFile,
+    PathRule
 )
 from src.places.models import District
 from src.places.admin import DistrictFilter
@@ -176,6 +175,9 @@ class CampaignAdmin(BaseFileAdmin):
         DataPointInline
     ]
 
+    def get_queryset(self, request):
+        return super().get_queryset(request).filter(is_unmatched=False)
+
     def get_list_display(self, request):
         base = super().get_list_display(request)
         return base[:1] + ["get_coverage", "get_district", "date"] + base[1:]
@@ -207,7 +209,6 @@ class CampaignAdmin(BaseFileAdmin):
 
     get_coverage.short_description = "Coverage"
     get_district.short_description = "District"
-
 
 @admin.register(DataPoint)
 class DataPointAdmin(BaseFileAdmin):
@@ -317,16 +318,11 @@ class CategoryAdmin(admin.ModelAdmin):
     ]
 
 
-@admin.register(UnmatchedCampaign)
-class UnmatchedCampaignAdmin(CampaignAdmin):
+@admin.register(UnmatchedFile)
+class UnmatchedFileAdmin(BaseFileAdmin):
     pass
 
 
-@admin.register(UnmatchedDataPoint)
-class UnmatchedDataPointAdmin(DataPointAdmin):
-    pass
-
-
-@admin.register(UnmatchedMeasurement)
-class UnmatchedMeasurementAdmin(MeasurementAdmin):
+@admin.register(PathRule)
+class PathRuleAdmin(admin.ModelAdmin):
     pass
