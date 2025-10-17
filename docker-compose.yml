@@ -34,6 +34,7 @@ x-airflow-common:
       target: /app/project
   env_file:
     - environments/production.env
+    - secrets.env
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on
@@ -143,6 +144,8 @@ services:
       - airflow
       - spectrumsaber
     image: postgres:13
+    env_file:
+      - secrets.env
     environment:
       POSTGRES_USER: ${AIRFLOW_POSTGRES_USER}
       POSTGRES_PASSWORD: ${AIRFLOW_POSTGRES_PASSWORD}
@@ -192,8 +195,6 @@ services:
       retries: 5
       start_period: 30s
     restart: always
-    env_file:
-      - environments/production.env
     depends_on:
       <<: *airflow-common-depends-on
       airflow-init:
@@ -217,8 +218,6 @@ services:
       retries: 5
       start_period: 30s
     restart: always
-    env_file:
-      - environments/production.env
     depends_on:
       <<: *airflow-common-depends-on
       airflow-init:
@@ -248,8 +247,6 @@ services:
       # See https://airflow.apache.org/docs/docker-stack/entrypoint.html#signal-propagation
       DUMB_INIT_SETSID: "0"
     restart: always
-    env_file:
-      - environments/production.env
     depends_on:
       <<: *airflow-common-depends-on
       airflow-init:
@@ -271,8 +268,6 @@ services:
       retries: 5
       start_period: 30s
     restart: always
-    env_file:
-      - environments/production.env
     depends_on:
       <<: *airflow-common-depends-on
       airflow-init:
@@ -289,8 +284,6 @@ services:
       <<: *airflow-common-env
       CONNECTION_CHECK_MAX_COUNT: "0"
     # Workaround for entrypoint issue. See: https://github.com/apache/airflow/issues/16252
-    env_file:
-      - environments/production.env
     command:
       - bash
       - -c
@@ -361,8 +354,6 @@ services:
       _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-airflow}
       _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
       _PIP_ADDITIONAL_REQUIREMENTS: ''
-    env_file:
-      - environments/production.env
     user: "0:0"
     volumes:
       - ${AIRFLOW_PROJ_DIR:-.}:/sources
