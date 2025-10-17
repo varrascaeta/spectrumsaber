@@ -67,6 +67,7 @@ THIRD_PARTY_APPS = [
     'rangefilter',
     'admin_auto_filters',
     'strawberry_django',
+    'django_filters'
 ]
 
 INSTALLED_APPS = DJANGO_APPS + LOCAL_APPS + THIRD_PARTY_APPS
