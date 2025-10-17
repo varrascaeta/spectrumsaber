@@ -9,6 +9,12 @@ from airflow.decorators import dag, task
 from django.conf import settings
 # Project imports
 from src.airflow.operators import ScanFTPDirectory, SetupDjango
+from src.campaigns.dags.tasks import (
+    match_patterns,
+    select_is_unmatched,
+    build_unmatched,
+    commit_to_db
+)
 
 
 logger = logging.getLogger(__name__)
@@ -35,32 +41,52 @@ def process_coverage():
     )
 
     @task
-    def build_coverage(coverage_data):
-        from src.campaigns.dags.builder import CoverageBuilder
-        builder = CoverageBuilder(coverage_data)
-        builder.build()
-        if not builder.result:
-            return None
-        pickled_data = pickle.dumps(builder)
+    def build_matched(matched_coverage_data):
+        from src.campaigns.directors import CoverageDirector
+        logger.info("Building coverage from data %s", matched_coverage_data)
+        director = CoverageDirector()
+        director.construct(matched_coverage_data)
+        pickled_data = pickle.dumps(director)
         encoded_data = base64.b64encode(pickled_data).decode('utf-8')
-        return {"builder": encoded_data}
+        return {"director": encoded_data, "class_name": "Coverage"}
 
-    @task
-    def save_coverage(coverage_builder):
-        encoded_data = coverage_builder['builder'].encode('utf-8')
-        pickled_data = base64.b64decode(encoded_data)
-        builder = pickle.loads(pickled_data)
-        builder.save_to_db()
+    # Define task flow
 
-    build_coverages = build_coverage.expand(
-        coverage_data=scan_coverages.output
+    apply_rules = match_patterns(
+        scan_coverages.output,
+        level="coverage"
     )
 
-    save_coverages = save_coverage.expand(
-        coverage_builder=build_coverages
+    unmatched_coverages = select_is_unmatched(
+        apply_rules,
+        is_unmatched=True
     )
 
-    setup_django >> scan_coverages >> build_coverages >> save_coverages
+    matched_coverages = select_is_unmatched(
+        apply_rules,
+        is_unmatched=False
+    )
+
+    build_unmatched_coverages = build_unmatched.expand(
+        unmatched_file_data=unmatched_coverages
+    )
+
+    build_matched_coverages = build_matched.expand(
+        matched_coverage_data=matched_coverages
+    )
+
+    save_matched_objects = commit_to_db.expand(
+        director_data=build_matched_coverages
+    )
+
+    save_unmatched_objects = commit_to_db.expand(
+        director_data=build_unmatched_coverages
+    )
+
+    setup_django >> scan_coverages >> apply_rules
+    # Branch for unmatched and matched
+    apply_rules >> unmatched_coverages >> build_unmatched_coverages >> save_unmatched_objects
+    apply_rules >> matched_coverages >> build_matched_coverages >> save_matched_objects
 
 
 dag = process_coverage()

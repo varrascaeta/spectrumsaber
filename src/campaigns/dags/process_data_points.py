@@ -13,6 +13,9 @@ from src.airflow.operators import (
     SetupDjango
 )
 from src.utils import get_param_from_context
+from src.campaigns.dags.tasks import (
+    match_patterns
+)
 
 
 # Globals
@@ -67,31 +70,55 @@ def process_data_points():
         return to_process
 
     @task(trigger_rule="all_done")
-    def build_data_points(data_points_data):
-        from src.campaigns.dags.builder import DataPointBuilder
-        builders = []
-        for dp_data in data_points_data:
-            builder = DataPointBuilder(dp_data)
-            logger.info("Building data point %s", dp_data["name"])
-            builder.build()
-            if not builder.result:
-                logger.info("Invalid data for data point %s", dp_data["name"])
+    def get_matched(data_points_list):
+        matched = []
+        for dp in data_points_list:
+            if dp.get("is_unmatched", False):
                 continue
-            builder.build_parent()
-            builder.build_metadata()
-            builder.build_order()
-            pickled_data = pickle.dumps(builder)
-            encoded_data = base64.b64encode(pickled_data).decode('utf-8')
-            builders.append(encoded_data)
-        return builders
+            matched.append(dp)
+        return matched
 
     @task(trigger_rule="all_done")
-    def save_data_points(dp_builders):
-        for dp_builder in dp_builders:
-            encoded_data = dp_builder.encode('utf-8')
+    def get_unmatched(data_points_list):
+        unmatched = []
+        for dp in data_points_list:
+            if dp.get("is_unmatched", False):
+                unmatched.append(dp)
+        return unmatched
+
+    @task(trigger_rule="all_done")
+    def build_data_points(data_points_data):
+        from src.campaigns.directors import DataPointDirector
+        directors = []
+        for dp_data in data_points_data:
+            director = DataPointDirector(dp_data)
+            logger.info("Building data point %s", dp_data["name"])
+            director.construct()
+            pickled_data = pickle.dumps(director)
+            encoded_data = base64.b64encode(pickled_data).decode('utf-8')
+            directors.append(encoded_data)
+        return directors
+
+    @task(trigger_rule="all_done")
+    def build_unmatched(unmatched_data_points):
+        from src.campaigns.directors import UnmatchedDirector
+        directors = []
+        for unmatched_data in unmatched_data_points:
+            director = UnmatchedDirector()
+            director.construct(unmatched_data)
+            pickled_data = pickle.dumps(director)
+            encoded_data = base64.b64encode(pickled_data).decode('utf-8')
+            directors.append(encoded_data)
+        return directors
+
+    @task(trigger_rule="all_done")
+    def save_data_points(dp_directors):
+        for dp_director in dp_directors:
+            encoded_data = dp_director.encode('utf-8')
             pickled_data = base64.b64decode(encoded_data)
-            builder = pickle.loads(pickled_data)
-            builder.save_to_db()
+            director = pickle.loads(pickled_data)
+            logger.info("Committing data point %s to DB", director._builder.instance.__dict__)
+            director.commit()
 
     # Define task flow
     setup_django = SetupDjango(
@@ -112,19 +139,83 @@ def process_data_points():
         dp_data=scan_data_points.output
     )
 
-    build_dps = build_data_points.expand(
-        data_points_data=data_points_to_process
+    splitted = match_patterns.partial(level='data_point').expand(
+        file_data=data_points_to_process
     )
 
-    save_dps = save_data_points.expand(
-        dp_builders=build_dps
+    matched = get_matched.expand(
+        data_points_list=splitted
     )
 
-    setup_django >> campaigns_to_scan >> scan_data_points
-    scan_data_points >> data_points_to_process >> build_dps >> save_dps
+    build_matched_dps = build_data_points.expand(
+        data_points_data=matched
+    )
+
+    unmatched = get_unmatched.expand(
+        data_points_list=splitted
+    )
+
+    build_unmatched_dps = build_unmatched.expand(
+        unmatched_data_points=unmatched
+    )
+
+    commit_matched_dps = save_data_points.expand(
+        dp_directors=build_matched_dps
+    )
+
+    commit_unmatched_dps = save_data_points.expand(
+        dp_directors=build_unmatched_dps
+    )
+
+    setup_django >> campaigns_to_scan >> scan_data_points >> data_points_to_process
+
+    data_points_to_process >> splitted >> unmatched >> build_unmatched_dps >> commit_unmatched_dps
+    data_points_to_process >> splitted >> matched >> build_matched_dps >> commit_matched_dps
 
 
 dag = process_data_points()
 
 if __name__ == "__main__":
     dag.test()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

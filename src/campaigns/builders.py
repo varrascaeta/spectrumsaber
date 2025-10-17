@@ -10,9 +10,12 @@ from src.campaigns.models import (
     Campaign,
     Coverage,
     DataPoint,
-    ComplimentaryData
+    ComplimentaryData,
+    PathRule,
+    UnmatchedFile
 )
 from src.places.models import District
+from src.campaigns.models import PATH_LEVELS
 
 
 # Globals
@@ -23,9 +26,14 @@ class BaseBuilder(abc.ABC):
     def __init__(self):
         self.model = self._get_model()
         self.instance = None
-        self.attributes = {}
 
-    def build_instance(self, path: str) -> BaseFile:
+    def remove_unmatched_if_exists(self, path: str):
+        unmatched = UnmatchedFile.objects.filter(path=path).first()
+        if unmatched:
+            unmatched.delete()
+
+    def build_instance(self, path: str):
+        self.remove_unmatched_if_exists(path)
         existing = self.model.objects.filter(path=path).first()
         if existing:
             self.instance = existing
@@ -35,6 +43,12 @@ class BaseBuilder(abc.ABC):
     def build_name(self, name: str):
         self.instance.name = name
 
+    def build_metadata(self, metadata: dict):
+        if self.instance.metadata:
+            self.instance.metadata.update(metadata)
+        else:
+            self.instance.metadata = metadata
+
     def build_description(self, description: str):
         self.instance.description = description
 
@@ -43,22 +57,10 @@ class BaseBuilder(abc.ABC):
             self.instance.ftp_created_at = created_at
 
     def build_is_unmatched(self):
-        if not self.attributes:
-            self.instance.is_unmatched = True
-            logger.warning(f"File {self.instance.name} is unmatched")
+        self.instance.is_unmatched = False
 
     def build_last_synced_at(self):
         self.instance.last_synced_at = datetime.now(timezone.utc)
-
-    def build_attributes(self):
-        if not self.instance.name:
-            logger.error("Name is not set for the instance")
-            return
-        attributes = self.instance.match_pattern()
-        self.attributes.update(attributes or {})
-
-    def build_metadata(self):
-        self.instance.metadata = self.attributes.get("metadata", {})
 
     @abc.abstractmethod
     def build_parent(self, parent_path: str):
@@ -79,6 +81,25 @@ class BaseBuilder(abc.ABC):
         self.__dict__ = state
 
 
+class UnmatchedBuilder(BaseBuilder):
+    def _get_model(self):
+        return UnmatchedFile
+
+    def remove_unmatched_if_exists(self, path: str):
+        # No need to remove unmatched for unmatched files
+        pass
+
+    def build_parent(self, parent_path: str):
+        self.instance.parent_path = parent_path
+
+    def build_is_unmatched(self):
+        self.instance.is_unmatched = True
+
+    def build_level(self, level: str):
+        if level in dict(PATH_LEVELS).keys():
+            self.instance.level = level
+
+
 class CoverageBuilder(BaseBuilder):
     def _get_model(self):
         return Coverage
@@ -92,20 +113,31 @@ class CampaignBuilder(BaseBuilder):
     def _get_model(self):
         return Campaign
 
-    def build_date(self):
-        date_str = self.attributes.get("date")
+    def build_date(self, rule_id: int, date_str: str):
+        date = None
         if date_str:
-            self.instance.date = parse(date_str)
+            try:
+                rule = PathRule.objects.get(id=rule_id)
+                if rule.date_format:
+                    date = datetime.strptime(date_str, rule.date_format)
+                else:
+                    date = datetime.strptime(date_str, "%Y-%m-%d")
+            except ValueError:
+                try:
+                    date = parse(date_str)
+                except ValueError as e:
+                    logger.warning("Failed to parse date '%s': %s", date_str, e)
+        return date
 
-    def build_external_id(self):
-        self.instance.external_id = self.attributes.get("external_id")
+    def build_external_id(self, external_id: str):
+        self.instance.external_id = external_id
 
     def build_parent(self, parent_path: str):
         coverage_id = Coverage.objects.get(path=parent_path).id
         self.instance.coverage_id = coverage_id
 
     def build_district(self):
-        district_code = self.attributes.get("geo_code")
+        district_code = self.instance.metadata.get("geo_code")
         if district_code:
             district = District.objects.filter(code=district_code).last()
             if district:
@@ -127,17 +159,17 @@ class DataPointBuilder(BaseBuilder):
         self.instance.campaign_id = parent.id
 
     def build_order(self):
-        order = self.attributes.get("order")
+        order = self.instance.metadata.get("order")
         if order:
             self.instance.order = int(order)
 
     def build_latitude(self):
-        latitude = self.attributes.get("latitude")
+        latitude = self.instance.metadata.get("latitude")
         if latitude:
             self.instance.latitude = float(latitude)
 
     def build_longitude(self):
-        longitude = self.attributes.get("longitude")
+        longitude = self.instance.metadata.get("longitude")
         if longitude:
             self.instance.longitude = float(longitude)
 
@@ -145,12 +177,3 @@ class DataPointBuilder(BaseBuilder):
 class ComplimentaryDataBuilder(BaseBuilder):
     def _get_model(self):
         return ComplimentaryData
-
-    def build_parent(self) -> int: 
-        parent_path = self.file_data.get("parent")
-        if parent_path:
-            parent = Campaign.objects.filter(path=parent_path).last()
-            if parent:
-                self.result["campaign_id"] = parent.id
-
-

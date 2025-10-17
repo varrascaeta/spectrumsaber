@@ -14,6 +14,12 @@ from src.airflow.operators import (
     ScanFTPDirectory,
     SetupDjango
 )
+from src.campaigns.dags.tasks import (
+    match_patterns,
+    select_is_unmatched,
+    build_unmatched,
+    commit_to_db
+)
 from src.utils import get_param_from_context
 
 
@@ -55,32 +61,14 @@ def process_campaigns():
         return to_process
 
     @task
-    def build_campaign(campaign_data):
-        from src.campaigns.dags.builder import CampaignBuilder
-        logger.info("Building campaign from data %s", campaign_data)
-        builder = CampaignBuilder(campaign_data)
-        builder.build()
-        if not builder.result:
-            logger.info("Invalid data for campaign %s", campaign_data["name"])
-            return None
-        context = get_current_context()
-        coverage_name = get_param_from_context(context, "coverage_name")
-        builder.build_parent(coverage_name)
-        builder.build_metadata()
-        builder.build_date()
-        builder.build_external_id()
-        builder.build_location()
-        pickled_data = pickle.dumps(builder)
+    def build_matched(matched_campaign_data):
+        from src.campaigns.directors import CampaignDirector
+        logger.info("Building campaign from data %s", matched_campaign_data)
+        director = CampaignDirector()
+        director.construct(matched_campaign_data)
+        pickled_data = pickle.dumps(director)
         encoded_data = base64.b64encode(pickled_data).decode('utf-8')
-        return {"builder": encoded_data}
-
-    @task
-    def save_campaign(campaign_builder):
-        encoded_data = campaign_builder['builder'].encode('utf-8')
-        pickled_data = base64.b64decode(encoded_data)
-        builder = pickle.loads(pickled_data)
-        builder.save_to_db()
-        logger.info("Saved campaign %s", builder.result["name"])
+        return {"director": encoded_data, "class_name": "Campaign"}
 
     # Define task flow
 
@@ -100,16 +88,41 @@ def process_campaigns():
         scan_campaigns.output
     )
 
-    build_campaigns = build_campaign.expand(
-        campaign_data=campaigns_to_process
+    apply_rules = match_patterns(
+        file_data=campaigns_to_process,
+        level="campaign"
     )
 
-    save_campaigns = save_campaign.expand(
-        campaign_builder=build_campaigns
+    unmatched_campaigns = select_is_unmatched(
+        apply_rules,
+        is_unmatched=True
     )
 
-    setup_django >> scan_campaigns >> campaigns_to_process
-    campaigns_to_process >> build_campaigns >> save_campaigns
+    matched_campaigns = select_is_unmatched(
+        apply_rules,
+        is_unmatched=False
+    )
+
+    build_campaigns_unmatched = build_unmatched.expand(
+        unmatched_file_data=unmatched_campaigns
+    )
+
+    build_campaigns_matched = build_matched.expand(
+        matched_campaign_data=matched_campaigns
+    )
+
+    save_matched_objects = commit_to_db.expand(
+        director_data=build_campaigns_matched
+    )
+
+    save_unmatched_objects = commit_to_db.expand(
+        director_data=build_campaigns_unmatched
+    )
+
+    setup_django >> scan_campaigns >> campaigns_to_process >> apply_rules    
+    # Branch for unmatched and matched
+    apply_rules >> unmatched_campaigns >> build_campaigns_unmatched >> save_unmatched_objects
+    apply_rules >> matched_campaigns >> build_campaigns_matched >> save_matched_objects
 
 
 dag = process_campaigns()
