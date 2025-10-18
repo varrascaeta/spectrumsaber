@@ -339,6 +339,7 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(UnmatchedFile)
 class UnmatchedFileAdmin(BaseFileAdmin):
+    search_fields = ("name", "path", "level")
     list_display = [
         "name", "level", "ftp_created_at", "last_synced_at"
     ]
