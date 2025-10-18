@@ -53,6 +53,7 @@ class CoverageDirector(BaseDirector):
         super().construct(file_data)
         # Coverage attributes
         self._builder.build_parent(parent_path="")  # Coverage has no parent
+        logger.info("Built Coverage: %s", self._builder.instance.__dict__)
 
 
 class CampaignDirector(BaseDirector):
@@ -82,8 +83,5 @@ class DataPointDirector(BaseDirector):
         super().construct(file_data)
 
         # DataPoint attributes
-        self._builder.build_order()
-
-        # Save to DB
-        self._builder.save_to_db()
-        return self._builder.instance
+        self._builder.build_order(file_data.get("order", 0))
+        logger.info("Built DataPoint: %s", self._builder.instance.__dict__)

@@ -180,10 +180,8 @@ class DataPointBuilder(BaseBuilder):
         parent = Campaign.objects.get(path=parent_path)
         self.instance.campaign_id = parent.id
 
-    def build_order(self):
-        order = self.instance.metadata.get("order")
-        if order:
-            self.instance.order = int(order)
+    def build_order(self, order: str = None):
+        self.instance.order = int(order) if order else 0
 
     def build_latitude(self):
         latitude = self.instance.metadata.get("latitude")
