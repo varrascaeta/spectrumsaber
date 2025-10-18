@@ -203,7 +203,7 @@ class Campaign(BaseFile):
 
 class DataPoint(BaseFile):
     # Fields
-    order = models.IntegerField()
+    order = models.IntegerField(default=0)
     latitude = models.FloatField(null=True)
     longitude = models.FloatField(null=True)
     # Relationships
@@ -227,15 +227,17 @@ class Measurement(BaseFile):
 class SheetType():
     OFFICE = "Office Sheet"
     FIELD = "Field Sheet"
+    COMPLEMENTARY = "Complimentary Data Sheet"
 
     CHOICES = (
         (OFFICE, "OFC"),
         (FIELD, "FLD"),
+        (COMPLEMENTARY, "CDS"),
     )
 
 
 class Spreadsheet(BaseFile):
-    sheet_type = models.CharField(max_length=16, choices=SheetType.CHOICES)
+    sheet_type = models.CharField(max_length=255, choices=SheetType.CHOICES)
     delimiter = models.CharField(max_length=1, default=";")
 
 
