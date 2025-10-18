@@ -37,7 +37,11 @@ coverage_param = "{{ params.coverage_name }}"
     params={
         "coverage_name": Param(
             description="Name of the coverage to process",
-            default="HIDROLOGIA"
+            default="AGRICULTURA"
+        ),
+        "force_reprocess": Param(
+            description="Whether to force reprocessing of campaigns",
+            default=False
         )
     }
 
@@ -47,6 +51,10 @@ def process_campaigns():
     def get_campaigns_to_process(campaigns_data):
         from src.campaigns.models import Campaign
         paths = [campaign_data["path"] for campaign_data in campaigns_data]
+        context = get_current_context()
+        force_reprocess = get_param_from_context(context, "force_reprocess")
+        if force_reprocess:
+            return campaigns_data
         existing = Campaign.objects.filter(
             scan_complete=True,
             path__in=paths

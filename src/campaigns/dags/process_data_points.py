@@ -33,6 +33,10 @@ coverage_param = "{{ params.coverage_name }}"
         "coverage_name": Param(
             description="Name of the coverage to process",
             default="HIDROLOGIA"
+        ),
+        "force_reprocess": Param(
+            description="Whether to force reprocessing of data points",
+            default=False
         )
     }
 
@@ -43,11 +47,13 @@ def process_data_points():
         from src.campaigns.models import Campaign
         context = get_current_context()
         coverage_name = get_param_from_context(context, "coverage_name")
+        force_reprocess = get_param_from_context(context, "force_reprocess")
         campaigns = Campaign.objects.filter(
             coverage__name=coverage_name,
-            scan_complete=False,
             is_unmatched=False
         )
+        if not force_reprocess:
+            campaigns = campaigns.filter(scan_complete=True)
         folder_data = [
             {"path": campaign.path, "is_dir": True}
             for campaign in campaigns
@@ -59,6 +65,11 @@ def process_data_points():
     def get_data_points_to_process(dp_data):
         from src.campaigns.models import DataPoint
         paths = [data["path"] for data in dp_data]
+        context = get_current_context()
+        force_reprocess = get_param_from_context(context, "force_reprocess")
+        if force_reprocess:
+            logger.info("Force reprocess is enabled, processing all data points")
+            return dp_data
         existing = DataPoint.objects.filter(path__in=paths).values_list(
             "path",
             flat=True
@@ -90,10 +101,11 @@ def process_data_points():
     def build_data_points(data_points_data):
         from src.campaigns.directors import DataPointDirector
         directors = []
+        logger.info("Building matched data points", data_points_data)
         for dp_data in data_points_data:
-            director = DataPointDirector(dp_data)
+            director = DataPointDirector()
             logger.info("Building data point %s", dp_data["name"])
-            director.construct()
+            director.construct(dp_data)
             pickled_data = pickle.dumps(director)
             encoded_data = base64.b64encode(pickled_data).decode('utf-8')
             directors.append(encoded_data)
