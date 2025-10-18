@@ -17,7 +17,8 @@ PATH_LEVELS = [
     ("campaign", "campaign"),
     ("data_point", "data_point"),
     ("category", "category"),
-    ("measurement", "measurement")
+    ("measurement", "measurement"),
+    ("complimentary_data", "complimentary_data")
 ]
 
 PATH_LEVELS_MODELS = {
@@ -25,13 +26,15 @@ PATH_LEVELS_MODELS = {
     "campaign": "Campaign",
     "data_point": "DataPoint",
     "category": "Category",
-    "measurement": "Measurement"
+    "measurement": "Measurement",
+    "complimentary_data": "ComplimentaryData"
 }
 
 PARENT_MAP = {
     "campaign": ("Coverage", "coverage_id"),
     "data_point": ("Campaign", "campaign_id"),
-    "measurement": ("DataPoint", "data_point_id")
+    "measurement": ("DataPoint", "data_point_id"),
+    "complimentary_data": ("Campaign", "campaign_id")
 }
 
 
