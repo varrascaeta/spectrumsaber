@@ -149,28 +149,6 @@ class FTPClient():
         return f"FTP:{self.username}@{self.host}"
 
 
-class DatabaseContext():
-    def __enter__(self):
-        sys.path.append('./spectrumsaber/')  # TODO: Change this to env var
-        os.environ.setdefault("DJANGO_SETTINGS_MODULE", "service.settings")
-        import django
-        django.setup()
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        pass
-
-
-def dynamic_import(module: str, name: str):
-    module = importlib.import_module(module)
-    return getattr(module, name)
-
-
-def get_dirs_to_process(self, filepath: str) -> list[str]:
-    with open(filepath) as f:
-        return json.load(f)
-
-
 def get_param_from_context(context: Context, param_name: str) -> str:
     dag_run = context.get("dag_run", None)
     if not dag_run:
