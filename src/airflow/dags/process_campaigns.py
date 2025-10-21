@@ -14,7 +14,7 @@ from src.airflow.operators import (
     ScanFTPDirectory,
     SetupDjango
 )
-from src.campaigns.dags.tasks import (
+from src.airflow.tasks import (
     match_patterns,
     select_is_unmatched,
     build_unmatched,

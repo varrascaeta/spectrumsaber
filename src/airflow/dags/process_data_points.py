@@ -13,7 +13,7 @@ from src.airflow.operators import (
     SetupDjango
 )
 from src.utils import get_param_from_context
-from src.campaigns.dags.tasks import (
+from src.airflow.tasks import (
     match_patterns
 )
 
