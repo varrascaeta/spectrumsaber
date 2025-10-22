@@ -1,0 +1,2 @@
+class SpectrumSaber:
+    pass

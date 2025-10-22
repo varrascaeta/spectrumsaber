@@ -12,9 +12,9 @@ from src.campaigns.models import (
     Campaign,
     DataPoint,
     Measurement,
-    UnmatchedCampaign,
-    UnmatchedDataPoint,
-    UnmatchedMeasurement
+    UnmatchedFile,
+    PathRule,
+    PATH_LEVELS
 )
 from src.places.models import District
 from src.places.admin import DistrictFilter
@@ -101,6 +101,28 @@ class DataPointFilter(AutocompleteFilter):
     field_name = "data_point"
 
 
+class CategoryFilter(AutocompleteFilter):
+    title = "Category"
+    field_name = "category"
+
+
+class LevelFilter(admin.SimpleListFilter):
+    title = "Level"  # título que aparece en el sidebar del admin
+    parameter_name = "level"  # el nombre del parámetro en la URL
+
+    def lookups(self, request, model_admin):
+        # Muestra las opciones en el sidebar del admin
+        # PATH_LEVELS debe ser una lista de tuplas, ej: [('root', 'Root'), ('sub', 'Subfolder')]
+        return PATH_LEVELS
+
+    def queryset(self, request, queryset):
+        # Aplica el filtro cuando se selecciona una opción
+        if self.value():
+            return queryset.filter(level=self.value())
+        return queryset
+
+
+
 # Admins
 class SpectrumsaberAdmin(admin.AdminSite):
     index_title = "SpectrumSaber Administration"
@@ -109,7 +131,7 @@ class SpectrumsaberAdmin(admin.AdminSite):
 
 class BaseFileAdmin(admin.ModelAdmin):
     list_display = [
-        "__str__", "ftp_created_at", "updated_at"
+        "__str__", "ftp_created_at", "last_synced_at"
     ]
     readonly_fields = ("created_at", "updated_at")
 
@@ -176,6 +198,9 @@ class CampaignAdmin(BaseFileAdmin):
         DataPointInline
     ]
 
+    def get_queryset(self, request):
+        return super().get_queryset(request).filter(is_unmatched=False)
+
     def get_list_display(self, request):
         base = super().get_list_display(request)
         return base[:1] + ["get_coverage", "get_district", "date"] + base[1:]
@@ -207,7 +232,6 @@ class CampaignAdmin(BaseFileAdmin):
 
     get_coverage.short_description = "Coverage"
     get_district.short_description = "District"
-
 
 @admin.register(DataPoint)
 class DataPointAdmin(BaseFileAdmin):
@@ -267,6 +291,7 @@ class DataPointAdmin(BaseFileAdmin):
 class MeasurementAdmin(BaseFileAdmin):
     list_filter = (
         DataPointFilter,
+        CategoryFilter,
     )
 
     def get_list_display(self, request):
@@ -317,16 +342,24 @@ class CategoryAdmin(admin.ModelAdmin):
     ]
 
 
-@admin.register(UnmatchedCampaign)
-class UnmatchedCampaignAdmin(CampaignAdmin):
-    pass
+@admin.register(UnmatchedFile)
+class UnmatchedFileAdmin(BaseFileAdmin):
+    search_fields = ("name", "path", "level")
+    list_display = [
+        "name", "level", "ftp_created_at", "last_synced_at"
+    ]
+
+    list_filter = [
+        LevelFilter,
+    ]
 
 
-@admin.register(UnmatchedDataPoint)
-class UnmatchedDataPointAdmin(DataPointAdmin):
-    pass
+@admin.register(PathRule)
+class PathRuleAdmin(admin.ModelAdmin):
+    list_display = [
+        "name", "pattern", "level", "order"
+    ]
 
-
-@admin.register(UnmatchedMeasurement)
-class UnmatchedMeasurementAdmin(MeasurementAdmin):
-    pass
+    list_filter = [
+        LevelFilter,
+    ]

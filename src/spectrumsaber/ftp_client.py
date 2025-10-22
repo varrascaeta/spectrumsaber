@@ -1,15 +1,12 @@
 # Standard imports
-import importlib
 import json
 import logging
 import os
 import re
-import sys
 import signal
 from datetime import datetime, UTC
 # Extra imports
 from ftplib import FTP, error_perm
-from airflow.utils.context import Context
 
 
 logger = logging.getLogger(__name__)
@@ -87,12 +84,12 @@ class FTPClient():
                     parsed_files.append(parsed)
             return parsed_files
         except error_perm as e:
-            logger.error(f"Error scanning {path}: {e}")
-            with open("permission_errors.txt", "a") as f:
+            logger.error("Error scanning %s: %s", path, e)
+            with open("permission_errors.txt", "a", encoding="utf-8") as f:
                 f.write(f"{path}\n")
             return []
         except Exception as e:
-            logger.error(f"Error scanning {path}: {e}")
+            logger.error("Error scanning %s: %s", path, e)
             return []
 
     def parse_line(self, path, line):
@@ -109,7 +106,7 @@ class FTPClient():
                 "is_dir": kind == "<DIR>",
             }
         else:
-            logger.error(f"Line {line} does not match FTP pattern")
+            logger.error("Line  %s does not match FTP pattern", line)
             return {}
 
     def get_files_at_depth(self, path: str, depth: int) -> list[dict]:
@@ -125,59 +122,5 @@ class FTPClient():
             current_depth += 1
         return files
 
-    def recursive_scan(self, start_path: str) -> dict:
-        result = {}
-        subdirs = self.get_dir_data(start_path)
-        for subdir in subdirs:
-            filename = subdir["name"]
-            if subdir["is_dir"]:
-                result[filename] = self.map_to_json(subdir["path"])
-            else:
-                if result.get(filename):
-                    result[filename].append(subdir["path"])
-                else:
-                    result[filename] = [filename]
-        return result
-
-    def map_to_json(self, start_path: str) -> list[dict]:
-        ftp_structure = self.recursive_scan(start_path)
-        with open("ftp_structure.json", "w") as f:
-            json.dump(ftp_structure, f, default=str)
-        logger.info("FTP structure saved to ftp_structure.json")
-
     def __str__(self) -> str:
         return f"FTP:{self.username}@{self.host}"
-
-
-class DatabaseContext():
-    def __enter__(self):
-        sys.path.append('./spectrumsaber/')  # TODO: Change this to env var
-        os.environ.setdefault("DJANGO_SETTINGS_MODULE", "service.settings")
-        import django
-        django.setup()
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        pass
-
-
-def dynamic_import(module: str, name: str):
-    module = importlib.import_module(module)
-    return getattr(module, name)
-
-
-def get_dirs_to_process(self, filepath: str) -> list[str]:
-    with open(filepath) as f:
-        return json.load(f)
-
-
-def get_param_from_context(context: Context, param_name: str) -> str:
-    dag_run = context.get("dag_run", None)
-    if not dag_run:
-        logger.warning("DAG run not found in context")
-        param = None
-    else:
-        conf = dag_run.conf
-        param = conf.get(param_name)
-    logger.info("Param %s: %s", param_name, param)
-    return param
