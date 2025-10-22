@@ -5,7 +5,6 @@ from django.utils.safestring import mark_safe
 # Extra imports
 from rangefilter.filters import DateRangeFilter
 from admin_auto_filters.filters import AutocompleteFilter
-import django_filters
 # Project imports
 from src.campaigns.models import (
     Category,
@@ -100,6 +99,11 @@ class CampaignFilter(AutocompleteFilter):
 class DataPointFilter(AutocompleteFilter):
     title = "Data Point"
     field_name = "data_point"
+
+
+class CategoryFilter(AutocompleteFilter):
+    title = "Category"
+    field_name = "category"
 
 
 class LevelFilter(admin.SimpleListFilter):
@@ -287,6 +291,7 @@ class DataPointAdmin(BaseFileAdmin):
 class MeasurementAdmin(BaseFileAdmin):
     list_filter = (
         DataPointFilter,
+        CategoryFilter,
     )
 
     def get_list_display(self, request):

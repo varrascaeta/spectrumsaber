@@ -65,6 +65,7 @@ class BaseFile(models.Model):
 
     class Meta:
         abstract = True
+        ordering = ["path"]
 
 
 # Measurements
@@ -142,6 +143,16 @@ class CategoryType():
         slug_alias = alias.lower().replace(" ", "")
         for category, aliases in cls.SLUG_ALIASES.items():
             if slug_alias in aliases:
+                return category
+        return None
+
+    @classmethod
+    def  get_by_path(cls, path: str) -> str:
+        possible_categories = path.split("/")
+        for path_part in possible_categories:
+            filename = path_part.lower().replace(" ", "")
+            category = cls.get_by_alias(filename)
+            if category:
                 return category
         return None
 
