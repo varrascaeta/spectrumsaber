@@ -59,6 +59,7 @@ DJANGO_APPS = [
 ]
 
 LOCAL_APPS = [
+    'src.users.apps.UsersConfig',
     'src.campaigns.apps.CampaignsConfig',
     'src.places.apps.PlacesConfig',
 ]
@@ -138,6 +139,8 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+
+AUTH_USER_MODEL = 'users.SpectrumsaberUser'
 
 
 # Internationalization
