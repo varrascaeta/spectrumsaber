@@ -161,11 +161,12 @@ cython_debug/
 *.pid
 *.log*
 *logs/*
+*/logs/scheduler/*
 *.db
 
 
 # Credentials
-credentials/*.json
+secrets.env
 
 # Static files
 static/

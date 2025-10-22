@@ -66,7 +66,7 @@ LOCAL_APPS = [
 THIRD_PARTY_APPS = [
     'rangefilter',
     'admin_auto_filters',
-    'graphene_django',
+    'strawberry_django',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + LOCAL_APPS + THIRD_PARTY_APPS
@@ -98,6 +98,10 @@ TEMPLATES = [
         },
     },
 ]
+
+STRAWBERRY_DJANGO = {
+    "DEFAULT_PK_FIELD_NAME": "id",
+}
 
 WSGI_APPLICATION = 'service.wsgi.application'
 

@@ -29,7 +29,9 @@ x-airflow-common:
     # If you want to use it, outcomment it and replace airflow.cfg with the name of your config file
     AIRFLOW_CONFIG: '/app/project/src/airflow/config/airflow.cfg'
   volumes:
-    - .:/app/project/
+    - type: bind
+      source: .
+      target: /app/project
   env_file:
     - environments/production.env
   user: "${AIRFLOW_UID:-50000}:0"
@@ -117,8 +119,6 @@ services:
       - testing
     image: 'postgres:16'
     restart: always
-    environment:
-    - POSTGRES_PASSWORD=postgres
     ports:
     - '9432:5432'
 
@@ -144,9 +144,9 @@ services:
       - spectrumsaber
     image: postgres:13
     environment:
-      POSTGRES_USER: airflow
-      POSTGRES_PASSWORD: airflow
-      POSTGRES_DB: airflow
+      POSTGRES_USER: ${AIRFLOW_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${AIRFLOW_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${AIRFLOW_POSTGRES_DB}
     volumes:
       - postgres-db-volume:/var/lib/postgresql/data
     healthcheck:
@@ -352,8 +352,6 @@ services:
           echo "   https://airflow.apache.org/docs/apache-airflow/stable/howto/docker-compose/index.html#before-you-begin"
           echo
         fi
-        mkdir -p /sources/logs /sources/dags /sources/plugins
-        chown -R "${AIRFLOW_UID}:0" /sources/{logs,dags,plugins}
         exec /entrypoint airflow version
     # yamllint enable rule:line-length
     environment:
