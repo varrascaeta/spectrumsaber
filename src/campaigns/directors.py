@@ -4,6 +4,7 @@ from src.campaigns.builders import (
     CoverageBuilder,
     CampaignBuilder,
     DataPointBuilder,
+    MeasurementBuilder,
     UnmatchedBuilder
 )
 from src.campaigns.models import BaseFile
@@ -85,3 +86,16 @@ class DataPointDirector(BaseDirector):
         # DataPoint attributes
         self._builder.build_order(file_data.get("order", 0))
         logger.info("Built DataPoint: %s", self._builder.instance.__dict__)
+
+
+class MeasurementDirector(BaseDirector):
+    def _get_builder(self) -> BaseBuilder:
+        return MeasurementBuilder()
+    
+    def construct(self, file_data: dict) -> BaseFile:
+        super().construct(file_data)
+
+        # Measurement attributes
+
+        self._builder.build_category(file_data["path"])
+        logger.info("Built Measurement: %s", self._builder.instance.__dict__)

@@ -4,15 +4,20 @@ import abc
 import logging
 from dateutil.parser import parse
 from datetime import datetime, timezone
+# Django imports
+from django.db import IntegrityError
 # Project imports
 from src.campaigns.models import (
     BaseFile,
     Campaign,
     Coverage,
     DataPoint,
+    Measurement,
     ComplimentaryData,
+    Category,
     PathRule,
-    UnmatchedFile
+    UnmatchedFile,
+    CategoryType
 )
 from src.places.models import District
 from src.campaigns.models import PATH_LEVELS
@@ -197,3 +202,30 @@ class DataPointBuilder(BaseBuilder):
 class ComplimentaryDataBuilder(BaseBuilder):
     def _get_model(self):
         return ComplimentaryData
+
+    def build_parent(self, parent_path: str):
+        return # ComplimentaryData has no parent
+
+
+class MeasurementBuilder(BaseBuilder):
+    def _get_model(self):
+        return Measurement
+
+    def build_parent(self, parent_path: str):
+        data_point = DataPoint.objects.get(path=parent_path)
+        self.instance.data_point_id = data_point.id
+
+    def build_category(self, path: str):
+        category_name = CategoryType.get_by_path(path)
+        category = None
+        if category_name:
+            try:
+                category, created = Category.objects.get_or_create(name=category_name)
+            except IntegrityError:
+                category = Category.objects.get(name=category_name)
+                created = False
+            logger.info("%s category %s", "Created" if created else "Found", category)
+        if category:
+            self.instance.category_id = category.id
+        else:
+            logger.warning("No category found for path %s", path)
