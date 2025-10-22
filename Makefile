@@ -22,7 +22,7 @@ migrate:
 createsuperuser:
 	uv run $(ENV_CFG) service/manage.py createsuperuser --noinput
 airflow:
-	docker compose --env-file environments/production.env --env-file secrets.env --profile airflow up -d
+	docker compose --env-file environments/production.env --env-file secrets.env --profile airflow up --scale airflow-worker=4 -d
 app:
 	docker compose --env-file environments/production.env --env-file secrets.env --profile app up -d
 app-stop:
