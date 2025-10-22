@@ -12,7 +12,7 @@ from src.airflow.operators import (
     ScanFTPDirectory,
     SetupDjango
 )
-from src.utils import get_param_from_context
+from src.airflow.utils import get_param_from_context
 from src.airflow.tasks import (
     match_patterns
 )
@@ -20,7 +20,6 @@ from src.airflow.tasks import (
 
 # Globals
 logger = logging.getLogger(__name__)
-coverage_param = "{{ params.coverage_name }}"
 
 
 @dag(

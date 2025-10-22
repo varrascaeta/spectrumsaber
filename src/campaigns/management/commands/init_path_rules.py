@@ -8,16 +8,17 @@ from src.campaigns.models import PathRule
 from src.logging_cfg import setup_logger
 logger = setup_logger(__name__)
 
-
-DEFAULT_PATH_RULES = [
+COVERAGE_PATH_RULES = [
     {
         'name': 'Coverage',
         'order': 1,
         'pattern': '^(?P<name>[A-Z]+)$',
         'date_format': None,
         'level': 'coverage'
-    },
-    # Campaign level patterns
+    }
+]
+
+CAMPAIGN_PATH_RULES = [
     {
         'name': 'Campaign ID-YYYYMMDD-GEO',
         'order': 1,
@@ -52,8 +53,10 @@ DEFAULT_PATH_RULES = [
         'pattern': '^(?P<id>\\d{1}\\.\\d{1})-(?P<date>\\d{8})-(?P<metadata__geo_code>.+)$',
         'date_format': None,
         'level': 'campaign'
-    },
-    # DataPoint level patterns
+    }
+]
+
+DATA_POINT_PATH_RULES = [
     {
         'name': 'Urbano LN-material',
         'order': 1,
@@ -97,7 +100,6 @@ DEFAULT_PATH_RULES = [
         'level': 'data_point'
     }
 ]
-
 
 
 class Command(BaseCommand):

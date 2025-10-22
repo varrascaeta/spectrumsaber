@@ -91,7 +91,7 @@ class DataPointDirector(BaseDirector):
 class MeasurementDirector(BaseDirector):
     def _get_builder(self) -> BaseBuilder:
         return MeasurementBuilder()
-    
+
     def construct(self, file_data: dict) -> BaseFile:
         super().construct(file_data)
 

@@ -20,12 +20,12 @@ from src.airflow.tasks import (
     build_unmatched,
     commit_to_db
 )
-from src.utils import get_param_from_context
+from src.airflow.utils import get_param_from_context
 
 
 # Globals
 logger = logging.getLogger(__name__)
-coverage_param = "{{ params.coverage_name }}"
+COVERAGE_PARAM = "{{ params.coverage_name }}"
 
 
 @dag(
@@ -86,7 +86,7 @@ def process_campaigns():
 
     scan_campaigns = ScanFTPDirectory(
         folder_data={
-            "path": settings.BASE_FTP_PATH + "/" + coverage_param,
+            "path": settings.BASE_FTP_PATH + "/" + COVERAGE_PARAM,
             "is_dir": True,
         },
         task_id="scan_campaigns",
