@@ -4,11 +4,14 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path
 from django.views.generic import TemplateView
+from django.views.decorators.csrf import csrf_exempt
+
+
 # Extra imports
-from strawberry.django.views import GraphQLView
+from strawberry.django.views import AsyncGraphQLView
 
 # Project imports
-from src.campaigns.schema import schema
+from service.schema import schema
 
 
 urlpatterns = [
@@ -19,6 +22,6 @@ urlpatterns = [
     ),
     # Django Admin, use {% url 'admin:index' %}
     path("admin/", admin.site.urls),
-    path('graphql', GraphQLView.as_view(schema=schema)),
+    path('graphql', csrf_exempt(AsyncGraphQLView.as_view(schema=schema)), name='graphql'),
     
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

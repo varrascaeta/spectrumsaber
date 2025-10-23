@@ -14,6 +14,8 @@ import os
 from pathlib import Path
 from django.utils.log import DEFAULT_LOGGING
 from django.contrib.admin.sites import AdminSite
+from gqlauth.settings_type import GqlAuthSettings
+
 
 AdminSite.index_title = "SpectrumSaber"
 AdminSite.site_header = "SpectrumSaber Administration"
@@ -68,7 +70,8 @@ THIRD_PARTY_APPS = [
     'rangefilter',
     'admin_auto_filters',
     'strawberry_django',
-    'django_filters'
+    'django_filters',
+    'gqlauth',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + LOCAL_APPS + THIRD_PARTY_APPS
@@ -81,6 +84,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'gqlauth.core.middlewares.django_jwt_middleware'
 ]
 
 ROOT_URLCONF = 'service.urls'
@@ -140,6 +144,10 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",
+]
+
 AUTH_USER_MODEL = 'users.SpectrumsaberUser'
 
 
@@ -167,3 +175,15 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 BASE_FTP_PATH = os.getenv("BASE_FTP_PATH")
+
+# Email settings
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+
+# GraphQL
+
+GQL_AUTH = GqlAuthSettings(
+    LOGIN_REQUIRE_CAPTCHA=False,
+    REGISTER_REQUIRE_CAPTCHA=False,
+)
