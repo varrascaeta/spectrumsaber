@@ -1,5 +1,6 @@
 import strawberry_django
 from strawberry import auto
+from typing import Optional
 
 from src.campaigns.models import (
     Campaign,
@@ -18,6 +19,9 @@ class CoverageFilter:
     id: auto
     name: auto
 
+    class Meta:
+        lookups = True
+
 
 @strawberry_django.filter(Campaign)
 class CampaignFilter:
@@ -25,8 +29,11 @@ class CampaignFilter:
     name: auto
     date: auto
     external_id: auto
-    district: 'DistrictFilter'
-    coverage: CoverageFilter
+    district: Optional['DistrictFilter']
+    coverage: Optional['CoverageFilter']
+
+    class Meta:
+        lookups = True
 
 
 @strawberry_django.filter(Category)
@@ -34,20 +41,29 @@ class CategoryFilter:
     id: auto
     name: auto
 
+    class Meta:
+        lookups = True
+
 
 @strawberry_django.filter(DataPoint)
 class DataPointFilter:
     id: auto
     name: auto
-    campaign: CampaignFilter
+    campaign: Optional[CampaignFilter]
+
+    class Meta:
+        lookups = True
 
 
 @strawberry_django.filter(Measurement)
 class MeasurementFilter:
     id: auto
     name: auto
-    category: CategoryFilter
-    data_point: DataPointFilter
+    category: Optional[CategoryFilter]
+    data_point: Optional[DataPointFilter]
+
+    class Meta:
+        lookups = True
 
 
 @strawberry_django.filter(District)
@@ -55,17 +71,26 @@ class DistrictFilter:
     id: auto
     name: auto
 
+    class Meta:
+        lookups = True
+
 
 @strawberry_django.filter(MeasuringTool)
 class MeasuringToolFilter:
     id: auto
     name: auto
 
+    class Meta:
+        lookups = True
+
 
 @strawberry_django.filter(Spreadsheet)
 class SpreadsheetFilter:
     id: auto
     name: auto
+
+    class Meta:
+        lookups = True
 
 
 # Types
@@ -90,6 +115,7 @@ class CampaignType:
     name: auto
     date: auto
     external_id: auto
+    metadata: auto
     district: DistrictType
     coverage: CoverageType
     data_points: list['DataPointType']
