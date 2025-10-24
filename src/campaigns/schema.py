@@ -1,41 +1,133 @@
-# schema.py
-
+# Strawberry imports
 import strawberry
 import strawberry_django
-from strawberry_django.optimizer import DjangoOptimizerExtension
-
+from strawberry.types import Info
+# gqlauth imports
+from gqlauth.core.types_ import GQLAuthError, GQLAuthErrors
+from gqlauth.core.utils import get_user
+# Project imports
 from src.campaigns.types import *
 
-@strawberry.type
-class Query:
-    # Coverage
-    coverage: CoverageType = strawberry_django.field(filters=CoverageFilter)
-    coverages: list[CoverageType] = strawberry_django.field(filters=CoverageFilter)
-    # Campaign
-    campaign: CampaignType = strawberry_django.field(filters=CampaignFilter)
-    campaigns: list[CampaignType] = strawberry_django.field(filters=CampaignFilter)
-    # Data Point
-    data_point: DataPointType = strawberry_django.field(filters=DataPointFilter)
-    data_points: list[DataPointType] = strawberry_django.field(filters=DataPointFilter)
-    # Category
-    category: CategoryType = strawberry_django.field(filters=CategoryFilter)
-    categories: list[CategoryType] = strawberry_django.field(filters=CategoryFilter)
-    # Measurement
-    measurement: MeasurementType = strawberry_django.field(filters=MeasurementFilter)
-    measurements: list[MeasurementType] = strawberry_django.field(filters=MeasurementFilter)
-    # District
-    district: DistrictType = strawberry_django.field(filters=DistrictFilter)
-    districts: list[DistrictType] = strawberry_django.field(filters=DistrictFilter)
-    # Measuring Tool
-    measuring_tool: MeasuringToolType = strawberry_django.field(filters=MeasuringToolFilter)
-    measuring_tools: list[MeasuringToolType] = strawberry_django.field(filters=MeasuringToolFilter)
-    # Spreadsheet
-    spreadsheet: SpreadsheetType = strawberry_django.field(filters=SpreadsheetFilter)
-    spreadsheets: list[SpreadsheetType] = strawberry_django.field(filters=SpreadsheetFilter )
 
-schema = strawberry.Schema(
-    query=Query,
-    extensions=[
-        DjangoOptimizerExtension,  # not required, but highly recommended
-    ],
-)
+@strawberry.type
+class CampaignQuery:
+    # Coverage
+    @strawberry.field
+    def coverages(
+        self,
+        info: Info,
+        filters: CoverageFilter | None = None,
+    ) -> list[CoverageType]:
+        user = get_user(info)
+        if not user.is_authenticated:
+            raise GQLAuthError(code=GQLAuthErrors.UNAUTHENTICATED)
+
+        qs = Coverage.objects.all()
+        if filters:
+            qs = strawberry_django.filters.apply(filters, qs)
+        return qs
+
+    @strawberry.field
+    def campaigns(
+        self,
+        info: Info,
+        filters: CampaignFilter | None = None,
+    ) -> list[CampaignType]:
+        user = get_user(info)
+        if not user.is_authenticated:
+            raise GQLAuthError(code=GQLAuthErrors.UNAUTHENTICATED)
+
+        qs = Campaign.objects.all()
+        if filters:
+            qs = strawberry_django.filters.apply(filters, qs)
+        return qs
+
+    @strawberry.field
+    def data_points(
+        self,
+        info: Info,
+        filters: DataPointFilter | None = None,
+    ) -> list[DataPointType]:
+        user = get_user(info)
+        if not user.is_authenticated:
+            raise GQLAuthError(code=GQLAuthErrors.UNAUTHENTICATED)
+
+        qs = DataPoint.objects.all()
+        if filters:
+            qs = strawberry_django.filters.apply(filters, qs)
+        return qs
+
+    @strawberry.field
+    def categories(
+        self,
+        info: Info,
+        filters: CategoryFilter | None = None,
+    ) -> list[CategoryType]:
+        user = get_user(info)
+        if not user.is_authenticated:
+            raise GQLAuthError(code=GQLAuthErrors.UNAUTHENTICATED)
+
+        qs = Category.objects.all()
+        if filters:
+            qs = strawberry_django.filters.apply(filters, qs)
+        return qs
+
+    @strawberry.field
+    def measurements(
+        self,
+        info: Info,
+        filters: MeasurementFilter | None = None,
+    ) -> list[MeasurementType]:
+        user = get_user(info)
+        if not user.is_authenticated:
+            raise GQLAuthError(code=GQLAuthErrors.UNAUTHENTICATED)
+
+        qs = Measurement.objects.all()
+        if filters:
+            qs = strawberry_django.filters.apply(filters, qs)
+        return qs
+
+    @strawberry.field
+    def districts(
+        self,
+        info: Info,
+        filters: DistrictFilter | None = None,
+    ) -> list[DistrictType]:
+        user = get_user(info)
+        if not user.is_authenticated:
+            raise GQLAuthError(code=GQLAuthErrors.UNAUTHENTICATED)
+
+        qs = District.objects.all()
+        if filters:
+            qs = strawberry_django.filters.apply(filters, qs)
+        return qs
+
+    @strawberry.field
+    def measuring_tools(
+        self,
+        info: Info,
+        filters: MeasuringToolFilter | None = None,
+    ) -> list[MeasuringToolType]:
+        user = get_user(info)
+        if not user.is_authenticated:
+            raise GQLAuthError(code=GQLAuthErrors.UNAUTHENTICATED)
+
+        qs = MeasuringTool.objects.all()
+        if filters:
+            qs = strawberry_django.filters.apply(filters, qs)
+        return qs
+
+    @strawberry.field
+    def spreadsheets(
+        self,
+        info: Info,
+        filters: SpreadsheetFilter | None = None,
+    ) -> list[SpreadsheetType]:
+        user = get_user(info)
+        if not user.is_authenticated:
+            raise GQLAuthError(code=GQLAuthErrors.UNAUTHENTICATED)
+
+        qs = Spreadsheet.objects.all()
+        if filters:
+            qs = strawberry_django.filters.apply(filters, qs)
+        return qs
