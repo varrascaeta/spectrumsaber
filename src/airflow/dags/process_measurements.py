@@ -10,7 +10,7 @@ from airflow.operators.python import get_current_context
 # Project imports
 from src.airflow.operators import SetupDjango
 from src.airflow.utils import get_param_from_context
-from src.spectrumsaber.ftp_client import FTPClient
+from spectrumsaber.client import FTPClient
 
 
 # Globals

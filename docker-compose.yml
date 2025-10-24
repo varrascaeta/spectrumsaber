@@ -56,6 +56,7 @@ services:
     command: bash -c "python service/manage.py runserver 0.0.0.0:8000"
     env_file:
       - environments/production.env
+      - secrets.env
     volumes:
       - .:/app/project/
     ports:
@@ -80,6 +81,7 @@ services:
     command: bash -c "sleep 5 && python service/manage.py migrate"
     env_file:
       - environments/production.env
+      - secrets.env
     volumes:
       - .:/app/project/
     depends_on:
@@ -103,6 +105,9 @@ services:
     volumes:
       - spectrumsaber-db-data:/var/lib/postgresql/data
       - .:/app/project/
+    env_file:
+      - environments/production.env
+      - secrets.env
     environment:
       - POSTGRES_HOST_AUTH_METHOD=trust
       - POSTGRES_USER

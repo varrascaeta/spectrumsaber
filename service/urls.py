@@ -2,7 +2,7 @@
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, re_path
 from django.views.generic import TemplateView
 from django.views.decorators.csrf import csrf_exempt
 
@@ -22,6 +22,6 @@ urlpatterns = [
     ),
     # Django Admin, use {% url 'admin:index' %}
     path("admin/", admin.site.urls),
-    path('graphql', csrf_exempt(AsyncGraphQLView.as_view(schema=schema)), name='graphql'),
-    
+    path("admin", admin.site.urls),
+    re_path(r'^graphql/?$', csrf_exempt(AsyncGraphQLView.as_view(schema=schema)), name='graphql'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

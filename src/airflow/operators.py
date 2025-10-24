@@ -3,7 +3,7 @@ import os
 import sys
 import logging
 # Project imports
-from src.spectrumsaber.ftp_client import FTPClient
+from spectrumsaber.client import FTPClient
 # Airflow imports
 from airflow.models.baseoperator import BaseOperator
 
