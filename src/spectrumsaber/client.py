@@ -16,7 +16,13 @@ class SpectrumSaberClient:
             headers["Authorization"] = f"JWT {self.__token__}"
         return headers
 
-    def __refresh_auth_token__(self):
+    def __refresh_auth_token__(self) -> bool:
+        if not self.__refresh_token__:
+            logger.error(
+                "No refresh token available to refresh authentication. " \
+                "Please register or login with your credentials."
+            )
+            return False
         query = """
         mutation RefreshToken ($refreshToken: String!, $revokeRefreshToken: Boolean!) {
             refreshToken (refreshToken: $refreshToken, revokeRefreshToken: $revokeRefreshToken) {
@@ -36,25 +42,33 @@ class SpectrumSaberClient:
         if result.get("data") and result["data"]["refreshToken"]["success"]:
             self.__token__ = result["data"]["refreshToken"]["token"]["token"]
             logger.info("Refreshed token successfully.")
+            return True
         else:
             logger.error("Failed to refresh token: %s", result.get("errors"))
+            return False
 
     def query(self, query: str, variables: dict | None = None):
         payload = {"query": query}
         if variables:
             payload["variables"] = variables
 
-        resp = requests.post(GRAPHQL_URL, json=payload, headers=self.__get_headers__())
+        resp = requests.post(
+            GRAPHQL_URL,
+            timeout=10,
+            json=payload,
+            headers=self.__get_headers__()
+        )
         data = resp.json()
         if data.get("errors"):
             for error in data["errors"]:
                 if "Unauthenticated" in error.get("message", ""):
                     logger.warning("Token expired, attempting to refresh.")
-                    self.__refresh_auth_token__()
-                    return self.query(query, variables)
+                    refreshed = self.__refresh_auth_token__()
+                    if refreshed:
+                        return self.query(query, variables)
         return data
 
-    def register_user(self, username: str, email: str, password: str, password_confirmation: str):
+    def register(self, username: str, email: str, password: str, password_confirmation: str):
         query = """
         mutation Register($username: String!, $email: String!, $password1: String!, $password2: String!) {
             register(username: $username, email: $email, password1: $password1, password2: $password2) {
@@ -76,7 +90,7 @@ class SpectrumSaberClient:
             logger.info("Registered user %s successfully.", username)
         return result
 
-    def authenticate_user(self, username: str, password: str):
+    def login(self, username: str, password: str):
         query = """
         mutation TokenAuth($username: String!, $password: String!) {
             tokenAuth(username: $username, password: $password) {
