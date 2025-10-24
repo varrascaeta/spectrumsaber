@@ -36,10 +36,12 @@ COVERAGE_PARAM = "{{ params.coverage_name }}"
     tags=["campaigns"],
     params={
         "coverage_name": Param(
+            type="string",
             description="Name of the coverage to process",
             default="AGRICULTURA"
         ),
         "force_reprocess": Param(
+            type="boolean",
             description="Whether to force reprocessing of campaigns",
             default=False
         )

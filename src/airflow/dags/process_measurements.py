@@ -41,6 +41,7 @@ def get_measurement_data_recursive(ftp_client: FTPClient, path: str) -> list:
     tags=["data_points"],
     params={
         "coverage_name": Param(
+            type="string",
             description="Name of the coverage to process",
             default="HIDROLOGIA"
         )

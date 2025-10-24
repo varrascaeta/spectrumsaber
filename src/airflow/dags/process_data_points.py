@@ -30,10 +30,12 @@ logger = logging.getLogger(__name__)
     tags=["data_points"],
     params={
         "coverage_name": Param(
+            type="string",
             description="Name of the coverage to process",
             default="HIDROLOGIA"
         ),
         "force_reprocess": Param(
+            type="boolean",
             description="Whether to force reprocessing of data points",
             default=False
         )
