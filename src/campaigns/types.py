@@ -9,8 +9,6 @@ from src.campaigns.models import (
     DataPoint,
     Measurement,
     District,
-    MeasuringTool,
-    Spreadsheet
 )
 
 # Filters
@@ -74,25 +72,6 @@ class DistrictFilter:
     class Meta:
         lookups = True
 
-
-@strawberry_django.filter(MeasuringTool)
-class MeasuringToolFilter:
-    id: auto
-    name: auto
-
-    class Meta:
-        lookups = True
-
-
-@strawberry_django.filter(Spreadsheet)
-class SpreadsheetFilter:
-    id: auto
-    name: auto
-
-    class Meta:
-        lookups = True
-
-
 # Types
 
 @strawberry_django.type(District)
@@ -142,17 +121,3 @@ class MeasurementType:
     name: auto
     category: CategoryType
     data_point: DataPointType
-
-
-@strawberry_django.type(MeasuringTool)
-class MeasuringToolType:
-    id: auto
-    name: auto
-    campaigns: list[CampaignType]
-
-
-@strawberry_django.type(Spreadsheet)
-class SpreadsheetType:
-    id: auto
-    name: auto
-    campaigns: list[CampaignType]

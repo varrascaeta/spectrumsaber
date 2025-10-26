@@ -10,10 +10,10 @@ from django.conf import settings
 # Project imports
 from src.airflow.operators import ScanFTPDirectory, SetupDjango
 from src.airflow.tasks import (
+    get_dict_result,
     match_patterns,
-    select_is_unmatched,
-    build_unmatched,
-    commit_to_db
+    process_expanded_by_class_group,
+    check_non_empty_dict
 )
 
 
@@ -56,37 +56,28 @@ def process_coverage():
         scan_coverages.output,
         level="coverage"
     )
+    check_matched = check_non_empty_dict(apply_rules, "matched")
+    check_unmatched = check_non_empty_dict(apply_rules, "unmatched")
 
-    unmatched_coverages = select_is_unmatched(
-        apply_rules,
-        is_unmatched=True
+    matched = get_dict_result(apply_rules, "matched")
+    unmatched = get_dict_result(apply_rules, "unmatched")
+
+    process_matched = process_expanded_by_class_group(
+        "process_matched_coverages",
+        matched,
+        "CoverageDirector"
     )
 
-    matched_coverages = select_is_unmatched(
-        apply_rules,
-        is_unmatched=False
+    process_unmatched = process_expanded_by_class_group(
+        "process_unmatched_coverages",
+        unmatched,
+        "UnmatchedDirector"
     )
 
-    build_unmatched_coverages = build_unmatched.expand(
-        unmatched_file_data=unmatched_coverages
-    )
-
-    build_matched_coverages = build_matched.expand(
-        matched_coverage_data=matched_coverages
-    )
-
-    save_matched_objects = commit_to_db.expand(
-        director_data=build_matched_coverages
-    )
-
-    save_unmatched_objects = commit_to_db.expand(
-        director_data=build_unmatched_coverages
-    )
-
-    setup_django >> scan_coverages >> apply_rules
-    # Branch for unmatched and matched
-    apply_rules >> unmatched_coverages >> build_unmatched_coverages >> save_unmatched_objects
-    apply_rules >> matched_coverages >> build_matched_coverages >> save_matched_objects
+    setup_django >> scan_coverages >>  apply_rules >> [
+        check_matched >> process_matched,
+        check_unmatched >> process_unmatched
+    ]
 
 
 dag = process_coverage()

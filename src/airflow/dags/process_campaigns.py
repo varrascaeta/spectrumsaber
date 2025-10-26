@@ -4,7 +4,7 @@ import pickle
 import base64
 from datetime import datetime
 # Airflow imports
-from airflow.decorators import dag, task
+from airflow.decorators import dag, task, task_group
 from airflow.models.param import Param
 from airflow.operators.python import get_current_context
 # Django imports
@@ -15,10 +15,11 @@ from src.airflow.operators import (
     SetupDjango
 )
 from src.airflow.tasks import (
+    get_dict_result,
     match_patterns,
-    select_is_unmatched,
-    build_unmatched,
-    commit_to_db
+    check_non_empty_dict,
+    process_expanded_by_class_group,
+
 )
 from src.airflow.utils import get_param_from_context
 
@@ -69,19 +70,7 @@ def process_campaigns():
         ]
         logger.info("Found %s campaigns to process", len(to_process))
         return to_process
-
-    @task
-    def build_matched(matched_campaign_data):
-        from src.campaigns.directors import CampaignDirector
-        logger.info("Building campaign from data %s", matched_campaign_data)
-        director = CampaignDirector()
-        director.construct(matched_campaign_data)
-        pickled_data = pickle.dumps(director)
-        encoded_data = base64.b64encode(pickled_data).decode('utf-8')
-        return {"director": encoded_data, "class_name": "Campaign"}
-
-    # Define task flow
-
+    
     setup_django = SetupDjango(
         task_id="setup_django"
     )
@@ -98,42 +87,43 @@ def process_campaigns():
         scan_campaigns.output
     )
 
-    apply_rules = match_patterns(
-        file_data=campaigns_to_process,
+    splitted = match_patterns(
+        campaigns_to_process,
         level="campaign"
     )
 
-    unmatched_campaigns = select_is_unmatched(
-        apply_rules,
-        is_unmatched=True
+    check_matched = check_non_empty_dict(splitted, "matched")
+    check_unmatched = check_non_empty_dict(splitted, "unmatched")
+    check_complimentary = check_non_empty_dict(splitted, "complimentary")
+
+    matched = get_dict_result(splitted, "matched")
+    unmatched = get_dict_result(splitted, "unmatched")
+    complimentary = get_dict_result(splitted, "complimentary")
+
+
+    process_matched = process_expanded_by_class_group(
+        "process_matched_campaigns",
+        matched,
+        "CampaignDirector",
+    )
+    process_unmatched = process_expanded_by_class_group(
+        "process_unmatched_campaigns",
+        unmatched,
+        "UnmatchedDirector",
+    )
+    process_complimentary = process_expanded_by_class_group(
+        "process_complimentary_campaigns",
+        complimentary,
+        "ComplimentaryDirector",
+        recurse_dirs=True
     )
 
-    matched_campaigns = select_is_unmatched(
-        apply_rules,
-        is_unmatched=False
-    )
-
-    build_campaigns_unmatched = build_unmatched.expand(
-        unmatched_file_data=unmatched_campaigns
-    )
-
-    build_campaigns_matched = build_matched.expand(
-        matched_campaign_data=matched_campaigns
-    )
-
-    save_matched_objects = commit_to_db.expand(
-        director_data=build_campaigns_matched
-    )
-
-    save_unmatched_objects = commit_to_db.expand(
-        director_data=build_campaigns_unmatched
-    )
-
-    setup_django >> scan_campaigns >> campaigns_to_process >> apply_rules    
-    # Branch for unmatched and matched
-    apply_rules >> unmatched_campaigns >> build_campaigns_unmatched >> save_unmatched_objects
-    apply_rules >> matched_campaigns >> build_campaigns_matched >> save_matched_objects
-
+    setup_django >> scan_campaigns >> campaigns_to_process >> splitted
+    splitted >> [
+        check_matched >> process_matched,
+        check_unmatched >> process_unmatched,
+        check_complimentary >> process_complimentary
+    ]
 
 dag = process_campaigns()
 

@@ -3,6 +3,7 @@ import logging
 import requests
 # Airflow imports
 from airflow.utils.context import Context
+from spectrumsaber.client import FTPClient
 from src.airflow.types import DagInfoType, DagParamType
 
 
@@ -19,6 +20,23 @@ def get_param_from_context(context: Context, param_name: str) -> str:
         param = conf.get(param_name)
     logger.info("Param %s: %s", param_name, param)
     return param
+
+
+def get_bottom_level_file_recursive(ftp_client: FTPClient, path: str) -> list:
+    final_files = []
+    children_data = ftp_client.get_dir_data(path)
+
+    for child_data in children_data:
+        if not child_data["is_dir"]:
+            child_data["parent"] = path
+            final_files.append(child_data)
+        else:
+            files = get_bottom_level_file_recursive(
+                ftp_client,
+                child_data["path"]
+            )
+            final_files.extend(files)
+    return final_files
 
 
 def trigger_dag(dag_id: str, conf: dict) -> str:

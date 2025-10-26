@@ -8,6 +8,7 @@ from admin_auto_filters.filters import AutocompleteFilter
 # Project imports
 from src.campaigns.models import (
     Category,
+    ComplimentaryData,
     Coverage,
     Campaign,
     DataPoint,
@@ -35,14 +36,43 @@ def get_admin_link(obj, app, model, name_field="name"):
 class DataPointInline(admin.TabularInline):
     model = DataPoint
     extra = 0
-    fields = ("get_link", "order", "latitude", "longitude")
-    readonly_fields = ("get_link",)
+    fields = ("get_link", "order", "get_total_measurements")
+    readonly_fields = ("get_link", "get_total_measurements")
     ordering = ("order",)
+
+    def get_total_measurements(self, obj):
+        return obj.measurements.count()
 
     def get_link(self, obj):
         return get_admin_link(obj, "campaigns", DataPoint)
 
     get_link.short_description = "Data Point"
+    get_total_measurements.short_description = "Total Measurements"
+
+class CampaignComplements(admin.TabularInline):
+    model = ComplimentaryData
+    extra = 0
+    fields = ("name", "complement_type")
+    readonly_fields = ("get_link",)
+    ordering = ("name",)
+
+    def get_link(self, obj):
+        return get_admin_link(obj, "campaigns", ComplimentaryData)
+
+    get_link.short_description = "Complementary Data"
+
+
+class DataPointComplements(admin.TabularInline):
+    model = ComplimentaryData
+    extra = 0
+    fields = ("name", "complement_type")
+    readonly_fields = ("get_link",)
+    ordering = ("name",)
+
+    def get_link(self, obj):
+        return get_admin_link(obj, "campaigns", ComplimentaryData)
+
+    get_link.short_description = "Complementary Data"
 
 
 class MeasurementInline(admin.TabularInline):
@@ -134,6 +164,7 @@ class BaseFileAdmin(admin.ModelAdmin):
         "__str__", "ftp_created_at", "last_synced_at"
     ]
     readonly_fields = ("created_at", "updated_at")
+    search_fields = ("name", "path")
 
     def get_fieldsets(self, request, obj):
         return [
@@ -152,7 +183,6 @@ class BaseFileAdmin(admin.ModelAdmin):
                     "fields": (
                         "created_at",
                         "updated_at",
-                        "is_unmatched",
                         "last_synced_at"
                     )
                 }
@@ -195,7 +225,8 @@ class CampaignAdmin(BaseFileAdmin):
         DistrictFilter,
     )
     inlines = [
-        DataPointInline
+        DataPointInline,
+        CampaignComplements,
     ]
 
     def get_queryset(self, request):
@@ -214,7 +245,6 @@ class CampaignAdmin(BaseFileAdmin):
                         "name",
                         "external_id",
                         "coverage",
-                        "measuring_tool",
                         "district"
                     )
                 }
@@ -340,6 +370,49 @@ class CategoryAdmin(admin.ModelAdmin):
     list_display = [
         "__str__", "created_at",
     ]
+
+
+@admin.register(ComplimentaryData)
+class ComplimentaryDataAdmin(BaseFileAdmin):
+    list_display = [
+        "name", "complement_type", "ftp_created_at", "last_synced_at"
+    ]
+
+    list_filter = [
+        "complement_type",
+    ]
+
+    def get_fieldsets(self, request, obj):
+        if obj and obj.data_point:
+            data_point_fieldsets = [
+                (
+                    "Complement Details",
+                    {
+                        "fields": (
+                            "name",
+                            "complement_type",
+                            "data_point",
+                        )
+                    }
+                ),
+            ]
+            return data_point_fieldsets + super().get_fieldsets(request, obj)
+        elif obj and obj.campaign:
+             data_point_fieldsets = [
+                (
+                    "Complement Details",
+                    {
+                        "fields": (
+                            "name",
+                            "complement_type",
+                            "campaign",
+                        )
+                    }
+                ),
+            ]
+             return data_point_fieldsets + super().get_fieldsets(request, obj)
+        else:
+            return super().get_fieldsets(request, obj)
 
 
 @admin.register(UnmatchedFile)

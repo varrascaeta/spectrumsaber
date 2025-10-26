@@ -1,8 +1,10 @@
 # Standard imports
+from ast import alias
 import re
 # Django imports
 from django.db import models
 from django.utils import timezone
+from django.conf import settings
 from django.apps import apps
 # Project imports
 from src.places.models import District
@@ -85,11 +87,11 @@ class CategoryType():
     TXT_RAD_PAR_CORR = "Text Radiance Parabolic Correction"
     REF_PAR_CORR = "Reflectance Parabolic Correction"
     TXT_REF_PAR_CORR = "Text Reflectance Parabolic Correction"
+    
 
     CHOICES = (
         (RAW_DATA, RAW_DATA),
         (TXT_DATA, TXT_DATA),
-        (PHOTOMETRY, PHOTOMETRY),
         # Radiance
         (RADIANCE, RADIANCE),
         (AVG_RADIANCE, AVG_RADIANCE),
@@ -157,6 +159,59 @@ class CategoryType():
         return None
 
 
+class ComplimentaryDataType():
+    COMPLIMENTARY_DATA = "Complimentary Data"
+    FIELD_SPREADSHEET = "Field Spreadsheet"
+    LAB_SPREADSHEET = "Laboratory Spreadsheet"
+    INSTRUMENT = "Instrument"
+    PHOTOS = "Photos"
+
+
+
+    CHOICES = (
+        (COMPLIMENTARY_DATA, COMPLIMENTARY_DATA),
+        (FIELD_SPREADSHEET, FIELD_SPREADSHEET),
+        (LAB_SPREADSHEET, LAB_SPREADSHEET),
+        (INSTRUMENT, INSTRUMENT),
+        (PHOTOS, PHOTOS),
+    )
+    SLUG_ALIASES = {
+        FIELD_SPREADSHEET: ["planillacampo"],
+        LAB_SPREADSHEET: ["planillalaboratorio", "planillagabinete"],
+        PHOTOS: ["fotos", "imagenes", "images", "pictures"],
+        INSTRUMENT: ["instrumento"],
+    }
+
+    @classmethod
+    def is_complimentary(cls, file_path: str) -> bool:
+        slug_filepath = file_path.lower().replace(" ", "")
+        has_dc = "datoscomplementarios" in slug_filepath
+        if has_dc:
+            return True
+        for aliases in cls.SLUG_ALIASES.values():
+            for alias in aliases:
+                if alias in slug_filepath:
+                    return True
+        
+    @classmethod
+    def get_by_alias(cls, alias: str) -> str:
+        slug_alias = alias.lower().replace(" ", "")
+        for category, aliases in cls.SLUG_ALIASES.items():
+            if slug_alias in aliases:
+                return category
+        return None
+
+    @classmethod
+    def get_by_path(cls, path: str) -> str:
+        possible_categories = path.split("/")
+        for path_part in possible_categories:
+            filename = path_part.lower().replace(" ", "")
+            category = cls.get_by_alias(filename)
+            if category:
+                return category
+        return cls.COMPLIMENTARY_DATA
+
+
 class Category(models.Model):
     name = models.CharField(
         max_length=128,
@@ -170,17 +225,6 @@ class Category(models.Model):
 
     class Meta:
         verbose_name_plural = "Categories"
-
-
-class MeasuringTool(models.Model):
-    name = models.CharField(max_length=255)
-    model_name = models.CharField(max_length=255, null=True)
-    fov = models.FloatField(null=True)
-    measure_height = models.FloatField(null=True)
-    created_at = models.DateTimeField(default=timezone.now)
-
-    def __str__(self) -> str:
-        return self.name + " " + self.model_name
 
 
 # Campaigns
@@ -202,18 +246,7 @@ class Campaign(BaseFile):
         blank=True,
         on_delete=models.SET_NULL
     )
-    measuring_tool = models.ForeignKey(
-        MeasuringTool,
-        null=True,
-        blank=True,
-        related_name="campaigns",
-        on_delete=models.SET_NULL
-    )
-    spreadsheets = models.ManyToManyField(
-        "Spreadsheet",
-        blank=True,
-        related_name="campaigns"
-    )
+
 
 class DataPoint(BaseFile):
     # Fields
@@ -237,31 +270,45 @@ class Measurement(BaseFile):
     )
 
 
-# Spreadsheets
-class SheetType():
-    OFFICE = "Office Sheet"
-    FIELD = "Field Sheet"
-    COMPLEMENTARY = "Complimentary Data Sheet"
-
-    CHOICES = (
-        (OFFICE, "OFC"),
-        (FIELD, "FLD"),
-        (COMPLEMENTARY, "CDS"),
-    )
-
-
-class Spreadsheet(BaseFile):
-    sheet_type = models.CharField(max_length=255, choices=SheetType.CHOICES)
-    delimiter = models.CharField(max_length=1, default=";")
-
-
 class ComplimentaryData(BaseFile):
     # Relationships
+    data_point = models.ForeignKey(
+        DataPoint,
+        on_delete=models.CASCADE,
+        related_name="complementary_data",
+        blank=True,
+        null=True
+    )
+
     campaign = models.ForeignKey(
         Campaign,
         on_delete=models.CASCADE,
-        related_name="complimentary_data"
+        related_name="complementary_data",
+        blank=True,
+        null=True
     )
+
+    complement_type = models.CharField(
+        max_length=128,
+        choices=ComplimentaryDataType.CHOICES,
+        null=True
+    )
+
+    @classmethod
+    def get_parent(cls, file_path: str) -> str:
+        splitted = file_path.split("/")
+        normalized = [part.lower().replace(" ", "").strip() for part in splitted]
+        if "datoscomplementarios" in normalized:
+            index = normalized.index("datoscomplementarios")
+            if index == 3:
+                parent_path = "/".join(splitted[:index])
+                return Campaign.objects.get(path=parent_path)
+            elif index >= 4:
+                parent_path = "/".join(splitted[:4])  # up to data point level
+                return DataPoint.objects.get(path=parent_path)
+    
+    class Meta:
+        verbose_name_plural = "Complimentary Data"
 
 
 class PathRule(models.Model):
@@ -303,6 +350,12 @@ class PathRule(models.Model):
         matched_files = []
         unmatched_files = []
         for file_data in files:
+            if level == "measuremet":
+                category = CategoryType.get_by_path(file_data["path"])
+                if category:
+                    file_data["category"] = category
+                    file_data["is_unmatched"] = False
+                    continue
             for rule in rules:
                 attributes = rule.match_pattern(file_data["name"])
                 if attributes:

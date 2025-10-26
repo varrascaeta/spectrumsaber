@@ -1,6 +1,7 @@
 import abc
 from src.campaigns.builders import (
     BaseBuilder,
+    ComplimentaryBuilder,
     CoverageBuilder,
     CampaignBuilder,
     DataPointBuilder,
@@ -71,8 +72,6 @@ class CampaignDirector(BaseDirector):
         )
         self._builder.build_external_id(file_data.get("external_id", ""))
         self._builder.build_district()
-        self._builder.build_measuring_tool()
-        self._builder.build_spreadsheets()
         logger.info("Built Campaign: %s", self._builder.instance.__dict__)
 
 
@@ -99,3 +98,27 @@ class MeasurementDirector(BaseDirector):
 
         self._builder.build_category(file_data["path"])
         logger.info("Built Measurement: %s", self._builder.instance.__dict__)
+
+
+class ComplimentaryDirector(BaseDirector):
+    def _get_builder(self) -> BaseBuilder:
+        return ComplimentaryBuilder()  # Assuming ComplimentaryData uses BaseBuilder
+
+    def construct(self, file_data: dict) -> BaseFile:
+        super().construct(file_data)
+        self._builder.build_complement_type(file_data.get("path"))
+
+        # ComplimentaryData attributes
+        logger.info("Built ComplimentaryData: %s", self._builder.instance.__dict__)
+
+
+def get_director_by_class_name(class_name: str):
+    director_classes = {
+        "UnmatchedDirector": UnmatchedDirector,
+        "CoverageDirector": CoverageDirector,
+        "CampaignDirector": CampaignDirector,
+        "DataPointDirector": DataPointDirector,
+        "MeasurementDirector": MeasurementDirector,
+        "ComplimentaryDirector": ComplimentaryDirector,
+    }
+    return director_classes.get(class_name, None)

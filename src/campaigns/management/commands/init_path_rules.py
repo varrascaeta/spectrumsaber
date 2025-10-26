@@ -99,6 +99,11 @@ DATA_POINT_PATH_RULES = [
         'date_format': None,
         'level': 'data_point'
     }
+    {
+        'name': "Datos Complementarios Punto",
+        'order': 7,
+        'pattern': '^Datos Complementarios$',
+    }
 ]
 
 

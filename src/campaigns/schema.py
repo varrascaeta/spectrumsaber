@@ -101,33 +101,3 @@ class CampaignQuery:
         if filters:
             qs = strawberry_django.filters.apply(filters, qs)
         return qs
-
-    @strawberry.field
-    def measuring_tools(
-        self,
-        info: Info,
-        filters: MeasuringToolFilter | None = None,
-    ) -> list[MeasuringToolType]:
-        user = get_user(info)
-        if not user.is_authenticated:
-            raise GQLAuthError(code=GQLAuthErrors.UNAUTHENTICATED)
-
-        qs = MeasuringTool.objects.all()
-        if filters:
-            qs = strawberry_django.filters.apply(filters, qs)
-        return qs
-
-    @strawberry.field
-    def spreadsheets(
-        self,
-        info: Info,
-        filters: SpreadsheetFilter | None = None,
-    ) -> list[SpreadsheetType]:
-        user = get_user(info)
-        if not user.is_authenticated:
-            raise GQLAuthError(code=GQLAuthErrors.UNAUTHENTICATED)
-
-        qs = Spreadsheet.objects.all()
-        if filters:
-            qs = strawberry_django.filters.apply(filters, qs)
-        return qs

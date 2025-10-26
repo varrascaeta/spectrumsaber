@@ -4,33 +4,23 @@ from datetime import datetime
 import pickle
 import base64
 # Airflow imports
-from airflow.decorators import dag, task
+from airflow.decorators import dag, task, task_group
 from airflow.models.param import Param
 from airflow.operators.python import get_current_context
 # Project imports
-from src.airflow.operators import SetupDjango
-from src.airflow.utils import get_param_from_context
 from spectrumsaber.client import FTPClient
+from src.airflow.operators import SetupDjango
+from src.airflow.utils import get_param_from_context, get_bottom_level_file_recursive
+from src.airflow.tasks import (
+    check_non_empty_dict,
+    filter_non_empty,
+    process_multiple_by_class_group,
+    get_dict_result
+)
 
 
 # Globals
 logger = logging.getLogger(__name__)
-
-
-def get_measurement_data_recursive(ftp_client: FTPClient, path: str) -> list:
-    final_measurements = []
-    children_data = ftp_client.get_dir_data(path)
-
-    for child_data in children_data:
-        if not child_data["is_dir"]:
-            final_measurements.append(child_data)
-        else:
-            measurements = get_measurement_data_recursive(
-                ftp_client,
-                child_data["path"]
-            )
-            final_measurements.extend(measurements)
-    return final_measurements
 
 
 @dag(
@@ -67,38 +57,34 @@ def process_measurements():
 
     @task(trigger_rule="all_done")
     def get_measurements(data_point_path: str):
+        from src.campaigns.models import ComplimentaryDataType
         with FTPClient() as ftp_client:
-            measurements = get_measurement_data_recursive(
+            measurements = get_bottom_level_file_recursive(
                 ftp_client,
                 data_point_path,
             )
         logger.info("Found %s measurements in data point %s", len(measurements), data_point_path)
+        complimentary = []
+        matched = []
+
         for measurement in measurements:
             measurement["parent"] = data_point_path
-
-        return measurements
-
-    @task(trigger_rule="all_done")
-    def build_measurements(measurements_data):
-        from src.campaigns.directors import MeasurementDirector
-        directors = []
-        logger.info("Building %s measurements", len(measurements_data))
-        for m_data in measurements_data:
-            director = MeasurementDirector()
-            logger.info("Building measurement %s", m_data["name"])
-            director.construct(m_data)
-            pickled_data = pickle.dumps(director)
-            encoded_data = base64.b64encode(pickled_data).decode('utf-8')
-            directors.append(encoded_data)
-        return directors
-
-    @task(trigger_rule="all_done")
-    def save_measurements(measurements_directors):
-        for m_director in measurements_directors:
-            encoded_data = m_director.encode('utf-8')
-            pickled_data = base64.b64decode(encoded_data)
-            director = pickle.loads(pickled_data)
-            director.commit()
+            if ComplimentaryDataType.is_complimentary(measurement["path"]):
+                measurement["is_complimentary"] = True
+                complimentary.append(measurement)
+            else:
+                measurement["is_complimentary"] = False
+                matched.append(measurement)
+        logger.info(
+            "Data point %s: Matched %s files, Complimentary %s files",
+            data_point_path,
+            len(matched),
+            len(complimentary)
+        )
+        return {
+            "matched": matched,
+            "complimentary": complimentary
+        }
 
     # Define task flow
     setup_django = SetupDjango(
@@ -107,23 +93,35 @@ def process_measurements():
 
     data_points_to_scan = get_data_points_to_scan()
 
-    process_measurements = get_measurements.expand(
+    measurements = get_measurements.expand(
         data_point_path=data_points_to_scan
     )
 
-    build = build_measurements.expand(
-        measurements_data=process_measurements
-    )
+    for key, director_class, recurse_dirs in [
+        ("matched", "MeasurementDirector", False),
+        ("complimentary", "ComplimentaryDirector", False)
+    ]:
+        check = check_non_empty_dict.partial(
+            key=key
+        ).expand(dict_data=measurements)
 
-    commit = save_measurements.expand(
-        measurements_directors=build
-    )
+        process_task = process_multiple_by_class_group(
+            f"process_{key}",
+            recurse_dirs=recurse_dirs
+        )
 
+        process = process_task.partial(
+            selector_key=key,
+            director_class=director_class
+        ).expand(file_data=check)
 
-    setup_django >> data_points_to_scan >> process_measurements >> build >> commit
+        measurements >> check >> process
+
+    setup_django >> data_points_to_scan >> measurements
 
 
 dag = process_measurements()
+
 
 if __name__ == "__main__":
     run_conf = {

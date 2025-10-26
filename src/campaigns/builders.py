@@ -10,6 +10,7 @@ from django.db import IntegrityError
 from src.campaigns.models import (
     BaseFile,
     Campaign,
+    ComplimentaryDataType,
     Coverage,
     DataPoint,
     Measurement,
@@ -170,12 +171,6 @@ class CampaignBuilder(BaseBuilder):
             if district:
                 self.instance.district_id = district.id
 
-    def build_measuring_tool(self):
-        pass
-
-    def build_spreadsheets(self):
-        pass
-
 
 class DataPointBuilder(BaseBuilder):
     def _get_model(self):
@@ -229,3 +224,20 @@ class MeasurementBuilder(BaseBuilder):
             self.instance.category_id = category.id
         else:
             logger.warning("No category found for path %s", path)
+
+
+class ComplimentaryBuilder(BaseBuilder):
+    def _get_model(self):
+        return ComplimentaryData
+
+    def build_parent(self, parent_path: str):
+        parent = ComplimentaryData.get_parent(parent_path)
+        if isinstance(parent, Campaign):
+            self.instance.campaign_id = parent.id
+        elif isinstance(parent, DataPoint):
+            self.instance.data_point_id = parent.id
+
+    def build_complement_type(self, path: str):
+        data_type = ComplimentaryDataType.get_by_path(path)
+        if data_type:
+            self.instance.complement_type = data_type
