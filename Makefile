@@ -21,8 +21,15 @@ migrate:
 	uv run $(ENV_CFG) service/manage.py migrate
 createsuperuser:
 	uv run $(ENV_CFG) service/manage.py createsuperuser --noinput
+build:
+	uv export --format requirements-txt --no-hashes --no-header -o requirements.txt > requirements.txt && \
+	docker compose --env-file environments/production.env --env-file secrets.env --profile app --profile airflow up --build -d
+stop:
+	docker compose --env-file environments/production.env --env-file secrets.env --profile airflow --profile app down
+up:
+	docker compose --env-file environments/production.env --env-file secrets.env --profile airflow --profile app up --scale airflow-worker=2 -d
 airflow:
-	docker compose --env-file environments/production.env --env-file secrets.env --profile airflow up --scale airflow-worker=4 -d
+	docker compose --env-file environments/production.env --env-file secrets.env --profile airflow up --scale airflow-worker=2 -d
 app:
 	docker compose --env-file environments/production.env --env-file secrets.env --profile app up -d
 app-stop:
