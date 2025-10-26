@@ -22,6 +22,5 @@ urlpatterns = [
     ),
     # Django Admin, use {% url 'admin:index' %}
     path("admin/", admin.site.urls),
-    path("admin", admin.site.urls),
     re_path(r'^graphql/?$', csrf_exempt(AsyncGraphQLView.as_view(schema=schema)), name='graphql'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
