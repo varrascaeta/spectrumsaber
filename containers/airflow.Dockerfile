@@ -1,4 +1,4 @@
-FROM apache/airflow:2.10.2
+FROM apache/airflow:2.10.5
 
 USER root
 SHELL ["/bin/bash", "-c"]
