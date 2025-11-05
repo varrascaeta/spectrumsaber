@@ -8,44 +8,86 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Country',
+            name="Country",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=255)),
-                ('code', models.CharField(max_length=8, null=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=255)),
+                ("code", models.CharField(max_length=8, null=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
             ],
             options={
-                'verbose_name_plural': 'Countries',
+                "verbose_name_plural": "Countries",
             },
         ),
         migrations.CreateModel(
-            name='Province',
+            name="Province",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=255)),
-                ('code', models.CharField(max_length=8, null=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('country', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='provinces', to='places.country')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=255)),
+                ("code", models.CharField(max_length=8, null=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "country",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="provinces",
+                        to="places.country",
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='District',
+            name="District",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=255)),
-                ('code', models.CharField(max_length=16, null=True, unique=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('province', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='districts', to='places.province')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=255)),
+                (
+                    "code",
+                    models.CharField(max_length=16, null=True, unique=True),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "province",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="districts",
+                        to="places.province",
+                    ),
+                ),
             ],
         ),
         migrations.AddConstraint(
-            model_name='district',
-            constraint=models.UniqueConstraint(fields=('name', 'province'), name='unique_district'),
+            model_name="district",
+            constraint=models.UniqueConstraint(
+                fields=("name", "province"), name="unique_district"
+            ),
         ),
     ]

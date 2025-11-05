@@ -1,16 +1,19 @@
 import abc
+
 from src.campaigns.builders import (
     BaseBuilder,
+    CampaignBuilder,
     ComplimentaryBuilder,
     CoverageBuilder,
-    CampaignBuilder,
     DataPointBuilder,
     MeasurementBuilder,
-    UnmatchedBuilder
+    UnmatchedBuilder,
 )
 from src.campaigns.models import BaseFile
 from src.logging_cfg import setup_logger
+
 logger = setup_logger(__name__)
+
 
 class BaseDirector(abc.ABC):
     def __init__(self):
@@ -68,7 +71,7 @@ class CampaignDirector(BaseDirector):
         # Campaign attributes
         self._builder.build_date(
             rule_id=file_data.get("rule_id", ""),
-            date_str=file_data.get("date", "")
+            date_str=file_data.get("date", ""),
         )
         self._builder.build_external_id(file_data.get("external_id", ""))
         self._builder.build_district()
@@ -102,14 +105,18 @@ class MeasurementDirector(BaseDirector):
 
 class ComplimentaryDirector(BaseDirector):
     def _get_builder(self) -> BaseBuilder:
-        return ComplimentaryBuilder()  # Assuming ComplimentaryData uses BaseBuilder
+        return (
+            ComplimentaryBuilder()
+        )  # Assuming ComplimentaryData uses BaseBuilder
 
     def construct(self, file_data: dict) -> BaseFile:
         super().construct(file_data)
         self._builder.build_complement_type(file_data.get("path"))
 
         # ComplimentaryData attributes
-        logger.info("Built ComplimentaryData: %s", self._builder.instance.__dict__)
+        logger.info(
+            "Built ComplimentaryData: %s", self._builder.instance.__dict__
+        )
 
 
 def get_director_by_class_name(class_name: str):

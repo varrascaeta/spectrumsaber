@@ -6,13 +6,23 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('campaigns', '0003_alter_complimentarydata_options_and_more'),
+        ("campaigns", "0003_alter_complimentarydata_options_and_more"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='complimentarydata',
-            name='complement_type',
-            field=models.CharField(choices=[('Complimentary Data', 'Complimentary Data'), ('Field Spreadsheet', 'Field Spreadsheet'), ('Laboratory Spreadsheet', 'Laboratory Spreadsheet'), ('Instrument', 'Instrument'), ('Photos', 'Photos')], max_length=128, null=True),
+            model_name="complimentarydata",
+            name="complement_type",
+            field=models.CharField(
+                choices=[
+                    ("Complimentary Data", "Complimentary Data"),
+                    ("Field Spreadsheet", "Field Spreadsheet"),
+                    ("Laboratory Spreadsheet", "Laboratory Spreadsheet"),
+                    ("Instrument", "Instrument"),
+                    ("Photos", "Photos"),
+                ],
+                max_length=128,
+                null=True,
+            ),
         ),
     ]

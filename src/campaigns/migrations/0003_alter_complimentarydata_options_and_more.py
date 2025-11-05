@@ -7,22 +7,34 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('campaigns', '0002_remove_campaign_measuring_tool_and_more'),
+        ("campaigns", "0002_remove_campaign_measuring_tool_and_more"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='complimentarydata',
-            options={'verbose_name_plural': 'Complimentary Data'},
+            name="complimentarydata",
+            options={"verbose_name_plural": "Complimentary Data"},
         ),
         migrations.AlterField(
-            model_name='complimentarydata',
-            name='campaign',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='complementary_data', to='campaigns.campaign'),
+            model_name="complimentarydata",
+            name="campaign",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="complementary_data",
+                to="campaigns.campaign",
+            ),
         ),
         migrations.AlterField(
-            model_name='complimentarydata',
-            name='data_point',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='complementary_data', to='campaigns.datapoint'),
+            model_name="complimentarydata",
+            name="data_point",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="complementary_data",
+                to="campaigns.datapoint",
+            ),
         ),
     ]

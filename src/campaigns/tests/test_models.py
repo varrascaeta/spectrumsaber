@@ -1,5 +1,6 @@
 # Standard imports
 import pytest
+
 # Project imports
 from src.campaigns.models import Campaign
 
@@ -11,7 +12,7 @@ class TestCampaignModel:
         assert campaign == {
             "date_str": "20220401",
             "external_id": "136",
-            "geo_code": "COR"
+            "geo_code": "COR",
         }
 
     def test_missing_geo(self):
@@ -23,7 +24,7 @@ class TestCampaignModel:
         assert campaign == {
             "date_str": "20220401",
             "external_id": "136",
-            "geo_code": "COR"
+            "geo_code": "COR",
         }
 
     def test_wrong_prefix(self):

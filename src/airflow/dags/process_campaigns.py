@@ -1,28 +1,24 @@
 # Standard imports
 import logging
-import pickle
-import base64
 from datetime import datetime
-# Airflow imports
-from airflow.decorators import dag, task, task_group
-from airflow.models.param import Param
-from airflow.operators.python import get_current_context
+
 # Django imports
 from django.conf import settings
+
+# Airflow imports
+from airflow.decorators import dag, task
+from airflow.models.param import Param
+from airflow.operators.python import get_current_context
+
 # Project imports
-from src.airflow.operators import (
-    ScanFTPDirectory,
-    SetupDjango
-)
+from src.airflow.operators import ScanFTPDirectory, SetupDjango
 from src.airflow.tasks import (
+    check_non_empty_dict,
     get_dict_result,
     match_patterns,
-    check_non_empty_dict,
     process_expanded_by_class_group,
-
 )
 from src.airflow.utils import get_param_from_context
-
 
 # Globals
 logger = logging.getLogger(__name__)
@@ -39,41 +35,35 @@ COVERAGE_PARAM = "{{ params.coverage_name }}"
         "coverage_name": Param(
             type="string",
             description="Name of the coverage to process",
-            default="AGRICULTURA"
+            default="AGRICULTURA",
         ),
         "force_reprocess": Param(
             type="boolean",
             description="Whether to force reprocessing of campaigns",
-            default=False
-        )
-    }
-
+            default=False,
+        ),
+    },
 )
 def process_campaigns():
     @task
     def get_campaigns_to_process(campaigns_data):
         from src.campaigns.models import Campaign
+
         paths = [campaign_data["path"] for campaign_data in campaigns_data]
         context = get_current_context()
         force_reprocess = get_param_from_context(context, "force_reprocess")
         if force_reprocess:
             return campaigns_data
         existing = Campaign.objects.filter(
-            scan_complete=True,
-            path__in=paths
-        ).values_list(
-            "path",
-            flat=True
-        )
+            scan_complete=True, path__in=paths
+        ).values_list("path", flat=True)
         to_process = [
             cd for cd in campaigns_data if cd["path"] not in existing
         ]
         logger.info("Found %s campaigns to process", len(to_process))
         return to_process
-    
-    setup_django = SetupDjango(
-        task_id="setup_django"
-    )
+
+    setup_django = SetupDjango(task_id="setup_django")
 
     scan_campaigns = ScanFTPDirectory(
         folder_data={
@@ -83,14 +73,9 @@ def process_campaigns():
         task_id="scan_campaigns",
     )
 
-    campaigns_to_process = get_campaigns_to_process(
-        scan_campaigns.output
-    )
+    campaigns_to_process = get_campaigns_to_process(scan_campaigns.output)
 
-    splitted = match_patterns(
-        campaigns_to_process,
-        level="campaign"
-    )
+    splitted = match_patterns(campaigns_to_process, level="campaign")
 
     check_matched = check_non_empty_dict(splitted, "matched")
     check_unmatched = check_non_empty_dict(splitted, "unmatched")
@@ -99,7 +84,6 @@ def process_campaigns():
     matched = get_dict_result(splitted, "matched")
     unmatched = get_dict_result(splitted, "unmatched")
     complimentary = get_dict_result(splitted, "complimentary")
-
 
     process_matched = process_expanded_by_class_group(
         "process_matched_campaigns",
@@ -115,15 +99,16 @@ def process_campaigns():
         "process_complimentary_campaigns",
         complimentary,
         "ComplimentaryDirector",
-        recurse_dirs=True
+        recurse_dirs=True,
     )
 
     setup_django >> scan_campaigns >> campaigns_to_process >> splitted
     splitted >> [
         check_matched >> process_matched,
         check_unmatched >> process_unmatched,
-        check_complimentary >> process_complimentary
+        check_complimentary >> process_complimentary,
     ]
+
 
 dag = process_campaigns()
 

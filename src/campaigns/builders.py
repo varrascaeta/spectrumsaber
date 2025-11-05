@@ -1,28 +1,29 @@
-
 # Standard imports
 import abc
 import logging
-from dateutil.parser import parse
 from datetime import datetime, timezone
+
+from dateutil.parser import parse
+
 # Django imports
 from django.db import IntegrityError
+
 # Project imports
 from src.campaigns.models import (
+    PATH_LEVELS,
     BaseFile,
     Campaign,
+    Category,
+    CategoryType,
+    ComplimentaryData,
     ComplimentaryDataType,
     Coverage,
     DataPoint,
     Measurement,
-    ComplimentaryData,
-    Category,
     PathRule,
     UnmatchedFile,
-    CategoryType
 )
 from src.places.models import District
-from src.campaigns.models import PATH_LEVELS
-
 
 # Globals
 logger = logging.getLogger(__name__)
@@ -150,11 +151,13 @@ class CampaignBuilder(BaseBuilder):
                     date = datetime.strptime(date_str, rule.date_format)
                 else:
                     date = parse(date_str)
-            except ValueError as e:
+            except ValueError:
                 try:
                     date = parse(date_str)
                 except Exception as e:
-                    logger.warning("Failed to parse date '%s': %s", date_str, e)
+                    logger.warning(
+                        "Failed to parse date '%s': %s", date_str, e
+                    )
         self.instance.date = date
 
     def build_external_id(self, external_id: str):
@@ -199,7 +202,7 @@ class ComplimentaryDataBuilder(BaseBuilder):
         return ComplimentaryData
 
     def build_parent(self, parent_path: str):
-        return # ComplimentaryData has no parent
+        return  # ComplimentaryData has no parent
 
 
 class MeasurementBuilder(BaseBuilder):
@@ -215,11 +218,15 @@ class MeasurementBuilder(BaseBuilder):
         category = None
         if category_name:
             try:
-                category, created = Category.objects.get_or_create(name=category_name)
+                category, created = Category.objects.get_or_create(
+                    name=category_name
+                )
             except IntegrityError:
                 category = Category.objects.get(name=category_name)
                 created = False
-            logger.info("%s category %s", "Created" if created else "Found", category)
+            logger.info(
+                "%s category %s", "Created" if created else "Found", category
+            )
         if category:
             self.instance.category_id = category.id
         else:

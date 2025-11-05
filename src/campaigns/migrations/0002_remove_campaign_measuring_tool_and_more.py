@@ -7,42 +7,95 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('campaigns', '0001_initial'),
+        ("campaigns", "0001_initial"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='campaign',
-            name='measuring_tool',
+            model_name="campaign",
+            name="measuring_tool",
         ),
         migrations.RemoveField(
-            model_name='campaign',
-            name='spreadsheets',
+            model_name="campaign",
+            name="spreadsheets",
         ),
         migrations.AddField(
-            model_name='complimentarydata',
-            name='complement_type',
-            field=models.CharField(choices=[('Complimentary Data', 'Complimentary Data'), ('Field Spreadsheet', 'Field Spreadsheet'), ('Laboratory Spreadsheet', 'Laboratory Spreadsheet'), ('Instrument', 'Instrument'), ('Photometry', 'Photometry')], max_length=128, null=True),
+            model_name="complimentarydata",
+            name="complement_type",
+            field=models.CharField(
+                choices=[
+                    ("Complimentary Data", "Complimentary Data"),
+                    ("Field Spreadsheet", "Field Spreadsheet"),
+                    ("Laboratory Spreadsheet", "Laboratory Spreadsheet"),
+                    ("Instrument", "Instrument"),
+                    ("Photometry", "Photometry"),
+                ],
+                max_length=128,
+                null=True,
+            ),
         ),
         migrations.AddField(
-            model_name='complimentarydata',
-            name='data_point',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='spreadsheets', to='campaigns.datapoint'),
+            model_name="complimentarydata",
+            name="data_point",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="spreadsheets",
+                to="campaigns.datapoint",
+            ),
         ),
         migrations.AlterField(
-            model_name='category',
-            name='name',
-            field=models.CharField(choices=[('Raw Data', 'Raw Data'), ('Text Data', 'Text Data'), ('Radiance', 'Radiance'), ('Average Radiance', 'Average Radiance'), ('Text Radiance', 'Text Radiance'), ('Text Average Radiance', 'Text Average Radiance'), ('Radiance Parabolic Correction', 'Radiance Parabolic Correction'), ('Text Radiance Parabolic Correction', 'Text Radiance Parabolic Correction'), ('Reflectance', 'Reflectance'), ('Average Reflectance', 'Average Reflectance'), ('Text Reflectance', 'Text Reflectance'), ('Text Average Reflectance', 'Text Average Reflectance'), ('Reflectance Parabolic Correction', 'Reflectance Parabolic Correction'), ('Text Reflectance Parabolic Correction', 'Text Reflectance Parabolic Correction')], max_length=128, unique=True),
+            model_name="category",
+            name="name",
+            field=models.CharField(
+                choices=[
+                    ("Raw Data", "Raw Data"),
+                    ("Text Data", "Text Data"),
+                    ("Radiance", "Radiance"),
+                    ("Average Radiance", "Average Radiance"),
+                    ("Text Radiance", "Text Radiance"),
+                    ("Text Average Radiance", "Text Average Radiance"),
+                    (
+                        "Radiance Parabolic Correction",
+                        "Radiance Parabolic Correction",
+                    ),
+                    (
+                        "Text Radiance Parabolic Correction",
+                        "Text Radiance Parabolic Correction",
+                    ),
+                    ("Reflectance", "Reflectance"),
+                    ("Average Reflectance", "Average Reflectance"),
+                    ("Text Reflectance", "Text Reflectance"),
+                    ("Text Average Reflectance", "Text Average Reflectance"),
+                    (
+                        "Reflectance Parabolic Correction",
+                        "Reflectance Parabolic Correction",
+                    ),
+                    (
+                        "Text Reflectance Parabolic Correction",
+                        "Text Reflectance Parabolic Correction",
+                    ),
+                ],
+                max_length=128,
+                unique=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='complimentarydata',
-            name='campaign',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='spreadsheets', to='campaigns.campaign'),
+            model_name="complimentarydata",
+            name="campaign",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="spreadsheets",
+                to="campaigns.campaign",
+            ),
         ),
         migrations.DeleteModel(
-            name='MeasuringTool',
+            name="MeasuringTool",
         ),
         migrations.DeleteModel(
-            name='Spreadsheet',
+            name="Spreadsheet",
         ),
     ]

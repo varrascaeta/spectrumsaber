@@ -1,12 +1,36 @@
 # Strawberry imports
 import strawberry
 import strawberry_django
-from strawberry.types import Info
+
 # gqlauth imports
 from gqlauth.core.types_ import GQLAuthError, GQLAuthErrors
 from gqlauth.core.utils import get_user
+from strawberry.types import Info
+
+from src.campaigns.models import (
+    Campaign,
+    Category,
+    Coverage,
+    DataPoint,
+    Measurement,
+)
+
 # Project imports
-from src.campaigns.types import *
+from src.campaigns.gql_types import (
+    CampaignFilter,
+    CampaignType,
+    CategoryFilter,
+    CategoryType,
+    CoverageFilter,
+    CoverageType,
+    DataPointFilter,
+    DataPointType,
+    DistrictFilter,
+    DistrictType,
+    MeasurementFilter,
+    MeasurementType,
+)
+from src.places.models import District
 
 
 @strawberry.type

@@ -1,0 +1,13 @@
+[flake8]
+max-line-length = 79
+extend-ignore = E203, W503, A003, I
+import-order-style = google
+isort_show_traceback = true
+exclude =
+    .git,
+    __pycache__,
+    */migrations/*,
+    .venv,
+    env,
+    venv
+enable-extensions = I

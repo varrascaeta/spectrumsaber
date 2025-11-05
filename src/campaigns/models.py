@@ -1,15 +1,14 @@
 # Standard imports
-from ast import alias
 import re
+
 # Django imports
+from django.apps import apps
 from django.db import models
 from django.utils import timezone
-from django.conf import settings
-from django.apps import apps
-# Project imports
-from src.places.models import District
-from src.logging_cfg import setup_logger
 
+# Project imports
+from src.logging_cfg import setup_logger
+from src.places.models import District
 
 logger = setup_logger(__name__)
 
@@ -20,7 +19,7 @@ PATH_LEVELS = [
     ("data_point", "data_point"),
     ("category", "category"),
     ("measurement", "measurement"),
-    ("complimentary_data", "complimentary_data")
+    ("complimentary_data", "complimentary_data"),
 ]
 
 PATH_LEVELS_MODELS = {
@@ -29,14 +28,14 @@ PATH_LEVELS_MODELS = {
     "data_point": "DataPoint",
     "category": "Category",
     "measurement": "Measurement",
-    "complimentary_data": "ComplimentaryData"
+    "complimentary_data": "ComplimentaryData",
 }
 
 PARENT_MAP = {
     "campaign": ("Coverage", "coverage_id"),
     "data_point": ("Campaign", "campaign_id"),
     "measurement": ("DataPoint", "data_point_id"),
-    "complimentary_data": ("Campaign", "campaign_id")
+    "complimentary_data": ("Campaign", "campaign_id"),
 }
 
 
@@ -71,7 +70,7 @@ class BaseFile(models.Model):
 
 
 # Measurements
-class CategoryType():
+class CategoryType:
     RAW_DATA = "Raw Data"
     TXT_DATA = "Text Data"
     PHOTOMETRY = "Photometry"
@@ -87,7 +86,6 @@ class CategoryType():
     TXT_RAD_PAR_CORR = "Text Radiance Parabolic Correction"
     REF_PAR_CORR = "Reflectance Parabolic Correction"
     TXT_REF_PAR_CORR = "Text Reflectance Parabolic Correction"
-    
 
     CHOICES = (
         (RAW_DATA, RAW_DATA),
@@ -120,7 +118,7 @@ class CategoryType():
             "radianciatexto",
             "textoradiancia",
             "datoradianciatexto",
-            "datotextoradiancia"
+            "datotextoradiancia",
         ],
         TXT_AVG_RADIANCE: ["textoradianciapromedio", "radianciapromediotexto"],
         # Reflectance aliases
@@ -130,11 +128,11 @@ class CategoryType():
             "reflectanciatexto",
             "textoreflectancia",
             "datoreflectanciatexto",
-            "datotextoreflectancia"
+            "datotextoreflectancia",
         ],
         TXT_AVG_REFLECTANCE: [
             "textoreflectanciapromedio",
-            "reflectanciapromediotexto"
+            "reflectanciapromediotexto",
         ],
         REF_PAR_CORR: ["refcorrpar", "refparcorr", "reflectanciacorrpar"],
         TXT_REF_PAR_CORR: ["textoreflectanciacorrpar", "textorefcorrpar"],
@@ -149,7 +147,7 @@ class CategoryType():
         return None
 
     @classmethod
-    def  get_by_path(cls, path: str) -> str:
+    def get_by_path(cls, path: str) -> str:
         possible_categories = path.split("/")
         for path_part in possible_categories:
             filename = path_part.lower().replace(" ", "")
@@ -159,14 +157,12 @@ class CategoryType():
         return None
 
 
-class ComplimentaryDataType():
+class ComplimentaryDataType:
     COMPLIMENTARY_DATA = "Complimentary Data"
     FIELD_SPREADSHEET = "Field Spreadsheet"
     LAB_SPREADSHEET = "Laboratory Spreadsheet"
     INSTRUMENT = "Instrument"
     PHOTOS = "Photos"
-
-
 
     CHOICES = (
         (COMPLIMENTARY_DATA, COMPLIMENTARY_DATA),
@@ -192,7 +188,7 @@ class ComplimentaryDataType():
             for alias in aliases:
                 if alias in slug_filepath:
                     return True
-        
+
     @classmethod
     def get_by_alias(cls, alias: str) -> str:
         slug_alias = alias.lower().replace(" ", "")
@@ -214,9 +210,7 @@ class ComplimentaryDataType():
 
 class Category(models.Model):
     name = models.CharField(
-        max_length=128,
-        unique=True,
-        choices=CategoryType.CHOICES
+        max_length=128, unique=True, choices=CategoryType.CHOICES
     )
     created_at = models.DateTimeField(default=timezone.now)
 
@@ -241,10 +235,7 @@ class Campaign(BaseFile):
         Coverage, on_delete=models.CASCADE, related_name="campaigns"
     )
     district = models.ForeignKey(
-        District,
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL
+        District, null=True, blank=True, on_delete=models.SET_NULL
     )
 
 
@@ -277,7 +268,7 @@ class ComplimentaryData(BaseFile):
         on_delete=models.CASCADE,
         related_name="complementary_data",
         blank=True,
-        null=True
+        null=True,
     )
 
     campaign = models.ForeignKey(
@@ -285,19 +276,19 @@ class ComplimentaryData(BaseFile):
         on_delete=models.CASCADE,
         related_name="complementary_data",
         blank=True,
-        null=True
+        null=True,
     )
 
     complement_type = models.CharField(
-        max_length=128,
-        choices=ComplimentaryDataType.CHOICES,
-        null=True
+        max_length=128, choices=ComplimentaryDataType.CHOICES, null=True
     )
 
     @classmethod
     def get_parent(cls, file_path: str) -> str:
         splitted = file_path.split("/")
-        normalized = [part.lower().replace(" ", "").strip() for part in splitted]
+        normalized = [
+            part.lower().replace(" ", "").strip() for part in splitted
+        ]
         if "datoscomplementarios" in normalized:
             index = normalized.index("datoscomplementarios")
             if index == 3:
@@ -306,7 +297,7 @@ class ComplimentaryData(BaseFile):
             elif index >= 4:
                 parent_path = "/".join(splitted[:4])  # up to data point level
                 return DataPoint.objects.get(path=parent_path)
-    
+
     class Meta:
         verbose_name_plural = "Complimentary Data"
 
@@ -367,7 +358,11 @@ class PathRule(models.Model):
             if file_data.get("is_unmatched", True):
                 file_data["is_unmatched"] = True
                 file_data["level"] = level
-                logger.info("File %s is unmatched at level %s", file_data["name"], level)
+                logger.info(
+                    "File %s is unmatched at level %s",
+                    file_data["name"],
+                    level,
+                )
                 unmatched_files.append(file_data)
         return matched_files, unmatched_files
 
@@ -392,21 +387,22 @@ class UnmatchedFile(BaseFile):
         file_model = apps.get_model("campaigns", model_name)
         parent_model = apps.get_model("campaigns", parent_model_name)
         if attributes:
-            parent_id = parent_model.objects.filter(
-                path=self.parent_path
-            ).first().id
+            parent_id = (
+                parent_model.objects.filter(path=self.parent_path).first().id
+            )
             defaults = {
                 "name": self.name,
                 "description": self.description,
                 "metadata": self.metadata,
                 "ftp_created_at": self.ftp_created_at,
                 "is_unmatched": False,
-                parent_id_field: parent_id
+                parent_id_field: parent_id,
             }
             defaults.update(attributes)
             file, created = file_model.objects.update_or_create(
-                path=self.path,
-                defaults=defaults
+                path=self.path, defaults=defaults
             )
-            logger.info("UnmatchedFile %s matched to %s", self.name, model_name)
+            logger.info(
+                "UnmatchedFile %s matched to %s", self.name, model_name
+            )
         return file, created

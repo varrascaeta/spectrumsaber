@@ -1,12 +1,13 @@
 # Standard imports
+import logging
 import os
 import sys
-import logging
-# Project imports
-from spectrumsaber.client import FTPClient
+
 # Airflow imports
 from airflow.models.baseoperator import BaseOperator
 
+# Project imports
+from spectrumsaber.client import FTPClient
 
 # Globals
 logger = logging.getLogger(__name__)
@@ -15,6 +16,7 @@ logger = logging.getLogger(__name__)
 class SetupDjango(BaseOperator):
     def execute(self, *args, **kwargs):
         import django
+
         sys.path.append("./spectrumsaber/")  # TODO: Change this to env var
         os.environ.setdefault("DJANGO_SETTINGS_MODULE", "service.settings")
         django.setup()

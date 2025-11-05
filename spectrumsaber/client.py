@@ -1,18 +1,20 @@
 # Standard imports
-import requests
 import logging
 import os
 import re
 import signal
-from datetime import datetime, UTC
-# Third party imports
+from datetime import UTC, datetime
 from ftplib import FTP, error_perm
+
+# Third party imports
+import requests
+
 # Project imports
 from spectrumsaber.cfg import (
-    GRAPHQL_ENDPOINT,
     FTP_HOST,
-    FTP_USER,
     FTP_PASSWORD,
+    FTP_USER,
+    GRAPHQL_ENDPOINT,
 )
 
 logger = logging.getLogger(__name__)
@@ -20,9 +22,8 @@ logger = logging.getLogger(__name__)
 
 logger = logging.getLogger(__name__)
 DIR_LIST_PATTERN = (
-    r'^(\d{2}-\d{2}-\d{2})\s+(\d{2}:\d{2}(?:AM|PM))\s+'
-    r'(<DIR>|\d+)\s+(.+)$'
-)
+    r"^(\d{2}-\d{2}-\d{2})\s+(\d{2}:\d{2}(?:AM|PM))\s+" r"(<DIR>|\d+)\s+(.+)$"
+)  # noqa: E501
 DATE_FORMAT = "%m-%d-%y"
 TIME_FORMAT = "%I:%M%p"
 
@@ -32,7 +33,7 @@ class TimeoutException(Exception):
     pass
 
 
-class TimeoutContext():
+class TimeoutContext:
     def __init__(self, timeout: int) -> None:
         self.timeout = timeout
 
@@ -49,12 +50,13 @@ class TimeoutContext():
         raise TimeoutException("Timeout ocurred")
 
 
-class FTPClient():
-    def __init__(self,
-            ftp_user: str = FTP_USER,
-            ftp_password: str = FTP_PASSWORD,
-            ftp_host: str = FTP_HOST
-        ) -> None:
+class FTPClient:
+    def __init__(
+        self,
+        ftp_user: str = FTP_USER,
+        ftp_password: str = FTP_PASSWORD,
+        ftp_host: str = FTP_HOST,
+    ) -> None:
         for required, name in [
             (ftp_host, "FTP_HOST"),
             (ftp_user, "FTP_USER"),
@@ -158,7 +160,7 @@ class FTPClient():
         current_depth = 0
         files = []
         while current_depth < depth:
-            current_files = self.get_dir_data(path) 
+            current_files = self.get_dir_data(path)
             for file in current_files:
                 if file["is_dir"]:
                     files.extend(self.get_files_at_depth(file["path"], depth))
@@ -179,7 +181,8 @@ class SpectrumSaberClient:
 
     def __get_headers__(self) -> dict:
         """
-        Construct headers for GraphQL requests, including auth token if available.
+        Construct headers for GraphQL requests, including auth token
+        if available.
         Returns:
             dict: Headers for the request.
         """
@@ -192,11 +195,12 @@ class SpectrumSaberClient:
         """
         Refresh the authentication token using the refresh token.
         Returns:
-            bool: True if the token was refreshed successfully, False otherwise.
+            bool: True if the token was refreshed successfully,
+            False otherwise.
         """
         if not self.__refresh_token__:
             logger.error(
-                "No refresh token available to refresh authentication. " \
+                "No refresh token available to refresh authentication. "
                 "Please register or login with your credentials."
             )
             return False
@@ -210,10 +214,10 @@ class SpectrumSaberClient:
                 errors
             }
         }
-        """
+        """  # noqa: E501
         variables = {
             "refreshToken": self.__refresh_token__,
-            "revokeRefreshToken": False
+            "revokeRefreshToken": False,
         }
         result = self.query(query, variables)
         if result.get("data") and result["data"]["refreshToken"]["success"]:
@@ -241,7 +245,7 @@ class SpectrumSaberClient:
             GRAPHQL_ENDPOINT,
             timeout=10,
             json=payload,
-            headers=self.__get_headers__()
+            headers=self.__get_headers__(),
         )
         data = resp.json()
         if data.get("errors"):
@@ -282,10 +286,16 @@ class SpectrumSaberClient:
         result = self.query(query, variables)
         if result.get("data") and result["data"]["tokenAuth"]["success"]:
             self.__token__ = result["data"]["tokenAuth"]["token"]["token"]
-            self.__refresh_token__ = result["data"]["tokenAuth"]["refreshToken"]["token"]
+            self.__refresh_token__ = result["data"]["tokenAuth"][
+                "refreshToken"
+            ]["token"]
             logger.info("Authenticated user %s.", username)
         else:
-            logger.error("Failed to authenticate user %s: %s", username, result.get("errors"))
+            logger.error(
+                "Failed to authenticate user %s: %s",
+                username,
+                result.get("errors"),
+            )
 
     def run_query(self, query: str, params: dict | None = None) -> dict | None:
         """
