@@ -253,38 +253,6 @@ class SpectrumSaberClient:
                         return self.query(query, variables)
         return data
 
-    def register(self, username: str, email: str, password: str, password_confirmation: str):
-        """
-        Register a new user with the given credentials.
-        Args:
-            username (str): The desired username.
-            email (str): The user's email address.
-            password (str): The desired password.
-            password_confirmation (str): Confirmation of the desired password.
-        Returns:
-            dict: The JSON response from the server.
-        """
-        query = """
-        mutation Register($username: String!, $email: String!, $password1: String!, $password2: String!) {
-            register(username: $username, email: $email, password1: $password1, password2: $password2) {
-                success
-                errors
-            }
-        }
-        """
-        variables = {
-            "username": username,
-            "email": email,
-            "password1": password,
-            "password2": password_confirmation,
-        }
-        result = self.query(query, variables)
-        if result.get("errors"):
-            logger.error("Error registering user %s: %s", username, result["errors"])
-        elif result.get("data") and result["data"]["register"]["success"]:
-            logger.info("Registered user %s successfully.", username)
-        return result
-
     def login(self, username: str, password: str):
         """
         Authenticate the user with the given credentials.
@@ -329,76 +297,4 @@ class SpectrumSaberClient:
             dict: The JSON response from the server.
         """
         result = self.query(query, params)
-        return result
-
-    def get_dags(self) -> dict | None:
-        """
-        Retrieve the list of available DAGs from the server.
-        Returns:
-            dict: The JSON response from the server.
-        """
-        query = """
-        query {
-            getDags {
-                dagId
-                dagDisplayName
-                isActive
-                isPaused
-                tags
-                description
-            }
-        }
-        """
-        result = self.query(query)
-        return result
-
-    def get_dag_info(self, dag_id: str) -> dict | None:
-        """
-        Retrieve information about a specific DAG by its ID.
-        Args:
-            dag_id (str): The ID of the DAG to retrieve.
-        Returns:
-            dict: The JSON response from the server.
-        """
-        query = """
-        query getDagInfo($dagId: String!) {
-            getDagInfo(dagId: $dagId) {
-                dagId
-                dagDisplayName
-                isActive
-                isPaused
-                tags
-                description
-                params {
-                    name
-                    type
-                    description
-                }
-            }
-        }
-        """
-        variables = {
-            "dagId": dag_id
-        }
-        result = self.query(query, variables)
-        return result
-
-    def trigger_dag(self, dag_id: str, params: dict) -> str:
-        """
-        Trigger an Airflow DAG run by its ID.
-        Args:
-            dag_id (str): The ID of the DAG to trigger.
-        Returns:
-            dict: The JSON response from the server.
-        """
-        query = """
-        mutation TriggerDAG($dagId: String!, $params: [KeyValueInput!]!) {
-            triggerDag(dagId: $dagId, params: $params)
-        }
-        """
-        variables = {
-            "dagId": dag_id,
-            "params": params
-        }
-        result = self.query(query, variables)
         return result
