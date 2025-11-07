@@ -10,7 +10,6 @@ from gqlauth.user.queries import UserQueries
 from strawberry_django.optimizer import DjangoOptimizerExtension
 
 # Project imports
-from src.airflow.schema import AirflowMutation, AirflowQuery
 from src.campaigns.schema import CampaignQuery
 from src.users.schema import AuthMutation
 
@@ -18,12 +17,12 @@ logger = logging.getLogger(__name__)
 
 
 @strawberry.type
-class Query(UserQueries, CampaignQuery, AirflowQuery):
+class Query(UserQueries, CampaignQuery):
     pass
 
 
 @strawberry.type
-class Mutation(AuthMutation, AirflowMutation):
+class Mutation(AuthMutation):
     pass
 
 

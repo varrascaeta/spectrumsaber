@@ -111,6 +111,10 @@ class ComplimentaryDirector(BaseDirector):
 
     def construct(self, file_data: dict) -> BaseFile:
         super().construct(file_data)
+        if not self._builder.instance.campaign_id and not self._builder.instance.data_point_id:
+            self._builder.build_parent(
+                parent_path=file_data["path"]
+            )
         self._builder.build_complement_type(file_data.get("path"))
 
         # ComplimentaryData attributes

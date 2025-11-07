@@ -14,7 +14,7 @@ from src.campaigns.models import (
 
 
 # Filters
-@strawberry_django.filter(Coverage)
+@strawberry_django.filter_type(Coverage)
 class CoverageFilter:
     id: auto
     name: auto
@@ -23,7 +23,7 @@ class CoverageFilter:
         lookups = True
 
 
-@strawberry_django.filter(Campaign)
+@strawberry_django.filter_type(Campaign)
 class CampaignFilter:
     id: auto
     name: auto
@@ -36,7 +36,7 @@ class CampaignFilter:
         lookups = True
 
 
-@strawberry_django.filter(Category)
+@strawberry_django.filter_type(Category)
 class CategoryFilter:
     id: auto
     name: auto
@@ -45,7 +45,7 @@ class CategoryFilter:
         lookups = True
 
 
-@strawberry_django.filter(DataPoint)
+@strawberry_django.filter_type(DataPoint)
 class DataPointFilter:
     id: auto
     name: auto
@@ -55,7 +55,7 @@ class DataPointFilter:
         lookups = True
 
 
-@strawberry_django.filter(Measurement)
+@strawberry_django.filter_type(Measurement)
 class MeasurementFilter:
     id: auto
     name: auto
@@ -66,7 +66,7 @@ class MeasurementFilter:
         lookups = True
 
 
-@strawberry_django.filter(District)
+@strawberry_django.filter_type(District)
 class DistrictFilter:
     id: auto
     name: auto

@@ -39,7 +39,25 @@ PARENT_MAP = {
 }
 
 
+class BaseFileManager(models.Manager):
+    def filter(self, *args, **kwargs):
+        if "path" in kwargs:
+            kwargs["path"] = kwargs["path"].strip("/")
+        if "path__exact" in kwargs:
+            kwargs["path__exact"] = kwargs["path__exact"].strip("/")
+        if "path__iexact" in kwargs:
+            kwargs["path__iexact"] = kwargs["path__iexact"].strip("/")
+        return super().filter(*args, **kwargs)
+
+    def get(self, *args, **kwargs):
+        if "path" in kwargs:
+            kwargs["path"] = kwargs["path"].strip("/")
+        return super().get(*args, **kwargs)
+
+
 class BaseFile(models.Model):
+    objects = BaseFileManager()
+
     name = models.CharField(max_length=255)
     path = models.CharField(max_length=255, unique=True)
     description = models.TextField(null=True, blank=True)
@@ -63,6 +81,10 @@ class BaseFile(models.Model):
             if attributes:
                 return attributes
         return None
+
+    def save(self, *args, **kwargs):
+        self.path = self.path.strip("/")
+        super().save(*args, **kwargs)
 
     class Meta:
         abstract = True
@@ -172,7 +194,7 @@ class ComplimentaryDataType:
         (PHOTOS, PHOTOS),
     )
     SLUG_ALIASES = {
-        FIELD_SPREADSHEET: ["planillacampo"],
+        FIELD_SPREADSHEET: ["planillacampo", "planilla_campo"],
         LAB_SPREADSHEET: ["planillalaboratorio", "planillagabinete"],
         PHOTOS: ["fotos", "imagenes", "images", "pictures"],
         INSTRUMENT: ["instrumento"],
@@ -285,7 +307,7 @@ class ComplimentaryData(BaseFile):
 
     @classmethod
     def get_parent(cls, file_path: str) -> str:
-        splitted = file_path.split("/")
+        splitted = file_path.strip("/").split("/")
         normalized = [
             part.lower().replace(" ", "").strip() for part in splitted
         ]
@@ -324,7 +346,7 @@ class PathRule(models.Model):
         return None
 
     def get_model(self):
-        model_name = str(self.level).capitalize()
+        model_name = PATH_LEVELS_MODELS.get(self.level)
         return apps.get_model("campaigns", model_name)
 
     def apply(self):
@@ -373,6 +395,20 @@ class PathRule(models.Model):
 class UnmatchedObjectManager(models.Manager):
     def get_queryset(self):
         return super().get_queryset().filter(is_unmatched=True)
+
+    def filter(self, *args, **kwargs):
+        if "path" in kwargs:
+            kwargs["path"] = kwargs["path"].strip("/")
+        if "path__exact" in kwargs:
+            kwargs["path__exact"] = kwargs["path__exact"].strip("/")
+        if "path__iexact" in kwargs:
+            kwargs["path__iexact"] = kwargs["path__iexact"].strip("/")
+        return super().filter(*args, **kwargs)
+
+    def get(self, *args, **kwargs):
+        if "path" in kwargs:
+            kwargs["path"] = kwargs["path"].strip("/")
+        return super().get(*args, **kwargs)
 
 
 class UnmatchedFile(BaseFile):
