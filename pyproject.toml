@@ -239,7 +239,60 @@ dependencies = [
     "zipp==3.21.0",
     "flake8-black>=0.4.0",
     "flake8-builtins>=3.1.0",
+    "tox-uv>=1.7.0",
+    "pytest-cov>=7.0.0",
 ]
+
+[tool.tox]
+requires = ["tox>=4.14", "tox-uv>=1.7.0"]
+env_list = [
+    "style",
+    "docstyle",
+    "check-manifest",
+    "check-testdir",
+    "check-headers",
+    "check-apidocsdir",
+    "mkdocs",
+    "py310",
+    "py311",
+    "py312",
+    "coverage"
+]
+
+[tool.tox.env_run_base]
+description = "Run test under {base_python}"
+runner = "uv-venv-runner"
+commands = [["pytest"]]
+
+[tool.tox.env.type]
+description = "run type check on code base"
+runner = "uv-venv-runner"
+deps = ["mypy==1.18.2", "types-cachetools>=5.5.0.20240820", "types-chardet>=5.0.4.6"]
+commands = [["mypy", "src{/}tox"], ["mypy", "tests"]]
+
+[tool.tox.env.style]
+description = "Runs code style checks with flake8 to ensure consistency and quality"
+runner = "uv-venv-runner"
+skip_install = true
+deps = [
+    "tomli",
+    "flake8",
+    "flake8-import-order",
+    "flake8-black",
+    "flake8-builtins",
+]
+commands = [["flake8", "src/", "spectrumsaber/", "{posargs}"]]
+
+[tool.tox.env.coverage]
+description = "Combines coverage data from multiple Python versions and generates the final report"
+runner = "uv-venv-runner"
+deps = ["coverage"]
+depends = ["py310", "py311", "py312"]
+commands = [
+    ["coverage", "combine"],
+    ["coverage", "report", "-m", "--fail-under", "91"],
+]
+
 
 [tool.isort]
 profile = "black"
