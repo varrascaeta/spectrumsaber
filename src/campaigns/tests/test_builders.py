@@ -11,7 +11,6 @@ from src.campaigns.builders import (
     DataPointBuilder,
     MeasurementBuilder,
     ComplimentaryDataBuilder,
-    ComplimentaryBuilder,
     DATE_TRANSLATE,
 )
 from src.campaigns.models import (
@@ -752,26 +751,9 @@ class TestComplimentaryDataBuilder:
         builder = ComplimentaryDataBuilder()
         assert builder.model == ComplimentaryData
 
-    def test_build_parent_does_nothing(self):
-        """Test build_parent does nothing for ComplimentaryDataBuilder"""
-        builder = ComplimentaryDataBuilder()
-        builder.build_instance("/test/complimentary")
-        # Should not raise any error
-        builder.build_parent("/some/parent")
-
-
-@pytest.mark.django_db
-class TestComplimentaryBuilder:
-    """Test ComplimentaryBuilder class"""
-
-    def test_get_model(self):
-        """Test _get_model returns ComplimentaryData"""
-        builder = ComplimentaryBuilder()
-        assert builder.model == ComplimentaryData
-
     def test_build_parent_campaign(self, campaign):
         """Test build_parent with Campaign parent"""
-        builder = ComplimentaryBuilder()
+        builder = ComplimentaryDataBuilder()
         builder.build_instance("/test/complimentary")
 
         with patch.object(
@@ -782,7 +764,7 @@ class TestComplimentaryBuilder:
 
     def test_build_parent_datapoint(self, data_point):
         """Test build_parent with DataPoint parent"""
-        builder = ComplimentaryBuilder()
+        builder = ComplimentaryDataBuilder()
         builder.build_instance("/test/complimentary")
 
         with patch.object(
@@ -793,7 +775,7 @@ class TestComplimentaryBuilder:
 
     def test_build_complement_type_photos(self):
         """Test build_complement_type with photos path"""
-        builder = ComplimentaryBuilder()
+        builder = ComplimentaryDataBuilder()
         builder.build_instance("/test/complimentary")
         builder.build_complement_type("/test/path/fotos/image.jpg")
 
@@ -801,7 +783,7 @@ class TestComplimentaryBuilder:
 
     def test_build_complement_type_field_spreadsheet(self):
         """Test build_complement_type with field spreadsheet path"""
-        builder = ComplimentaryBuilder()
+        builder = ComplimentaryDataBuilder()
         builder.build_instance("/test/complimentary")
         builder.build_complement_type("/test/path/planillacampo/data.xlsx")
 
@@ -812,7 +794,7 @@ class TestComplimentaryBuilder:
 
     def test_build_complement_type_lab_spreadsheet(self):
         """Test build_complement_type with lab spreadsheet path"""
-        builder = ComplimentaryBuilder()
+        builder = ComplimentaryDataBuilder()
         builder.build_instance("/test/complimentary")
         builder.build_complement_type(
             "/test/path/planillalaboratorio/data.xlsx"
@@ -825,7 +807,7 @@ class TestComplimentaryBuilder:
 
     def test_build_complement_type_none(self):
         """Test build_complement_type when no type matches"""
-        builder = ComplimentaryBuilder()
+        builder = ComplimentaryDataBuilder()
         builder.build_instance("/test/complimentary")
         builder.build_complement_type("/test/path/unknown/file.txt")
 
@@ -833,7 +815,7 @@ class TestComplimentaryBuilder:
 
     def test_create_complimentary_complete_with_campaign(self, campaign):
         """Test creating complete complimentary data with campaign"""
-        builder = ComplimentaryBuilder()
+        builder = ComplimentaryDataBuilder()
         builder.build_instance("/test/complete/fotos/photo.jpg")
         builder.build_name("Complete Complimentary")
 
@@ -853,7 +835,7 @@ class TestComplimentaryBuilder:
 
     def test_create_complimentary_complete_with_datapoint(self, data_point):
         """Test creating complete complimentary data with data point"""
-        builder = ComplimentaryBuilder()
+        builder = ComplimentaryDataBuilder()
         builder.build_instance("/test/complete/planillacampo/spreadsheet.xlsx")
         builder.build_name("Complete Complimentary DataPoint")
 

@@ -581,11 +581,11 @@ class TestComplimentaryDirector:
     """Test ComplimentaryDirector class"""
 
     def test_get_builder_returns_complimentary_builder(self):
-        """Test that _get_builder returns ComplimentaryBuilder"""
+        """Test that _get_builder returns ComplimentaryDataBuilder"""
         director = ComplimentaryDirector()
-        from src.campaigns.builders import ComplimentaryBuilder
+        from src.campaigns.builders import ComplimentaryDataBuilder
 
-        assert isinstance(director._builder, ComplimentaryBuilder)
+        assert isinstance(director._builder, ComplimentaryDataBuilder)
 
     def test_construct_complimentary_data(self, campaign):
         """Test constructing complimentary data"""

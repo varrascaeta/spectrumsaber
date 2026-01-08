@@ -36,10 +36,12 @@ class Command(BaseCommand):
             name=line["Provincia"],
             country=self.country,
         )
-        district, created = District.objects.get_or_create(
-            name=line["Nombre"],
-            province=province,
+        district, created = District.objects.update_or_create(
             code=line["Código"],
+            defaults={
+                "name": line["Nombre"],
+                "province": province,
+            },
         )
         logger.info("District %s created: %s", district, created)
         campaigns = Campaign.objects.filter(metadata__geo_code=district.code)

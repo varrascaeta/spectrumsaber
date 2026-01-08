@@ -147,26 +147,26 @@ class FTPClient:
             logger.error("Line  %s does not match FTP pattern", line)
             return {}
 
-    def get_files_at_depth(self, path: str, depth: int) -> list[dict]:
+    def get_files_at_depth(self, path: str, max_depth: int, current_depth: int = 0) -> list[dict]:
         """
         Retrieve files at a specified depth from the given path.
         Depth 0 means the root path relative to BASE_FTP_PATH from env.
         Args:
             path (str): The starting directory path.
-            depth (int): The depth to scan.
+            max_depth (int): The maximum depth to scan.
+            current_depth (int): The current depth in the recursion.
         Returns:
             list[dict]: A list of files found at the specified depth.
         """
-        current_depth = 0
         files = []
-        while current_depth < depth:
+        while current_depth < max_depth:
             current_files = self.get_dir_data(path)
+            current_depth += 1
             for file in current_files:
                 if file["is_dir"]:
-                    files.extend(self.get_files_at_depth(file["path"], depth))
+                    files.extend(self.get_files_at_depth(file["path"], max_depth, current_depth))
                 else:
                     files.append(file)
-            current_depth += 1
         return files
 
     def __str__(self) -> str:

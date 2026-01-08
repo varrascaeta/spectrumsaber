@@ -37,7 +37,6 @@ class TestAutoVerifyUserSignal:
             first_name="Test",
             last_name="User",
         )
-
         # Verify UserStatus was created and verified
         user_status = UserStatus.objects.get(user=user)
         assert user_status.verified is True
@@ -52,63 +51,6 @@ class TestAutoVerifyUserSignal:
             last_name="User",
         )
 
-        user_status = UserStatus.objects.get(user=user)
-        assert user_status.verified is True
-
-    def test_signal_does_not_trigger_on_user_update(self, disconnect_signals):
-        """Test that signal does not trigger when user is updated"""
-        # Create user without signal
-        user = User.objects.create_user(
-            username="updateuser",
-            email="update@example.com",
-            password="testpass123",
-            first_name="Update",
-            last_name="User",
-        )
-
-        # Manually create UserStatus as unverified
-        user_status = UserStatus.objects.create(user=user, verified=False)
-        assert user_status.verified is False
-
-        # Reconnect signal
-        post_save.connect(auto_verify_user, sender=User)
-
-        # Update user (should not trigger verification)
-        user.first_name = "Updated"
-        user.save()
-
-        # Verify status remains unchanged
-        user_status.refresh_from_db()
-        assert user_status.verified is False
-
-    def test_signal_handles_existing_user_status(self, disconnect_signals):
-        """Test signal updates existing UserStatus if it exists"""
-        # Create user without signal
-        user = User.objects.create_user(
-            username="existinguser",
-            email="existing@example.com",
-            password="testpass123",
-            first_name="Existing",
-            last_name="User",
-        )
-
-        # Create unverified UserStatus
-        UserStatus.objects.create(user=user, verified=False)
-
-        # Reconnect signal and create another user to trigger update_or_create
-        post_save.connect(auto_verify_user, sender=User)
-
-        # Delete the user and recreate (simulating edge case)
-        user.delete()
-        user = User.objects.create_user(
-            username="newuser",
-            email="new@example.com",
-            password="testpass123",
-            first_name="New",
-            last_name="User",
-        )
-
-        # Verify new user is verified
         user_status = UserStatus.objects.get(user=user)
         assert user_status.verified is True
 

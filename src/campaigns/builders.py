@@ -197,14 +197,6 @@ class DataPointBuilder(BaseBuilder):
             self.instance.longitude = float(longitude)
 
 
-class ComplimentaryDataBuilder(BaseBuilder):
-    def _get_model(self):
-        return ComplimentaryData
-
-    def build_parent(self, parent_path: str):
-        return  # ComplimentaryData has no parent
-
-
 class MeasurementBuilder(BaseBuilder):
     def _get_model(self):
         return Measurement
@@ -233,7 +225,7 @@ class MeasurementBuilder(BaseBuilder):
             logger.warning("No category found for path %s", path)
 
 
-class ComplimentaryBuilder(BaseBuilder):
+class ComplimentaryDataBuilder(BaseBuilder):
     def _get_model(self):
         return ComplimentaryData
 
