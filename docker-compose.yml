@@ -126,6 +126,12 @@ services:
       - testing
     image: 'postgres:16'
     restart: always
+    environment:
+      POSTGRES_USER: ${APP_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${APP_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: ${POSTGRES_PORT}
     ports:
     - '9432:5432'
 

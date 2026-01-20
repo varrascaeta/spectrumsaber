@@ -12,10 +12,10 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 import os
 from pathlib import Path
-from django.utils.log import DEFAULT_LOGGING
-from django.contrib.admin.sites import AdminSite
-from gqlauth.settings_type import GqlAuthSettings
 
+from django.contrib.admin.sites import AdminSite
+from django.utils.log import DEFAULT_LOGGING
+from gqlauth.settings_type import GqlAuthSettings
 
 AdminSite.index_title = "SpectrumSaber"
 AdminSite.site_header = "SpectrumSaber Administration"
@@ -29,7 +29,9 @@ APPS_DIR = BASE_DIR / "src"
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-xh+$+-i5y*01p7rbj#%zwdh%kloirp476qohe)(98swzu^w&i2'
+SECRET_KEY = (
+    "django-insecure-xh+$+-i5y*01p7rbj#%zwdh%kloirp476qohe)(98swzu^w&i2"
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -40,13 +42,13 @@ os.environ.setdefault("DJANGO_ALLOW_ASYNC_UNSAFE", "True")
 
 # Application definition
 
-STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_URL = "/static/"
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
 ADMIN_URL = "admin/"
 
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static'),
+    os.path.join(BASE_DIR, "static"),
     # Add any other directories containing static files
 ]
 DJANGO_APPS = [
@@ -57,49 +59,49 @@ DJANGO_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.admin",
     "django.forms",
-    "django_extensions"
+    "django_extensions",
 ]
 
 LOCAL_APPS = [
-    'src.users.apps.UsersConfig',
-    'src.campaigns.apps.CampaignsConfig',
-    'src.places.apps.PlacesConfig',
+    "src.users.apps.UsersConfig",
+    "src.campaigns.apps.CampaignsConfig",
+    "src.places.apps.PlacesConfig",
 ]
 
 THIRD_PARTY_APPS = [
-    'rangefilter',
-    'admin_auto_filters',
-    'strawberry_django',
-    'django_filters',
-    'gqlauth',
+    "rangefilter",
+    "admin_auto_filters",
+    "strawberry_django",
+    "django_filters",
+    "gqlauth",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + LOCAL_APPS + THIRD_PARTY_APPS
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'gqlauth.core.middlewares.django_jwt_middleware'
+    "django.middleware.security.SecurityMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "gqlauth.core.middlewares.django_jwt_middleware",
 ]
 
-ROOT_URLCONF = 'service.urls'
+ROOT_URLCONF = "service.urls"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [str(APPS_DIR / "templates")],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [str(APPS_DIR / "templates")],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
@@ -109,20 +111,20 @@ STRAWBERRY_DJANGO = {
     "DEFAULT_PK_FIELD_NAME": "id",
 }
 
-WSGI_APPLICATION = 'service.wsgi.application'
+WSGI_APPLICATION = "service.wsgi.application"
 
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('POSTGRES_DB'),
-        'USER': os.getenv('APP_POSTGRES_USER'),
-        'PASSWORD': os.getenv('APP_POSTGRES_PASSWORD'),
-        'HOST': os.getenv('POSTGRES_HOST'),
-        'PORT': os.getenv('POSTGRES_PORT'),
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.getenv("POSTGRES_DB"),
+        "USER": os.getenv("APP_POSTGRES_USER"),
+        "PASSWORD": os.getenv("APP_POSTGRES_PASSWORD"),
+        "HOST": os.getenv("POSTGRES_HOST"),
+        "PORT": os.getenv("POSTGRES_PORT"),
     }
 }
 
@@ -131,16 +133,16 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
 
@@ -148,15 +150,15 @@ AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
 ]
 
-AUTH_USER_MODEL = 'users.SpectrumsaberUser'
+AUTH_USER_MODEL = "users.SpectrumsaberUser"
 
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = "UTC"
 
 USE_I18N = True
 
@@ -166,19 +168,19 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = "static/"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
 BASE_FTP_PATH = os.getenv("BASE_FTP_PATH")
 
 # Email settings
 
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 
 # GraphQL

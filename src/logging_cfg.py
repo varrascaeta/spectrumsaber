@@ -1,9 +1,10 @@
 """
-    This file is used to set up the logging configuration for the project.
-    It defines the logger setup, including the log level and format.
+This file is used to set up the logging configuration for the project.
+It defines the logger setup, including the log level and format.
 """
 
 import logging
+
 
 def setup_logger(logger_name: str = None, prefix: str = "") -> logging.Logger:
     """Set up a logger with the specified name.
@@ -25,11 +26,11 @@ def setup_logger(logger_name: str = None, prefix: str = "") -> logging.Logger:
 
     handler = logging.StreamHandler()
     formatter = logging.Formatter(
-        prefix + "%(levelname)s %(asctime)s %(filename)s %(funcName)s:%(lineno)s| %(message)s",
-        datefmt='%Y-%m-%d %H:%M:%S'
+        prefix
+        + "%(levelname)s %(asctime)s %(filename)s %(funcName)s:%(lineno)s| %(message)s",  # noqa: E501
+        datefmt="%Y-%m-%d %H:%M:%S",
     )
     handler.setFormatter(formatter)
 
     logger.addHandler(handler)
     return logger
-

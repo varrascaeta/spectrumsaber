@@ -1,26 +1,24 @@
 # Django imports
+from admin_auto_filters.filters import AutocompleteFilter
 from django.contrib import admin
 from django.urls import reverse
 from django.utils.safestring import mark_safe
-# Extra imports
-from admin_auto_filters.filters import AutocompleteFilter
+
 # Project imports
-from src.places.models import (
-    Country,
-    Province,
-    District
-)
+from src.places.models import Country, District, Province
 
 
 # Utils
 def get_admin_link(obj, app, model, name_field="name"):
-    return mark_safe('<a href="{}">{}</a>'.format(
-        reverse(
-            "admin:{}_{}_change".format(app, model._meta.model_name),
-            args=(obj.id,)
-        ),
-        getattr(obj, name_field)
-    ))
+    return mark_safe(
+        '<a href="{}">{}</a>'.format(
+            reverse(
+                "admin:{}_{}_change".format(app, model._meta.model_name),
+                args=(obj.id,),
+            ),
+            getattr(obj, name_field),
+        )
+    )
 
 
 # Filters
@@ -73,15 +71,7 @@ class CountryAdmin(admin.ModelAdmin):
     inlines = [ProvinceInline]
 
     fieldsets = [
-        (
-            "Country Details",
-            {
-                "fields": (
-                    "name",
-                    "code"
-                )
-            }
-        ),
+        ("Country Details", {"fields": ("name", "code")}),
     ]
 
 
@@ -93,16 +83,7 @@ class ProvinceAdmin(admin.ModelAdmin):
     list_filter = (CountryFilter,)
 
     fieldsets = [
-        (
-            "Province Details",
-            {
-                "fields": (
-                    "name",
-                    "code",
-                    "country"
-                )
-            }
-        ),
+        ("Province Details", {"fields": ("name", "code", "country")}),
     ]
 
 
@@ -113,14 +94,5 @@ class DistrictAdmin(admin.ModelAdmin):
     list_filter = (ProvinceFilter,)
 
     fieldsets = [
-        (
-            "District Details",
-            {
-                "fields": (
-                    "name",
-                    "code",
-                    "province"
-                )
-            }
-        ),
+        ("District Details", {"fields": ("name", "code", "province")}),
     ]

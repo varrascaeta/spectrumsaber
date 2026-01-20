@@ -36,3 +36,7 @@ app-stop:
 	docker compose --env-file environments/production.env --env-file secrets.env --profile app down
 airflow-stop:
 	docker compose --env-file environments/production.env --env-file secrets.env --profile airflow down
+test:
+	docker compose --env-file environments/testing.env --env-file secrets.env --profile testing up -d && tox -e py312
+coverage:
+	tox -e coverage

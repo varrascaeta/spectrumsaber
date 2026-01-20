@@ -1,35 +1,39 @@
 # Django imports
+from admin_auto_filters.filters import AutocompleteFilter
 from django.contrib import admin
 from django.urls import reverse
 from django.utils.safestring import mark_safe
+
 # Extra imports
 from rangefilter.filters import DateRangeFilter
-from admin_auto_filters.filters import AutocompleteFilter
+
 # Project imports
 from src.campaigns.models import (
+    PATH_LEVELS,
+    Campaign,
     Category,
     ComplimentaryData,
     Coverage,
-    Campaign,
     DataPoint,
     Measurement,
-    UnmatchedFile,
     PathRule,
-    PATH_LEVELS
+    UnmatchedFile,
 )
-from src.places.models import District
 from src.places.admin import DistrictFilter
+from src.places.models import District
 
 
 # Utils
 def get_admin_link(obj, app, model, name_field="name"):
-    return mark_safe('<a href="{}">{}</a>'.format(
-        reverse(
-            "admin:{}_{}_change".format(app, model._meta.model_name),
-            args=(obj.id,)
-        ),
-        getattr(obj, name_field)
-    ))
+    return mark_safe(
+        '<a href="{}">{}</a>'.format(
+            reverse(
+                "admin:{}_{}_change".format(app, model._meta.model_name),
+                args=(obj.id,),
+            ),
+            getattr(obj, name_field),
+        )
+    )
 
 
 # Inlines
@@ -48,6 +52,7 @@ class DataPointInline(admin.TabularInline):
 
     get_link.short_description = "Data Point"
     get_total_measurements.short_description = "Total Measurements"
+
 
 class CampaignComplements(admin.TabularInline):
     model = ComplimentaryData
@@ -104,15 +109,12 @@ class DataPointCoverageFilter(admin.SimpleListFilter):
 
     def lookups(self, request, model_admin):
         return [
-            (coverage.id, coverage.name)
-            for coverage in Coverage.objects.all()
+            (coverage.id, coverage.name) for coverage in Coverage.objects.all()
         ]
 
     def queryset(self, request, queryset):
         if self.value():
-            return queryset.filter(
-                campaign__coverage_id=self.value()
-            )
+            return queryset.filter(campaign__coverage_id=self.value())
         return queryset
 
 
@@ -137,20 +139,16 @@ class CategoryFilter(AutocompleteFilter):
 
 
 class LevelFilter(admin.SimpleListFilter):
-    title = "Level"  # título que aparece en el sidebar del admin
-    parameter_name = "level"  # el nombre del parámetro en la URL
+    title = "Level"
+    parameter_name = "level"
 
     def lookups(self, request, model_admin):
-        # Muestra las opciones en el sidebar del admin
-        # PATH_LEVELS debe ser una lista de tuplas, ej: [('root', 'Root'), ('sub', 'Subfolder')]
         return PATH_LEVELS
 
     def queryset(self, request, queryset):
-        # Aplica el filtro cuando se selecciona una opción
         if self.value():
             return queryset.filter(level=self.value())
         return queryset
-
 
 
 # Admins
@@ -160,41 +158,18 @@ class SpectrumsaberAdmin(admin.AdminSite):
 
 
 class BaseFileAdmin(admin.ModelAdmin):
-    list_display = [
-        "__str__", "ftp_created_at", "last_synced_at"
-    ]
+    list_display = ["__str__", "ftp_created_at", "last_synced_at"]
     readonly_fields = ("created_at", "updated_at")
     search_fields = ("name", "path")
 
     def get_fieldsets(self, request, obj):
         return [
-            (
-                "FTP Data",
-                {
-                    "fields": (
-                        "path",
-                        "ftp_created_at"
-                    )
-                }
-            ),
+            ("FTP Data", {"fields": ("path", "ftp_created_at")}),
             (
                 "Scan Data",
-                {
-                    "fields": (
-                        "created_at",
-                        "updated_at",
-                        "last_synced_at"
-                    )
-                }
+                {"fields": ("created_at", "updated_at", "last_synced_at")},
             ),
-            (
-                "Metadata",
-                {
-                    "fields": (
-                        ("description", "metadata"),
-                    )
-                }
-            )
+            ("Metadata", {"fields": (("description", "metadata"),)}),
         ]
 
 
@@ -204,14 +179,7 @@ class CoverageAdmin(BaseFileAdmin):
 
     def get_fieldsets(self, request, obj):
         coverage_fieldsets = [
-            (
-                "Coverage Details",
-                {
-                    "fields": (
-                        "name",
-                    )
-                }
-            ),
+            ("Coverage Details", {"fields": ("name",)}),
         ]
         return coverage_fieldsets + super().get_fieldsets(request, obj)
 
@@ -240,14 +208,7 @@ class CampaignAdmin(BaseFileAdmin):
         campaign_fieldsets = [
             (
                 "Campaign Details",
-                {
-                    "fields": (
-                        "name",
-                        "external_id",
-                        "coverage",
-                        "district"
-                    )
-                }
+                {"fields": ("name", "external_id", "coverage", "district")},
             ),
         ]
         return campaign_fieldsets + super().get_fieldsets(request, obj)
@@ -262,6 +223,7 @@ class CampaignAdmin(BaseFileAdmin):
 
     get_coverage.short_description = "Coverage"
     get_district.short_description = "District"
+
 
 @admin.register(DataPoint)
 class DataPointAdmin(BaseFileAdmin):
@@ -286,9 +248,9 @@ class DataPointAdmin(BaseFileAdmin):
                         "order",
                         "campaign",
                         "latitude",
-                        "longitude"
+                        "longitude",
                     )
-                }
+                },
             ),
         ]
         return data_point_fieldsets + super().get_fieldsets(request, obj)
@@ -302,12 +264,12 @@ class DataPointAdmin(BaseFileAdmin):
         if obj:
             for category in Category.objects.all():
                 inline = type(
-                    f'{category}MeasurementInline',
+                    f"{category}MeasurementInline",
                     (MeasurementInline,),
                     {
-                        'verbose_name': category,
-                        'verbose_name_plural': f'{category} Measurements'
-                    }
+                        "verbose_name": category,
+                        "verbose_name_plural": f"{category} Measurements",
+                    },
                 )
                 inlines.append(
                     inline(self.model, self.admin_site, category=category)
@@ -339,7 +301,7 @@ class MeasurementAdmin(BaseFileAdmin):
                         "category",
                         "data_point",
                     )
-                }
+                },
             ),
         ]
         return data_point_fieldsets + super().get_fieldsets(request, obj)
@@ -368,14 +330,18 @@ class CategoryAdmin(admin.ModelAdmin):
     search_fields = ("name",)
 
     list_display = [
-        "__str__", "created_at",
+        "__str__",
+        "created_at",
     ]
 
 
 @admin.register(ComplimentaryData)
 class ComplimentaryDataAdmin(BaseFileAdmin):
     list_display = [
-        "name", "complement_type", "ftp_created_at", "last_synced_at"
+        "name",
+        "complement_type",
+        "ftp_created_at",
+        "last_synced_at",
     ]
 
     list_filter = [
@@ -393,12 +359,12 @@ class ComplimentaryDataAdmin(BaseFileAdmin):
                             "complement_type",
                             "data_point",
                         )
-                    }
+                    },
                 ),
             ]
             return data_point_fieldsets + super().get_fieldsets(request, obj)
         elif obj and obj.campaign:
-             data_point_fieldsets = [
+            data_point_fieldsets = [
                 (
                     "Complement Details",
                     {
@@ -407,10 +373,10 @@ class ComplimentaryDataAdmin(BaseFileAdmin):
                             "complement_type",
                             "campaign",
                         )
-                    }
+                    },
                 ),
             ]
-             return data_point_fieldsets + super().get_fieldsets(request, obj)
+            return data_point_fieldsets + super().get_fieldsets(request, obj)
         else:
             return super().get_fieldsets(request, obj)
 
@@ -418,9 +384,7 @@ class ComplimentaryDataAdmin(BaseFileAdmin):
 @admin.register(UnmatchedFile)
 class UnmatchedFileAdmin(BaseFileAdmin):
     search_fields = ("name", "path", "level")
-    list_display = [
-        "name", "level", "ftp_created_at", "last_synced_at"
-    ]
+    list_display = ["name", "level", "ftp_created_at", "last_synced_at"]
 
     list_filter = [
         LevelFilter,
@@ -429,9 +393,7 @@ class UnmatchedFileAdmin(BaseFileAdmin):
 
 @admin.register(PathRule)
 class PathRuleAdmin(admin.ModelAdmin):
-    list_display = [
-        "name", "pattern", "level", "order"
-    ]
+    list_display = ["name", "pattern", "level", "order"]
 
     list_filter = [
         LevelFilter,

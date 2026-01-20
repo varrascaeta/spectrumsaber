@@ -1,8 +1,8 @@
 # Standard imports
 import logging
+
 # Django imports
 from django.db import models
-
 
 logger = logging.getLogger(__name__)
 
@@ -25,9 +25,7 @@ class Province(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     country = models.ForeignKey(
-        Country,
-        on_delete=models.CASCADE,
-        related_name="provinces"
+        Country, on_delete=models.CASCADE, related_name="provinces"
     )
 
     def __str__(self) -> str:
@@ -39,9 +37,7 @@ class District(models.Model):
     code = models.CharField(max_length=16, null=True, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
     province = models.ForeignKey(
-        Province,
-        on_delete=models.CASCADE,
-        related_name="districts"
+        Province, on_delete=models.CASCADE, related_name="districts"
     )
 
     def __str__(self) -> str:
@@ -50,7 +46,6 @@ class District(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["name", "province"],
-                name="unique_district"
+                fields=["name", "province"], name="unique_district"
             )
         ]

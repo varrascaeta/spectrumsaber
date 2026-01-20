@@ -1,12 +1,14 @@
 # Standard imports
 import logging
+
 import pandas as pd
+
 # Django imports
 from django.core.management.base import BaseCommand, CommandParser
+
 # Project imports
 from src.campaigns.models import Campaign
 from src.places.models import Country, District, Province
-
 
 logger = logging.getLogger(__name__)
 
@@ -15,8 +17,7 @@ class Command(BaseCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.country, _ = Country.objects.get_or_create(
-            name="Argentina",
-            code="AR"
+            name="Argentina", code="AR"
         )
 
     def add_arguments(self, parser: CommandParser) -> None:
@@ -35,10 +36,12 @@ class Command(BaseCommand):
             name=line["Provincia"],
             country=self.country,
         )
-        district, created = District.objects.get_or_create(
-            name=line["Nombre"],
-            province=province,
+        district, created = District.objects.update_or_create(
             code=line["Código"],
+            defaults={
+                "name": line["Nombre"],
+                "province": province,
+            },
         )
         logger.info("District %s created: %s", district, created)
         campaigns = Campaign.objects.filter(metadata__geo_code=district.code)
