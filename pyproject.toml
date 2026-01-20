@@ -218,7 +218,6 @@ dependencies = [
     "time-machine==2.16.0 ; implementation_name != 'pypy'",
     "tomli>=2.2.1",
     "tomli==2.2.1 ; python_full_version < '3.11'",
-    "tox==4.14.2",
     "traitlets==5.14.3",
     "typing-extensions==4.13.0",
     "tzdata==2025.2",
@@ -238,25 +237,10 @@ dependencies = [
     "zipp==3.21.0",
     "flake8-black>=0.4.0",
     "flake8-builtins>=3.1.0",
-    "tox-uv>=1.7.0",
     "pytest-cov>=7.0.0",
     "diagrams>=0.25.1",
-]
-
-[tool.tox]
-requires = ["tox>=4.14", "tox-uv>=1.7.0"]
-env_list = [
-    "style",
-    "docstyle",
-    "check-manifest",
-    "check-testdir",
-    "check-headers",
-    "check-apidocsdir",
-    "mkdocs",
-    "py310",
-    "py311",
-    "py312",
-    "coverage"
+    "tox-uv>=1.25.0",
+    "tox-envfile>=0.0.8",
 ]
 
 [tool.isort]
