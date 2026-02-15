@@ -255,9 +255,10 @@ class TestFTPClient:
             side_effect=error_perm("550 Permission denied")
         )
 
-        with patch(
-            "builtins.open", mock_open()
-        ) as mock_file, patch.object(ftp_client, "parse_line"):
+        with (
+            patch("builtins.open", mock_open()) as mock_file,
+            patch.object(ftp_client, "parse_line"),
+        ):
             result = ftp_client.get_dir_data("/forbidden/path")
 
         assert result == []
@@ -294,9 +295,7 @@ class TestFTPClient:
             },
         ]
 
-        with patch.object(
-            ftp_client, "get_dir_data", return_value=mock_files
-        ):
+        with patch.object(ftp_client, "get_dir_data", return_value=mock_files):
             result = ftp_client.get_files_at_depth("/test", max_depth=1)
 
         # Should return non-directory files

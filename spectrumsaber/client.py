@@ -1,13 +1,22 @@
 # Standard imports
+import argparse
+import json
 import logging
 import os
 import re
 import signal
+import sys
 from datetime import UTC, datetime
 from ftplib import FTP, error_perm
+from pathlib import Path
 
 # Third party imports
 import requests
+from rich.console import Console
+from rich.panel import Panel
+from rich.prompt import Prompt, Confirm
+from rich.syntax import Syntax
+from rich.table import Table
 
 # Project imports
 from spectrumsaber.cfg import (
@@ -15,6 +24,7 @@ from spectrumsaber.cfg import (
     FTP_PASSWORD,
     FTP_USER,
     GRAPHQL_ENDPOINT,
+    GRAPHQL_JWT_TOKEN,
 )
 
 logger = logging.getLogger(__name__)
@@ -23,7 +33,7 @@ logger = logging.getLogger(__name__)
 logger = logging.getLogger(__name__)
 DIR_LIST_PATTERN = (
     r"^(\d{2}-\d{2}-\d{2})\s+(\d{2}:\d{2}(?:AM|PM))\s+" r"(<DIR>|\d+)\s+(.+)$"
-)  # noqa: E501
+)
 DATE_FORMAT = "%m-%d-%y"
 TIME_FORMAT = "%I:%M%p"
 
@@ -118,7 +128,7 @@ class FTPClient:
             with open("permission_errors.txt", "a", encoding="utf-8") as f:
                 f.write(f"{path}\n")
             return []
-        except Exception as e:
+        except OSError as e:
             logger.error("Error scanning %s: %s", path, e)
             return []
 
@@ -147,7 +157,9 @@ class FTPClient:
             logger.error("Line  %s does not match FTP pattern", line)
             return {}
 
-    def get_files_at_depth(self, path: str, max_depth: int, current_depth: int = 0) -> list[dict]:
+    def get_files_at_depth(
+        self, path: str, max_depth: int, current_depth: int = 0
+    ) -> list[dict]:
         """
         Retrieve files at a specified depth from the given path.
         Depth 0 means the root path relative to BASE_FTP_PATH from env.
@@ -164,7 +176,11 @@ class FTPClient:
             current_depth += 1
             for file in current_files:
                 if file["is_dir"]:
-                    files.extend(self.get_files_at_depth(file["path"], max_depth, current_depth))
+                    files.extend(
+                        self.get_files_at_depth(
+                            file["path"], max_depth, current_depth
+                        )
+                    )
                 else:
                     files.append(file)
         return files
@@ -175,9 +191,10 @@ class FTPClient:
 
 class SpectrumSaberClient:
     def __init__(self):
-        self.__token__ = None
+        self.__token__ = GRAPHQL_JWT_TOKEN
         self.__refresh_token__ = None
         self.user = None
+        self.updated_token = False
 
     def __get_headers__(self) -> dict:
         """
@@ -228,6 +245,40 @@ class SpectrumSaberClient:
             logger.error("Failed to refresh token: %s", result.get("errors"))
             return False
 
+    def __verify_token__(self) -> bool:
+        """
+        Verify if the current token is valid by attempting a simple query.
+        Returns:
+            bool: True if token is valid, False otherwise.
+        """
+        query = """
+        query {
+            me {
+                id
+                username
+            }
+        }
+        """
+        payload = {"query": query}
+        try:
+            resp = requests.post(
+                GRAPHQL_ENDPOINT,
+                timeout=10,
+                json=payload,
+                headers=self.__get_headers__(),
+            )
+            data = resp.json()
+            if data.get("errors"):
+                return False
+            if data.get("data") and data["data"].get("me"):
+                self.user = data["data"]["me"]["username"]
+                logger.info("Token verified for user: %s", self.user)
+                return True
+            return False
+        except (requests.RequestException, KeyError, ValueError) as e:
+            logger.error("Error verifying token: %s", e)
+            return False
+
     def query(self, query: str, variables: dict | None = None) -> dict:
         """
         Execute a GraphQL query or mutation.
@@ -260,11 +311,31 @@ class SpectrumSaberClient:
     def login(self, username: str, password: str):
         """
         Authenticate the user with the given credentials.
+        First attempts to use GRAPHQL_JWT_TOKEN from environment if available.
+        If the env token is expired, proceeds with username/password auth.
         If successful, stores the auth and refresh tokens.
         Args:
             username (str): The username.
             password (str): The password.
         """
+        # First, try to use token from environment variable
+        if GRAPHQL_JWT_TOKEN:
+            logger.info("Found GRAPHQL_JWT_TOKEN in environment, verifying...")
+            if self.__verify_token__():
+                logger.info(
+                    "Using valid token from GRAPHQL_JWT_TOKEN "
+                    "environment variable."
+                )
+                return
+            else:
+                logger.warning(
+                    "Token from GRAPHQL_JWT_TOKEN is expired or invalid. "
+                    "Proceeding with username/password authentication."
+                )
+                self.__token__ = None
+                self.updated_token = True
+
+        # Proceed with normal login
         query = """
         mutation TokenAuth($username: String!, $password: String!) {
             tokenAuth(username: $username, password: $password) {
@@ -290,6 +361,17 @@ class SpectrumSaberClient:
                 "refreshToken"
             ]["token"]
             logger.info("Authenticated user %s.", username)
+
+            # Notify user to update their environment variable
+            if self.updated_token:
+                print(
+                    "\n" + "=" * 60 + "\n"
+                    "Your GRAPHQL_JWT_TOKEN has been refreshed.\n"
+                    "Please update your environment variable with "
+                    "the new token:\n"
+                    "export GRAPHQL_JWT_TOKEN='%s'\n" % self.__token__
+                    + "=" * 60
+                )
         else:
             logger.error(
                 "Failed to authenticate user %s: %s",
@@ -308,3 +390,420 @@ class SpectrumSaberClient:
         """
         result = self.query(query, params)
         return result
+
+    def logout(self):
+        """
+        Clear authentication tokens to log out the user.
+        """
+        self.__token__ = None
+        self.__refresh_token__ = None
+        self.user = None
+        logger.info("User logged out successfully.")
+
+    def is_authenticated(self) -> bool:
+        """
+        Check if the client is currently authenticated.
+        Returns:
+            bool: True if authenticated, False otherwise.
+        """
+        return self.__token__ is not None
+
+    def get_token(self) -> str | None:
+        """
+        Get the current authentication token.
+        Returns:
+            str | None: The current token or None if not authenticated.
+        """
+        return self.__token__
+
+
+class InteractiveClient:
+    def __init__(self):
+        self.ftp_client = FTPClient()
+        self.saber_client = SpectrumSaberClient()
+
+    def run(self):
+        """
+        Run the interactive client, allowing the user to login and
+        interact with the FTP and GraphQL clients.
+        """
+        print("Welcome to the Spectrum Saber Interactive Client!")
+        while True:
+            print("\nPlease choose an option:")
+            print("1. Login")
+            print("2. Scan FTP Directory")
+            print("3. Run GraphQL Query")
+            print("4. Exit")
+            choice = input("Enter your choice: ")
+            if choice == "1":
+                username = input("Username: ")
+                password = input("Password: ")
+                self.saber_client.login(username, password)
+            elif choice == "2":
+                path = input("Enter FTP directory path to scan: ")
+                with self.ftp_client as ftp:
+                    files = ftp.get_files_at_depth(path, max_depth=2)
+                    for file in files:
+                        print(file)
+            elif choice == "3":
+                query = input("Enter GraphQL query: ")
+                result = self.saber_client.run_query(query)
+                print(result)
+            elif choice == "4":
+                print("Goodbye!")
+                break
+            else:
+                print("Invalid choice, please try again.")
+
+
+class RichInteractiveClient:
+    """
+    Enhanced interactive client using Rich console for better UX.
+    """
+
+    def __init__(self):
+        self.console = Console()
+        self.saber_client = SpectrumSaberClient()
+
+    def display_banner(self):
+        """
+        Display a welcome banner.
+        """
+        banner = Panel.fit(
+            "[bold cyan]Spectrum Saber GraphQL Client[/bold cyan]\n"
+            "[dim]Interactive GraphQL Query Interface[/dim]",
+            border_style="cyan",
+        )
+        self.console.print(banner)
+
+    def display_menu(self):
+        """
+        Display the main menu.
+        """
+        table = Table(show_header=False, box=None)
+        table.add_column("Option", style="cyan")
+        table.add_column("Description")
+
+        table.add_row("1", "Login")
+        table.add_row("2", "Logout")
+        table.add_row("3", "Show Token")
+        table.add_row("4", "Run GraphQL Query")
+        table.add_row("5", "Exit")
+
+        self.console.print("\n[bold]Menu:[/bold]")
+        self.console.print(table)
+
+    def handle_login(self):
+        """
+        Handle user login.
+        """
+        self.console.print("\n[bold yellow]Login[/bold yellow]")
+        username = Prompt.ask("Username")
+        password = Prompt.ask("Password", password=True)
+
+        self.saber_client.login(username, password)
+
+        if self.saber_client.is_authenticated():
+            self.console.print("[bold green]✓[/bold green] Login successful!")
+        else:
+            self.console.print(
+                "[bold red]✗[/bold red] Login failed. " "Check credentials."
+            )
+
+    def handle_logout(self):
+        """
+        Handle user logout.
+        """
+        if not self.saber_client.is_authenticated():
+            self.console.print("[yellow]Not currently logged in.[/yellow]")
+            return
+
+        self.saber_client.logout()
+        self.console.print(
+            "[bold green]✓[/bold green] Logged out successfully."
+        )
+
+    def handle_show_token(self):
+        """
+        Display the current authentication token.
+        """
+        token = self.saber_client.get_token()
+        if token:
+            self.console.print("\n[bold]Current Token:[/bold]")
+            self.console.print(Panel(token, border_style="green"))
+        else:
+            self.console.print(
+                "[yellow]Not authenticated. Please login first.[/yellow]"
+            )
+
+    def handle_query(self):
+        """
+        Handle GraphQL query execution.
+        """
+        if not self.saber_client.is_authenticated():
+            self.console.print(
+                "[yellow]Not authenticated. Please login first.[/yellow]"
+            )
+            return
+
+        self.console.print("\n[bold yellow]GraphQL Query[/bold yellow]")
+        self.console.print(
+            "[dim]Enter your query "
+            "(press Ctrl+D or Ctrl+Z when done):[/dim]\n"
+        )
+
+        query_lines = []
+        try:
+            while True:
+                line = input()
+                query_lines.append(line)
+        except EOFError:
+            pass
+
+        query = "\n".join(query_lines).strip()
+
+        if not query:
+            self.console.print("[red]Empty query. Aborting.[/red]")
+            return
+
+        # Ask for variables if needed
+        has_variables = Confirm.ask("\nDoes this query need variables?")
+        variables = None
+
+        if has_variables:
+            self.console.print("[dim]Enter variables as JSON:[/dim]")
+            variables_str = Prompt.ask("Variables")
+            try:
+                variables = json.loads(variables_str)
+            except json.JSONDecodeError:
+                self.console.print(
+                    "[red]Invalid JSON for variables."
+                    " Proceeding without variables.[/red]"
+                )
+                variables = None
+
+        # Execute query
+        self.console.print("\n[dim]Executing query...[/dim]")
+        result = self.saber_client.run_query(query, variables)
+
+        # Display result
+        self.display_result(result)
+
+        # Ask to save
+        if result and Confirm.ask("\nSave result to file?"):
+            filename = Prompt.ask("Filename", default="query_result.json")
+            self.save_result(result, filename)
+
+    def display_result(self, result: dict):
+        """
+        Display query result with syntax highlighting.
+        """
+        self.console.print("\n[bold]Result:[/bold]")
+        result_json = json.dumps(result, indent=2)
+        syntax = Syntax(
+            result_json, "json", theme="monokai", line_numbers=True
+        )
+        self.console.print(syntax)
+
+    def save_result(self, result: dict, filename: str):
+        """
+        Save query result to a file.
+        """
+        try:
+            filepath = Path(filename)
+            with open(filepath, "w", encoding="utf-8") as f:
+                json.dump(result, f, indent=2)
+            self.console.print(
+                f"[bold green]✓[/bold green] Saved to "
+                f"{filepath.absolute()}"
+            )
+        except OSError as e:
+            self.console.print(
+                f"[bold red]✗[/bold red] Error saving file: {e}"
+            )
+
+    def run(self):
+        """
+        Run the interactive client loop.
+        """
+        self.display_banner()
+
+        while True:
+            self.display_menu()
+
+            choice = Prompt.ask(
+                "\nChoose an option", choices=["1", "2", "3", "4", "5"]
+            )
+
+            if choice == "1":
+                self.handle_login()
+            elif choice == "2":
+                self.handle_logout()
+            elif choice == "3":
+                self.handle_show_token()
+            elif choice == "4":
+                self.handle_query()
+            elif choice == "5":
+                self.console.print("\n[bold cyan]Goodbye![/bold cyan]")
+                break
+
+
+class CLIClient:
+    """
+    Non-interactive CLI client for scripting and automation.
+    """
+
+    def __init__(self):
+        self.console = Console()
+        self.saber_client = SpectrumSaberClient()
+
+    def login(self, username: str, password: str) -> bool:
+        """
+        Login with credentials.
+        """
+        self.saber_client.login(username, password)
+        return self.saber_client.is_authenticated()
+
+    def get_token(self) -> str | None:
+        """
+        Get the authentication token.
+        """
+        return self.saber_client.get_token()
+
+    def execute_query(self, query: str, variables: dict | None = None) -> dict:
+        """
+        Execute a GraphQL query.
+        """
+        return self.saber_client.run_query(query, variables)
+
+    def save_to_file(self, data: dict, filepath: str):
+        """
+        Save data to a JSON file.
+        """
+        path = Path(filepath)
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2)
+
+
+def main():
+    """
+    Main entry point for CLI usage.
+    """
+    parser = argparse.ArgumentParser(
+        description="Spectrum Saber GraphQL Client",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+
+    parser.add_argument(
+        "--interactive", action="store_true", help="Run in interactive mode"
+    )
+
+    parser.add_argument(
+        "--username", type=str, help="Username for authentication"
+    )
+
+    parser.add_argument(
+        "--password", type=str, help="Password for authentication"
+    )
+
+    parser.add_argument("--query", type=str, help="GraphQL query to execute")
+
+    parser.add_argument(
+        "--query-file", type=str, help="Path to file containing GraphQL query"
+    )
+
+    parser.add_argument(
+        "--variables", type=str, help="Query variables as JSON string"
+    )
+
+    parser.add_argument(
+        "--variables-file",
+        type=str,
+        help="Path to file containing query variables (JSON)",
+    )
+
+    parser.add_argument(
+        "--output", type=str, help="Output file path to save results"
+    )
+
+    parser.add_argument(
+        "--show-token",
+        action="store_true",
+        help="Display the authentication token after login",
+    )
+
+    args = parser.parse_args()
+
+    # Interactive mode
+    if args.interactive:
+        client = RichInteractiveClient()
+        client.run()
+        return
+
+    # CLI mode
+    console = Console()
+    cli_client = CLIClient()
+
+    # Check if we need authentication
+    if args.query or args.query_file or args.show_token:
+        if not args.username or not args.password:
+            console.print(
+                "[bold red]Error:[/bold red] Username and password "
+                "required for authentication."
+            )
+            sys.exit(1)
+
+        console.print("[dim]Authenticating...[/dim]")
+        success = cli_client.login(args.username, args.password)
+
+        if not success:
+            console.print("[bold red]Error:[/bold red] Authentication failed.")
+            sys.exit(1)
+
+        console.print("[green]✓ Authenticated[/green]")
+
+        if args.show_token:
+            token = cli_client.get_token()
+            console.print(f"\nToken: {token}")
+
+    # Execute query
+    if args.query or args.query_file:
+        # Get query
+        if args.query_file:
+            with open(args.query_file, "r", encoding="utf-8") as f:
+                query = f.read()
+        else:
+            query = args.query
+
+        # Get variables
+        variables = None
+        if args.variables:
+            variables = json.loads(args.variables)
+        elif args.variables_file:
+            with open(args.variables_file, "r", encoding="utf-8") as f:
+                variables = json.load(f)
+
+        # Execute
+        console.print("[dim]Executing query...[/dim]")
+        result = cli_client.execute_query(query, variables)
+
+        # Output
+        if args.output:
+            cli_client.save_to_file(result, args.output)
+            console.print(f"[green]✓ Results saved to {args.output}[/green]")
+        else:
+            console.print("\n[bold]Result:[/bold]")
+            console.print_json(data=result)
+
+    # No action specified
+    if (
+        not args.interactive
+        and not args.query
+        and not args.query_file
+        and not args.show_token
+    ):
+        parser.print_help()
+
+
+if __name__ == "__main__":
+    main()
