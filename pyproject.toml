@@ -27,7 +27,6 @@ dependencies = [
     "asgiref==3.8.1",
     "asn1crypto==1.5.1",
     "asttokens==3.0.0",
-    "async-timeout==5.0.1 ; python_full_version < '3.11'",
     "attrs==25.3.0",
     "babel==2.17.0",
     "beautifulsoup4==4.13.3",
@@ -241,6 +240,8 @@ dependencies = [
     "diagrams>=0.25.1",
     "tox-uv>=1.25.0",
     "tox-envfile>=0.0.8",
+    "text-to-graphql-mcp",
+    "async-timeout>=4.0.3",
 ]
 
 [tool.isort]
