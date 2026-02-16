@@ -10,6 +10,7 @@ https://docs.djangoproject.com/en/5.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
+from datetime import timedelta
 import os
 from pathlib import Path
 
@@ -188,6 +189,9 @@ EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 GQL_AUTH = GqlAuthSettings(
     LOGIN_REQUIRE_CAPTCHA=False,
     REGISTER_REQUIRE_CAPTCHA=False,
+    SEND_ACTIVATION_EMAIL=False,
+    JWT_EXPIRATION_DELTA=timedelta(days=3650),
+    JWT_REFRESH_EXPIRATION_DELTA=timedelta(days=3650),
 )
 
 # Airflow settings

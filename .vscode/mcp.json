@@ -1,0 +1,8 @@
+{
+  "servers": {
+    "text-to-graphql": {
+      "command": "${workspaceFolder}/mcp_launcher.sh",
+      "args": []
+    }
+  }
+}
