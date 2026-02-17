@@ -1,31 +1,32 @@
 # Standard imports
-import pytest
 from datetime import datetime, timezone
 from unittest.mock import patch
 
+import pytest
+
 # Project imports
 from src.campaigns.builders import (
-    UnmatchedBuilder,
-    CoverageBuilder,
+    DATE_TRANSLATE,
     CampaignBuilder,
+    ComplimentaryDataBuilder,
+    CoverageBuilder,
     DataPointBuilder,
     MeasurementBuilder,
-    ComplimentaryDataBuilder,
-    DATE_TRANSLATE,
+    UnmatchedBuilder,
 )
 from src.campaigns.models import (
     Campaign,
-    Coverage,
-    DataPoint,
-    Measurement,
     Category,
     CategoryType,
     ComplimentaryData,
     ComplimentaryDataType,
+    Coverage,
+    DataPoint,
+    Measurement,
     PathRule,
     UnmatchedFile,
 )
-from src.places.models import District, Province, Country
+from src.places.models import Country, District, Province
 
 
 @pytest.fixture

@@ -1,7 +1,8 @@
 # Standard imports
-import pytest
 from datetime import datetime
 from unittest.mock import Mock, patch
+
+import pytest
 
 # Django imports
 from django.contrib.auth import get_user_model
@@ -14,7 +15,9 @@ from strawberry.types import Info
 from src.campaigns.models import (
     Campaign,
     Category,
-    CategoryType as CategoryTypeModel,
+)
+from src.campaigns.models import CategoryType as CategoryTypeModel
+from src.campaigns.models import (
     Coverage,
     DataPoint,
     Measurement,

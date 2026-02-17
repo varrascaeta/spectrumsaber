@@ -5,9 +5,12 @@ from datetime import UTC, datetime
 from ftplib import FTP, error_perm
 from unittest.mock import Mock, mock_open, patch
 
+# Third-party imports
 import pytest
 
+
 # Project imports
+from spectrumsaber.cfg import GRAPHQL_JWT_TOKEN
 from spectrumsaber.client import (
     DIR_LIST_PATTERN,
     FTPClient,
@@ -196,6 +199,33 @@ class TestFTPClient:
         mock_ftp.login.assert_called_once_with("user", "pass")
         assert client.connection == mock_ftp
 
+    def test_ftp_client_connect_handles_error_perm(self):
+        """Test connect handles FTP error_perm exception"""
+
+        client = FTPClient(
+            ftp_user="user", ftp_password="pass", ftp_host="host.com"
+        )
+        with patch(
+            "spectrumsaber.client.FTP",
+            side_effect=error_perm("530 Login incorrect"),
+        ):
+            with pytest.raises(error_perm):
+                client.connect()
+
+    def test_ftp_client_connect_handles_generic_exception(self):
+        """Test connect handles generic exception"""
+        from spectrumsaber.client import FTPClient
+
+        client = FTPClient(
+            ftp_user="user", ftp_password="pass", ftp_host="host.com"
+        )
+        with patch(
+            "spectrumsaber.client.FTP",
+            side_effect=Exception("Connection error"),
+        ):
+            with pytest.raises(Exception):
+                client.connect()
+
     def test_ftp_client_level_up(self, ftp_client, mock_ftp_connection):
         """Test level_up changes directory to parent"""
         ftp_client.level_up()
@@ -312,12 +342,13 @@ class TestSpectrumSaberClient:
 
     def test_saber_client_initialization(self, saber_client):
         """Test SpectrumSaberClient initializes with None tokens"""
-        assert saber_client.__token__ is None
+        assert saber_client.__token__ == GRAPHQL_JWT_TOKEN
         assert saber_client.__refresh_token__ is None
         assert saber_client.user is None
 
     def test_get_headers_without_token(self, saber_client):
         """Test __get_headers__ returns basic headers without token"""
+        saber_client.__token__ = None
         headers = saber_client.__get_headers__()
         assert headers == {"Content-Type": "application/json"}
 
@@ -342,10 +373,13 @@ class TestSpectrumSaberClient:
 
         assert result == {"data": {"test": "success"}}
         mock_requests.post.assert_called_once_with(
-            "http://localhost:8000/graphql/",
+            "http://localhost:8000/graphql",
             timeout=10,
             json={"query": query, "variables": variables},
-            headers={"Content-Type": "application/json"},
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"JWT {saber_client.__token__}",
+            },
         )
 
     def test_query_without_variables(self, saber_client, mock_requests):
@@ -478,6 +512,42 @@ class TestSpectrumSaberClient:
         assert saber_client.__token__ is None
         assert saber_client.__refresh_token__ is None
 
+    def test_login_handles_missing_tokenAuth(
+        self, saber_client, mock_requests
+    ):
+        """Test login handles missing tokenAuth in response"""
+        mock_response = Mock()
+        mock_response.json.return_value = {"data": {}}
+        mock_requests.post.return_value = mock_response
+        saber_client.login("user", "pass")
+        assert saber_client.__token__ is None
+        assert saber_client.__refresh_token__ is None
+
+    def test_login_handles_missing_token_and_refresh(
+        self, saber_client, mock_requests
+    ):
+        """Test login handles missing token and refreshToken fields"""
+        mock_response = Mock()
+        mock_response.json.return_value = {
+            "data": {"tokenAuth": {"success": True}}
+        }
+        mock_requests.post.return_value = mock_response
+        saber_client.login("user", "pass")
+        assert saber_client.__token__ is None
+        assert saber_client.__refresh_token__ is None
+
+    def test_login_handles_errors_field(self, saber_client, mock_requests):
+        """Test login logs error when errors field is present"""
+        mock_response = Mock()
+        mock_response.json.return_value = {
+            "data": {"tokenAuth": {"success": False}},
+            "errors": [{"message": "Some error"}],
+        }
+        mock_requests.post.return_value = mock_response
+        saber_client.login("user", "pass")
+        assert saber_client.__token__ is None
+        assert saber_client.__refresh_token__ is None
+
     def test_run_query_calls_query_method(self, saber_client):
         """Test run_query delegates to query method"""
         with patch.object(
@@ -500,6 +570,137 @@ class TestSpectrumSaberClient:
 
             mock_query.assert_called_once_with(query_string, None)
             assert result == {"data": {"test": "result"}}
+
+    def test_verify_token_success(self, saber_client, mock_requests):
+        """Test __verify_token__ validates token successfully"""
+        saber_client.__token__ = "valid_token_123"
+
+        mock_response = Mock()
+        mock_response.json.return_value = {
+            "data": {"me": {"id": "1", "username": "testuser"}}
+        }
+        mock_requests.post.return_value = mock_response
+
+        result = saber_client.__verify_token__()
+
+        assert result is True
+        assert saber_client.user == "testuser"
+
+    def test_verify_token_failure_with_errors(
+        self, saber_client, mock_requests
+    ):
+        """Test __verify_token__ fails when errors returned"""
+        saber_client.__token__ = "invalid_token"
+
+        mock_response = Mock()
+        mock_response.json.return_value = {
+            "errors": [{"message": "Invalid token"}]
+        }
+        mock_requests.post.return_value = mock_response
+
+        result = saber_client.__verify_token__()
+
+        assert result is False
+
+    def test_verify_token_failure_no_user_data(
+        self, saber_client, mock_requests
+    ):
+        """Test __verify_token__ fails when no user data returned"""
+        saber_client.__token__ = "token_123"
+
+        mock_response = Mock()
+        mock_response.json.return_value = {"data": {"me": None}}
+        mock_requests.post.return_value = mock_response
+
+        result = saber_client.__verify_token__()
+
+        assert result is False
+
+    def test_verify_token_handles_request_exception(self, saber_client):
+        """Test __verify_token__ handles request exceptions"""
+        import requests as real_requests
+
+        saber_client.__token__ = "token_123"
+
+        # Patch requests.post to raise exception
+        with patch("spectrumsaber.client.requests.post") as mock_post:
+            mock_post.side_effect = real_requests.RequestException(
+                "Network error"
+            )
+            result = saber_client.__verify_token__()
+
+        assert result is False
+
+    def test_login_with_valid_env_token(self, saber_client, mock_requests):
+        """Test login uses existing valid token from environment"""
+        saber_client.__token__ = "env_token_123"
+
+        # Mock verify_token to return True
+        with patch.object(saber_client, "__verify_token__", return_value=True):
+            saber_client.login("testuser", "testpassword")
+
+        # Should not make any mutation request
+        mock_requests.post.assert_not_called()
+        assert saber_client.__token__ == "env_token_123"
+
+    def test_login_with_invalid_env_token(self, saber_client, mock_requests):
+        """Test login proceeds with credentials when env token is invalid"""
+        saber_client.__token__ = "invalid_env_token"
+
+        # Mock login response
+        login_response = Mock()
+        login_response.json.return_value = {
+            "data": {
+                "tokenAuth": {
+                    "success": True,
+                    "token": {"token": "new_token_123"},
+                    "refreshToken": {"token": "refresh_token_456"},
+                }
+            }
+        }
+
+        mock_requests.post.return_value = login_response
+
+        with patch.object(
+            saber_client, "__verify_token__", return_value=False
+        ):
+            saber_client.login("testuser", "testpassword")
+
+        assert saber_client.__token__ == "new_token_123"
+        assert saber_client.__refresh_token__ == "refresh_token_456"
+        assert saber_client.updated_token is True
+
+    def test_logout_clears_tokens(self, saber_client):
+        """Test logout clears all authentication data"""
+        saber_client.__token__ = "token_123"
+        saber_client.__refresh_token__ = "refresh_token_456"
+        saber_client.user = "testuser"
+
+        saber_client.logout()
+
+        assert saber_client.__token__ is None
+        assert saber_client.__refresh_token__ is None
+        assert saber_client.user is None
+
+    def test_is_authenticated_returns_true_with_token(self, saber_client):
+        """Test is_authenticated returns True when token exists"""
+        saber_client.__token__ = "token_123"
+        assert saber_client.is_authenticated() is True
+
+    def test_is_authenticated_returns_false_without_token(self, saber_client):
+        """Test is_authenticated returns False without token"""
+        saber_client.__token__ = None
+        assert saber_client.is_authenticated() is False
+
+    def test_get_token_returns_token(self, saber_client):
+        """Test get_token returns current token"""
+        saber_client.__token__ = "token_123"
+        assert saber_client.get_token() == "token_123"
+
+    def test_get_token_returns_none_when_not_authenticated(self, saber_client):
+        """Test get_token returns None when not authenticated"""
+        saber_client.__token__ = None
+        assert saber_client.get_token() is None
 
 
 class TestDirListPattern:
@@ -539,3 +740,206 @@ class TestDirListPattern:
         match = re.match(DIR_LIST_PATTERN, line)
 
         assert match is None
+
+
+class TestCLIClient:
+    """Test CLIClient class"""
+
+    @pytest.fixture
+    def cli_client(self):
+        """Create a CLIClient instance"""
+        from spectrumsaber.client import CLIClient
+
+        return CLIClient()
+
+    @pytest.fixture
+    def mock_console(self):
+        """Create a mock Console"""
+        with patch("spectrumsaber.client.Console") as mock_console_class:
+            yield mock_console_class.return_value
+
+    def test_cli_client_initialization(self, cli_client):
+        """Test CLIClient initializes properly"""
+        assert cli_client.saber_client is not None
+        assert isinstance(cli_client.saber_client, SpectrumSaberClient)
+
+    def test_cli_client_login_success(self, cli_client):
+        """Test login returns True on success"""
+        with (
+            patch.object(cli_client.saber_client, "login"),
+            patch.object(
+                cli_client.saber_client, "is_authenticated", return_value=True
+            ),
+        ):
+            result = cli_client.login("testuser", "testpass")
+            assert result is True
+
+    def test_cli_client_login_failure(self, cli_client):
+        """Test login returns False on failure"""
+        with (
+            patch.object(cli_client.saber_client, "login"),
+            patch.object(
+                cli_client.saber_client, "is_authenticated", return_value=False
+            ),
+        ):
+            result = cli_client.login("baduser", "badpass")
+            assert result is False
+
+    def test_cli_client_get_token(self, cli_client):
+        """Test get_token delegates to saber_client"""
+        with patch.object(
+            cli_client.saber_client, "get_token", return_value="token_123"
+        ):
+            result = cli_client.get_token()
+            assert result == "token_123"
+
+    def test_cli_client_execute_query(self, cli_client):
+        """Test execute_query delegates to saber_client"""
+        expected_result = {"data": {"test": "result"}}
+        with patch.object(
+            cli_client.saber_client,
+            "run_query",
+            return_value=expected_result,
+        ):
+            result = cli_client.execute_query(
+                "query { test }", {"var1": "value1"}
+            )
+            assert result == expected_result
+
+    def test_cli_client_save_to_file(self, cli_client, tmp_path):
+        """Test save_to_file writes JSON data"""
+        import json
+
+        data = {"test": "data", "value": 123}
+        filepath = tmp_path / "test_output.json"
+
+        cli_client.save_to_file(data, str(filepath))
+
+        assert filepath.exists()
+        with open(filepath, "r", encoding="utf-8") as f:
+            loaded_data = json.load(f)
+        assert loaded_data == data
+
+
+class TestInteractiveClient:
+    """Test InteractiveClient class"""
+
+    @pytest.fixture
+    def interactive_client(self):
+        """Create an InteractiveClient instance"""
+        from spectrumsaber.client import InteractiveClient
+
+        with (
+            patch("spectrumsaber.client.FTPClient"),
+            patch("spectrumsaber.client.SpectrumSaberClient"),
+        ):
+            return InteractiveClient()
+
+    def test_interactive_client_initialization(self, interactive_client):
+        """Test InteractiveClient initializes with clients"""
+        assert interactive_client.ftp_client is not None
+        assert interactive_client.saber_client is not None
+
+
+class TestMainFunction:
+    """Test main CLI entry point"""
+
+    @patch("spectrumsaber.client.sys.argv", ["client.py", "--help"])
+    def test_main_with_help_flag(self):
+        """Test main shows help when --help is passed"""
+        from spectrumsaber.client import main
+
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        # argparse exits with code 0 for --help
+        assert exc_info.value.code == 0
+
+    @patch("spectrumsaber.client.sys.argv", ["client.py", "--interactive"])
+    @patch("spectrumsaber.client.RichInteractiveClient")
+    def test_main_interactive_mode(self, mock_rich_client):
+        """Test main runs interactive mode"""
+        from spectrumsaber.client import main
+
+        mock_instance = Mock()
+        mock_rich_client.return_value = mock_instance
+
+        main()
+
+        mock_instance.run.assert_called_once()
+
+    @patch(
+        "spectrumsaber.client.sys.argv",
+        [
+            "client.py",
+            "--username",
+            "testuser",
+            "--password",
+            "testpass",
+            "--query",
+            "query { test }",
+        ],
+    )
+    @patch("spectrumsaber.client.CLIClient")
+    @patch("spectrumsaber.client.Console")
+    def test_main_query_mode_success(self, mock_console, mock_cli_client):
+        """Test main executes query in CLI mode"""
+        from spectrumsaber.client import main
+
+        mock_client = Mock()
+        mock_client.saber_client.is_authenticated.return_value = False
+        mock_client.login.return_value = True
+        mock_client.execute_query.return_value = {"data": {"test": "result"}}
+        mock_cli_client.return_value = mock_client
+
+        main()
+
+        mock_client.login.assert_called_once_with("testuser", "testpass")
+        mock_client.execute_query.assert_called_once()
+
+    @patch(
+        "spectrumsaber.client.sys.argv",
+        [
+            "client.py",
+            "--username",
+            "testuser",
+            "--password",
+            "testpass",
+            "--show-token",
+        ],
+    )
+    @patch("spectrumsaber.client.CLIClient")
+    @patch("spectrumsaber.client.Console")
+    def test_main_show_token(self, mock_console, mock_cli_client):
+        """Test main shows token"""
+        from spectrumsaber.client import main
+
+        mock_client = Mock()
+        mock_client.saber_client.is_authenticated.return_value = False
+        mock_client.login.return_value = True
+        mock_client.get_token.return_value = "token_123"
+        mock_cli_client.return_value = mock_client
+
+        main()
+
+        mock_client.get_token.assert_called_once()
+
+    @patch("spectrumsaber.client.Console")
+    def test_main_query_without_credentials_fails(self, mock_console):
+        """Test main exits when query requires auth but no credentials"""
+        from spectrumsaber.client import main
+
+        with (
+            patch(
+                "spectrumsaber.client.sys.argv",
+                ["client.py", "--query", "query { test }"],
+            ),
+            patch("spectrumsaber.client.CLIClient") as mock_cli_client,
+            patch("spectrumsaber.client.sys.exit") as mock_exit,
+        ):
+            mock_client = Mock()
+            mock_client.saber_client.is_authenticated.return_value = False
+            mock_cli_client.return_value = mock_client
+
+            main()
+
+            mock_exit.assert_called_once_with(1)

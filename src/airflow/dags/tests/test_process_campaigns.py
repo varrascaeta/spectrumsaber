@@ -1,7 +1,5 @@
 """Tests for process_campaigns DAG."""
 
-from unittest.mock import MagicMock, patch
-
 import pytest
 
 

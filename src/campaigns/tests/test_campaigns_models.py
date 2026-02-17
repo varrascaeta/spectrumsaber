@@ -1,23 +1,24 @@
 # Standard imports
-import pytest
 from datetime import date
+
+import pytest
 
 # Project imports
 from src.campaigns.models import (
+    PARENT_MAP,
+    PATH_LEVELS_MODELS,
     Campaign,
-    Coverage,
-    DataPoint,
-    Measurement,
     Category,
     CategoryType,
     ComplimentaryData,
     ComplimentaryDataType,
+    Coverage,
+    DataPoint,
+    Measurement,
     PathRule,
     UnmatchedFile,
-    PATH_LEVELS_MODELS,
-    PARENT_MAP,
 )
-from src.places.models import District, Province, Country
+from src.places.models import Country, District, Province
 
 
 @pytest.fixture
