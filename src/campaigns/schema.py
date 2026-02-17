@@ -7,14 +7,6 @@ from gqlauth.core.types_ import GQLAuthError, GQLAuthErrors
 from gqlauth.core.utils import get_user
 from strawberry.types import Info
 
-from src.campaigns.models import (
-    Campaign,
-    Category,
-    Coverage,
-    DataPoint,
-    Measurement,
-)
-
 # Project imports
 from src.campaigns.gql_types import (
     CampaignFilter,
@@ -29,6 +21,13 @@ from src.campaigns.gql_types import (
     DistrictType,
     MeasurementFilter,
     MeasurementType,
+)
+from src.campaigns.models import (
+    Campaign,
+    Category,
+    Coverage,
+    DataPoint,
+    Measurement,
 )
 from src.places.models import District
 
