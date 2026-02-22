@@ -1,6 +1,7 @@
 # Standard imports
-import pytest
 from datetime import datetime
+
+import pytest
 
 # Django imports
 from django.db.models.signals import post_save

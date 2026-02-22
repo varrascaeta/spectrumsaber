@@ -1,8 +1,5 @@
 """Tests for DAG __init__ module."""
 
-import os
-import pytest
-
 
 def test_dags_init_module():
     """Test that the dags __init__ module can be imported."""

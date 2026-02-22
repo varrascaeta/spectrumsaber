@@ -5,6 +5,7 @@ SHELL ["/bin/bash", "-c"]
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
+    graphviz \
     pkg-config \
     libxml2-dev \
     libxmlsec1-dev \

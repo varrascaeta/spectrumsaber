@@ -1,9 +1,10 @@
 """Pytest configuration for DAG tests."""
 
 import os
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
+
 from airflow.models import DagBag
 
 

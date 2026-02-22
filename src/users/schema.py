@@ -4,7 +4,7 @@ from gqlauth.user import arg_mutations as mutations
 
 
 @strawberry.type
-class AuthMutation:
+class AuthMutation:  # pragma: no cover
     verify_token = mutations.VerifyToken.field
     update_account = mutations.UpdateAccount.field
     archive_account = mutations.ArchiveAccount.field

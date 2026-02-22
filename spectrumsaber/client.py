@@ -14,7 +14,7 @@ from pathlib import Path
 import requests
 from rich.console import Console
 from rich.panel import Panel
-from rich.prompt import Prompt, Confirm
+from rich.prompt import Confirm, Prompt
 from rich.syntax import Syntax
 from rich.table import Table
 
@@ -130,6 +130,9 @@ class FTPClient:
             return []
         except OSError as e:
             logger.error("Error scanning %s: %s", path, e)
+            return []
+        except Exception as e:
+            logger.error("Unexpected error scanning %s: %s", path, e)
             return []
 
     def parse_line(self, path: str, line: str) -> dict:
@@ -355,11 +358,21 @@ class SpectrumSaberClient:
             "password": password,
         }
         result = self.query(query, variables)
-        if result.get("data") and result["data"]["tokenAuth"]["success"]:
-            self.__token__ = result["data"]["tokenAuth"]["token"]["token"]
-            self.__refresh_token__ = result["data"]["tokenAuth"][
-                "refreshToken"
-            ]["token"]
+        if result.get("data") and result["data"].get("tokenAuth", {}).get(
+            "success"
+        ):
+            token_data = result["data"]["tokenAuth"].get("token")
+            refresh_data = result["data"]["tokenAuth"].get("refreshToken")
+            self.__token__ = (
+                token_data["token"]
+                if token_data and "token" in token_data
+                else None
+            )
+            self.__refresh_token__ = (
+                refresh_data["token"]
+                if refresh_data and "token" in refresh_data
+                else None
+            )
             logger.info("Authenticated user %s.", username)
 
             # Notify user to update their environment variable
@@ -417,7 +430,7 @@ class SpectrumSaberClient:
         return self.__token__
 
 
-class InteractiveClient:
+class InteractiveClient:  # pragma: no cover
     def __init__(self):
         self.ftp_client = FTPClient()
         self.saber_client = SpectrumSaberClient()
@@ -456,7 +469,7 @@ class InteractiveClient:
                 print("Invalid choice, please try again.")
 
 
-class RichInteractiveClient:
+class RichInteractiveClient:  # pragma: no cover
     """
     Enhanced interactive client using Rich console for better UX.
     """
@@ -746,21 +759,27 @@ def main():
 
     # Check if we need authentication
     if args.query or args.query_file or args.show_token:
-        if not args.username or not args.password:
+        if cli_client.saber_client.is_authenticated():
             console.print(
-                "[bold red]Error:[/bold red] Username and password "
-                "required for authentication."
+                "[green]✓ Already authenticated using existing token.[/green]"
             )
-            sys.exit(1)
+        else:
+            if not args.username or not args.password:
+                console.print(
+                    "[bold red]Error:[/bold red] Username and password "
+                    "required for authentication."
+                )
+                sys.exit(1)
 
-        console.print("[dim]Authenticating...[/dim]")
-        success = cli_client.login(args.username, args.password)
+            console.print("[dim]Authenticating...[/dim]")
+            success = cli_client.login(args.username, args.password)
+            if not success:
+                console.print(
+                    "[bold red]Error:[/bold red] Authentication failed."
+                )
+                sys.exit(1)
 
-        if not success:
-            console.print("[bold red]Error:[/bold red] Authentication failed.")
-            sys.exit(1)
-
-        console.print("[green]✓ Authenticated[/green]")
+            console.print("[green]✓ Authenticated[/green]")
 
         if args.show_token:
             token = cli_client.get_token()

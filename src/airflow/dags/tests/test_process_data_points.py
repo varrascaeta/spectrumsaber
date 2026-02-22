@@ -1,9 +1,7 @@
 """Tests for process_data_points DAG."""
 
-from unittest.mock import MagicMock, patch
-
 import pytest
-from airflow.models import DagBag
+from unittest.mock import MagicMock, patch
 
 
 class TestProcessDataPointsDag:

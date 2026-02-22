@@ -1,11 +1,8 @@
 """Tests for process_coverage DAG."""
 
-import base64
-import pickle
-from unittest.mock import MagicMock, patch
-
+# Standard imports
 import pytest
-from airflow.models import DagBag
+from unittest.mock import MagicMock, patch
 
 
 class TestProcessCoverageDag:
@@ -86,7 +83,4 @@ class TestBuildMatchedFunction:
         dag = process_coverage.dag
 
         # Create test data
-        test_data = {"coverage_name": "TEST_COVERAGE", "path": "/test/path"}
-
-        # We can't directly test the nested function, but we can verify the DAG structure
         assert dag is not None

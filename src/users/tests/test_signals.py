@@ -1,6 +1,7 @@
 # Standard imports
-import pytest
 from unittest.mock import patch
+
+import pytest
 
 # Django imports
 from django.contrib.auth import get_user_model
