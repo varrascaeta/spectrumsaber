@@ -1,0 +1,38 @@
+digraph process_coverage {
+	graph [label=process_coverage labelloc=t rankdir=LR]
+	check_non_empty_dict [color="#000000" fillcolor="#ffefeb" label=check_non_empty_dict shape=rectangle style="filled,rounded"]
+	check_non_empty_dict__1 [color="#000000" fillcolor="#ffefeb" label=check_non_empty_dict__1 shape=rectangle style="filled,rounded"]
+	get_coverage_data [color="#000000" fillcolor="#ffffff" label=get_coverage_data shape=rectangle style="filled,rounded"]
+	get_dict_result [color="#000000" fillcolor="#ffefeb" label=get_dict_result shape=rectangle style="filled,rounded"]
+	get_dict_result__1 [color="#000000" fillcolor="#ffefeb" label=get_dict_result__1 shape=rectangle style="filled,rounded"]
+	match_patterns [color="#000000" fillcolor="#ffefeb" label=match_patterns shape=rectangle style="filled,rounded"]
+	subgraph cluster_process_matched_coverages {
+		color="#000000" fillcolor="#6495ed7f" label=process_matched_coverages shape=rectangle style=filled
+		"process_matched_coverages.upstream_join_id" [color="#000000" fillcolor=CornflowerBlue height=0.2 label="" shape=circle style="filled,rounded" width=0.2]
+		"process_matched_coverages.build_single" [color="#000000" fillcolor="#ffefeb" label=build_single shape=rectangle style="filled,rounded"]
+		"process_matched_coverages.commit_director" [color="#000000" fillcolor="#ffefeb" label=commit_director shape=rectangle style="filled,rounded"]
+	}
+	subgraph cluster_process_unmatched_coverages {
+		color="#000000" fillcolor="#6495ed7f" label=process_unmatched_coverages shape=rectangle style=filled
+		"process_unmatched_coverages.upstream_join_id" [color="#000000" fillcolor=CornflowerBlue height=0.2 label="" shape=circle style="filled,rounded" width=0.2]
+		"process_unmatched_coverages.build_single" [color="#000000" fillcolor="#ffefeb" label=build_single shape=rectangle style="filled,rounded"]
+		"process_unmatched_coverages.commit_director" [color="#000000" fillcolor="#ffefeb" label=commit_director shape=rectangle style="filled,rounded"]
+	}
+	setup_django [color="#000000" fillcolor="#ffffff" label=setup_django shape=rectangle style="filled,rounded"]
+	check_non_empty_dict -> "process_matched_coverages.upstream_join_id"
+	check_non_empty_dict__1 -> "process_unmatched_coverages.upstream_join_id"
+	get_coverage_data -> match_patterns
+	get_dict_result -> "process_matched_coverages.upstream_join_id"
+	get_dict_result__1 -> "process_unmatched_coverages.upstream_join_id"
+	match_patterns -> check_non_empty_dict
+	match_patterns -> check_non_empty_dict__1
+	match_patterns -> get_dict_result
+	match_patterns -> get_dict_result__1
+	match_patterns -> "process_matched_coverages.upstream_join_id"
+	match_patterns -> "process_unmatched_coverages.upstream_join_id"
+	"process_matched_coverages.build_single" -> "process_matched_coverages.commit_director"
+	"process_matched_coverages.upstream_join_id" -> "process_matched_coverages.build_single"
+	"process_unmatched_coverages.build_single" -> "process_unmatched_coverages.commit_director"
+	"process_unmatched_coverages.upstream_join_id" -> "process_unmatched_coverages.build_single"
+	setup_django -> get_coverage_data
+}
