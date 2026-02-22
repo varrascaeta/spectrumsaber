@@ -430,7 +430,7 @@ class SpectrumSaberClient:
         return self.__token__
 
 
-class InteractiveClient:
+class InteractiveClient:  # pragma: no cover
     def __init__(self):
         self.ftp_client = FTPClient()
         self.saber_client = SpectrumSaberClient()
@@ -469,7 +469,7 @@ class InteractiveClient:
                 print("Invalid choice, please try again.")
 
 
-class RichInteractiveClient:
+class RichInteractiveClient:  # pragma: no cover
     """
     Enhanced interactive client using Rich console for better UX.
     """
