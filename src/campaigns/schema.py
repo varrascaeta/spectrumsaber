@@ -1,3 +1,7 @@
+# Standard imports
+import datetime
+from typing import Optional
+
 # Strawberry imports
 import strawberry
 import strawberry_django
@@ -55,6 +59,8 @@ class CampaignQuery:
         self,
         info: Info,
         filters: CampaignFilter | None = None,
+        date_gte: Optional[datetime.date] = None,
+        date_lte: Optional[datetime.date] = None,
     ) -> list[CampaignType]:
         user = get_user(info)
         if not user.is_authenticated:
@@ -63,6 +69,10 @@ class CampaignQuery:
         qs = Campaign.objects.all()
         if filters:
             qs = strawberry_django.filters.apply(filters, qs)
+        if date_gte is not None:
+            qs = qs.filter(date__gte=date_gte)
+        if date_lte is not None:
+            qs = qs.filter(date__lte=date_lte)
         return qs
 
     @strawberry.field

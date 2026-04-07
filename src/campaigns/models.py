@@ -59,6 +59,9 @@ class BaseFile(models.Model):
     objects = BaseFileManager()
 
     name = models.CharField(max_length=255)
+    normalized_name = models.CharField(
+        max_length=255, blank=True, db_index=True
+    )
     path = models.CharField(max_length=255, unique=True)
     description = models.TextField(null=True, blank=True)
     metadata = models.JSONField(null=True, blank=True)
@@ -84,6 +87,7 @@ class BaseFile(models.Model):
 
     def save(self, *args, **kwargs):
         self.path = self.path.strip("/")
+        self.normalized_name = self.name.lower().strip() if self.name else ""
         super().save(*args, **kwargs)
 
     class Meta:
@@ -234,7 +238,14 @@ class Category(models.Model):
     name = models.CharField(
         max_length=128, unique=True, choices=CategoryType.CHOICES
     )
+    normalized_name = models.CharField(
+        max_length=128, blank=True, db_index=True
+    )
     created_at = models.DateTimeField(default=timezone.now)
+
+    def save(self, *args, **kwargs):
+        self.normalized_name = self.name.lower().strip() if self.name else ""
+        super().save(*args, **kwargs)
 
     def __str__(self) -> str:
         return self.get_name_display()  # pylint: disable=no-member

@@ -18,6 +18,7 @@ from src.campaigns.models import (
 class CoverageFilter:
     id: auto
     name: auto
+    normalized_name: auto
 
     class Meta:
         lookups = True
@@ -27,6 +28,7 @@ class CoverageFilter:
 class CampaignFilter:
     id: auto
     name: auto
+    normalized_name: auto
     date: auto
     external_id: auto
     district: Optional["DistrictFilter"]
@@ -40,6 +42,7 @@ class CampaignFilter:
 class CategoryFilter:
     id: auto
     name: auto
+    normalized_name: auto
 
     class Meta:
         lookups = True
@@ -49,6 +52,7 @@ class CategoryFilter:
 class DataPointFilter:
     id: auto
     name: auto
+    normalized_name: auto
     campaign: Optional[CampaignFilter]
 
     class Meta:
@@ -59,6 +63,7 @@ class DataPointFilter:
 class MeasurementFilter:
     id: auto
     name: auto
+    normalized_name: auto
     category: Optional[CategoryFilter]
     data_point: Optional[DataPointFilter]
 
@@ -89,6 +94,7 @@ class DistrictType:
 class CoverageType:
     id: auto
     name: auto
+    normalized_name: auto
     campaigns: list["CampaignType"]
 
 
@@ -96,6 +102,7 @@ class CoverageType:
 class CampaignType:
     id: auto
     name: auto
+    normalized_name: auto
     date: auto
     external_id: auto
     metadata: auto
@@ -108,6 +115,7 @@ class CampaignType:
 class DataPointType:
     id: auto
     name: auto
+    normalized_name: auto
     campaign: CampaignType
     measurements: list["MeasurementType"]
 
@@ -116,6 +124,7 @@ class DataPointType:
 class CategoryType:
     id: auto
     name: auto
+    normalized_name: auto
     campaigns: list[CampaignType]
 
 
@@ -123,5 +132,6 @@ class CategoryType:
 class MeasurementType:
     id: auto
     name: auto
+    normalized_name: auto
     category: CategoryType
     data_point: DataPointType
