@@ -246,6 +246,10 @@ dependencies = [
     "matplotlib>=3.10.8",
 ]
 
+[project.scripts]
+spectrumsaber = "spectrumsaber.client:main"
+spectrumsaber-t2gql = "spectrumsaber.client:main_t2gql"
+
 [tool.isort]
 profile = "black"
 
@@ -255,3 +259,11 @@ target-version = ['py310', 'py311', 'py312']
 
 [tool.pylint.'MESSAGES CONTROL']
 disable = ["C0114", "C0115", "C0116"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["spectrumsaber*"]

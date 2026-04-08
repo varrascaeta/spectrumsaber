@@ -11,16 +11,16 @@
 CLIENT_CONTAINER=spark-client
 ENVIRONMENT=environments/local.env
 ENV_CFG=--env-file $(ENVIRONMENT) --env-file secrets.env
-DJANGO_PREFIX=uv run $(ENV_CFG) service/manage.py
+DJANGO_PREFIX=uv run $(ENV_CFG) manage.py
 
 shell:
-	uv run $(ENV_CFG) service/manage.py shell_plus
+	uv run $(ENV_CFG) manage.py shell_plus
 migrations:
-	uv run $(ENV_CFG) service/manage.py makemigrations
+	uv run $(ENV_CFG) manage.py makemigrations
 migrate:
-	uv run $(ENV_CFG) service/manage.py migrate
+	uv run $(ENV_CFG) manage.py migrate
 createsuperuser:
-	uv run $(ENV_CFG) service/manage.py createsuperuser --noinput
+	uv run $(ENV_CFG) manage.py createsuperuser --noinput
 build:
 	uv export --format requirements-txt --no-hashes --no-header -o requirements.txt > requirements.txt && \
 	docker compose --env-file environments/production.env --env-file secrets.env --profile app --profile airflow up --build -d
