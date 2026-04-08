@@ -28,7 +28,7 @@ x-airflow-common:
     _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
     # The following line can be used to set a custom config file, stored in the local config folder
     # If you want to use it, outcomment it and replace airflow.cfg with the name of your config file
-    AIRFLOW_CONFIG: '/app/project/src/airflow/config/airflow.cfg'
+    AIRFLOW_CONFIG: '/app/airflow/airflow.cfg'
   volumes:
     - type: bind
       source: .
@@ -53,7 +53,7 @@ services:
       - spectrumsaber
     container_name: spectrumsaber-app
     image: spectrumsaber:latest
-    command: bash -c "python service/manage.py runserver 0.0.0.0:8000"
+    command: bash -c "python manage.py runserver 0.0.0.0:8000"
     env_file:
       - environments/production.env
       - secrets.env
@@ -78,7 +78,7 @@ services:
     build:
       context: .
       dockerfile: containers/app.Dockerfile
-    command: bash -c "sleep 5 && python service/manage.py migrate"
+    command: bash -c "sleep 5 && python manage.py migrate"
     env_file:
       - environments/production.env
       - secrets.env
@@ -369,6 +369,9 @@ services:
     user: "0:0"
     volumes:
       - ${AIRFLOW_PROJ_DIR:-.}:/sources
+      - type: bind
+        source: .
+        target: /app/project
     networks:
       - spectrumsabernetwork
 
