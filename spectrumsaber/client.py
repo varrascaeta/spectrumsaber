@@ -429,6 +429,24 @@ class SpectrumSaberClient:
         """
         return self.__token__
 
+    def text2gql(self, llm_provider, cache_schema: bool = True):
+        """
+        Create a Text2GQL instance bound to this client.
+
+        Args:
+            llm_provider: Any LLMProvider instance (use
+                ``spectrumsaber.llm.create_provider`` to build one).
+            cache_schema: Cache the introspected schema between calls
+                          (default: True).
+
+        Returns:
+            A :class:`~spectrumsaber.text2gql.Text2GQL` instance ready
+            to translate and execute natural-language queries.
+        """
+        from spectrumsaber.text2gql import Text2GQL
+
+        return Text2GQL(self, llm_provider, cache_schema=cache_schema)
+
 
 class InteractiveClient:  # pragma: no cover
     def __init__(self):
@@ -501,7 +519,8 @@ class RichInteractiveClient:  # pragma: no cover
         table.add_row("2", "Logout")
         table.add_row("3", "Show Token")
         table.add_row("4", "Run GraphQL Query")
-        table.add_row("5", "Exit")
+        table.add_row("5", "Natural Language Query (Text-to-GraphQL)")
+        table.add_row("6", "Exit")
 
         self.console.print("\n[bold]Menu:[/bold]")
         self.console.print(table)
@@ -635,9 +654,90 @@ class RichInteractiveClient:  # pragma: no cover
                 f"[bold red]✗[/bold red] Error saving file: {e}"
             )
 
-    def run(self):
+    def handle_natural_query(
+        self,
+        provider: str | None = None,
+        api_key: str | None = None,
+        model: str | None = None,
+    ):
+        """
+        Start a natural-language → GraphQL REPL session.
+        Prompts for LLM credentials if not supplied.
+        """
+        if not self.saber_client.is_authenticated():
+            self.console.print(
+                "[yellow]Not authenticated. Please login first.[/yellow]"
+            )
+            return
+
+        from spectrumsaber.llm import create_provider
+
+        if not provider:
+            provider = Prompt.ask(
+                "LLM provider", choices=["anthropic", "openai"]
+            )
+        if not api_key:
+            api_key = Prompt.ask("API key", password=True)
+
+        kwargs = {}
+        if model:
+            kwargs["model"] = model
+
+        llm = create_provider(provider, api_key=api_key, **kwargs)
+        t2gql = self.saber_client.text2gql(llm)
+
+        self.console.print("[dim]Fetching schema…[/dim]", end=" ")
+        try:
+            schema = t2gql.fetch_schema()
+            self.console.print(
+                f"[green]✓[/green] [dim]{schema.count(chr(10))} lines[/dim]"
+            )
+        except RuntimeError as exc:
+            self.console.print(
+                f"[bold red]Failed to fetch schema:[/bold red] {exc}"
+            )
+            return
+
+        self.console.print(
+            Panel.fit(
+                "[bold cyan]Natural Language Query[/bold cyan]\n"
+                "[dim]Type your question in plain language. "
+                "Enter [bold]exit[/bold] to go back.[/dim]",
+                border_style="cyan",
+            )
+        )
+
+        while True:
+            try:
+                text = Prompt.ask("\n[bold cyan]Query[/bold cyan]").strip()
+            except (KeyboardInterrupt, EOFError):
+                break
+            if not text or text.lower() in ("exit", "quit", "q"):
+                break
+            try:
+                gql = t2gql.translate(text)
+                self.console.print(
+                    "\n[bold cyan]Generated GraphQL:[/bold cyan]"
+                )
+                self.console.print(Syntax(gql, "graphql", theme="monokai"))
+                result = t2gql.client.query(gql)
+                self.display_result(result)
+            except Exception as exc:  # noqa: BLE001
+                self.console.print(f"[bold red]Error:[/bold red] {exc}")
+
+    def run(
+        self,
+        provider: str | None = None,
+        api_key: str | None = None,
+        model: str | None = None,
+    ):
         """
         Run the interactive client loop.
+
+        Args:
+            provider: Pre-configured LLM provider name for text2gql.
+            api_key:  Pre-configured LLM API key for text2gql.
+            model:    Optional LLM model override for text2gql.
         """
         self.display_banner()
 
@@ -645,7 +745,8 @@ class RichInteractiveClient:  # pragma: no cover
             self.display_menu()
 
             choice = Prompt.ask(
-                "\nChoose an option", choices=["1", "2", "3", "4", "5"]
+                "\nChoose an option",
+                choices=["1", "2", "3", "4", "5", "6"],
             )
 
             if choice == "1":
@@ -657,6 +758,10 @@ class RichInteractiveClient:  # pragma: no cover
             elif choice == "4":
                 self.handle_query()
             elif choice == "5":
+                self.handle_natural_query(
+                    provider=provider, api_key=api_key, model=model
+                )
+            elif choice == "6":
                 self.console.print("\n[bold cyan]Goodbye![/bold cyan]")
                 break
 
@@ -745,12 +850,46 @@ def main():
         help="Display the authentication token after login",
     )
 
+    # Text-to-GraphQL options
+    parser.add_argument(
+        "--text2gql",
+        action="store_true",
+        help="Start an interactive natural-language → GraphQL REPL.",
+    )
+    parser.add_argument(
+        "--provider",
+        choices=["anthropic", "openai"],
+        default=os.getenv("LLM_PROVIDER"),
+        help="LLM provider for --text2gql (or set LLM_PROVIDER env var).",
+    )
+    parser.add_argument(
+        "--api-key",
+        metavar="KEY",
+        default=os.getenv("LLM_API_KEY"),
+        help="LLM API key for --text2gql (or set LLM_API_KEY env var).",
+    )
+    parser.add_argument(
+        "--model",
+        metavar="MODEL",
+        default=os.getenv("LLM_MODEL"),
+        help="LLM model override for --text2gql (or set LLM_MODEL env var).",
+    )
+
     args = parser.parse_args()
+
+    # Text-to-GraphQL interactive REPL (standalone or as part of interactive)
+    if args.text2gql:
+        _run_text2gql_repl(args)
+        return
 
     # Interactive mode
     if args.interactive:
         client = RichInteractiveClient()
-        client.run()
+        client.run(
+            provider=args.provider,
+            api_key=args.api_key,
+            model=args.model,
+        )
         return
 
     # CLI mode
@@ -817,11 +956,170 @@ def main():
     # No action specified
     if (
         not args.interactive
+        and not args.text2gql
         and not args.query
         and not args.query_file
         and not args.show_token
     ):
         parser.print_help()
+
+
+def _run_text2gql_repl(args):  # pragma: no cover
+    """
+    Authenticate and start the Text-to-GraphQL interactive REPL.
+    Called from both ``main()`` (via ``--text2gql``) and ``main_t2gql()``.
+    """
+    from spectrumsaber.llm import create_provider
+
+    console = Console()
+
+    # Resolve LLM credentials
+    provider = args.provider
+    api_key = getattr(args, "api_key", None) or os.getenv("LLM_API_KEY")
+    model = getattr(args, "model", None)
+
+    if not provider:
+        console.print(
+            "[bold red]Error:[/bold red] LLM provider required. "
+            "Set LLM_PROVIDER env var or pass --provider anthropic|openai."
+        )
+        sys.exit(1)
+    if not api_key:
+        console.print(
+            "[bold red]Error:[/bold red] LLM API key required. "
+            "Set LLM_API_KEY env var or pass --api-key."
+        )
+        sys.exit(1)
+
+    # Build and authenticate the saber client
+    saber_client = SpectrumSaberClient()
+    if not saber_client.is_authenticated():
+        username = getattr(args, "username", None) or os.getenv(
+            "GRAPHQL_USERNAME"
+        )
+        password = getattr(args, "password", None) or os.getenv(
+            "GRAPHQL_PASSWORD"
+        )
+        if not username or not password:
+            console.print(
+                "[yellow]Warning:[/yellow] No JWT token found. "
+                "Queries may fail. "
+                "Set GRAPHQL_JWT_TOKEN or pass --username/--password."
+            )
+        else:
+            console.print(f"[dim]Authenticating as {username}…[/dim]")
+            saber_client.login(username, password)
+            if not saber_client.is_authenticated():
+                console.print("[bold red]Authentication failed.[/bold red]")
+                sys.exit(1)
+            console.print("[green]✓ Authenticated[/green]")
+
+    # Build LLM provider
+    kwargs = {}
+    if model:
+        kwargs["model"] = model
+    llm = create_provider(provider, api_key=api_key, **kwargs)
+
+    # Build Text2GQL
+    cache = not getattr(args, "no_cache", False)
+    t2gql = saber_client.text2gql(llm, cache_schema=cache)
+
+    # Warm up schema
+    console.print("[dim]Fetching schema…[/dim]", end=" ")
+    try:
+        schema = t2gql.fetch_schema()
+        console.print(
+            f"[green]✓[/green] [dim]{schema.count(chr(10))} lines[/dim]"
+        )
+    except RuntimeError as exc:
+        console.print(f"\n[bold red]Failed to fetch schema:[/bold red] {exc}")
+        sys.exit(1)
+
+    console.print(
+        Panel.fit(
+            "[bold cyan]SpectrumSaber Text-to-GraphQL[/bold cyan]\n"
+            "[dim]Type your query in plain language. "
+            "Enter [bold]exit[/bold] or [bold]quit[/bold] to stop.[/dim]",
+            border_style="cyan",
+        )
+    )
+
+    while True:
+        try:
+            text = Prompt.ask("\n[bold cyan]Query[/bold cyan]").strip()
+        except (KeyboardInterrupt, EOFError):
+            console.print("\n[bold cyan]Bye![/bold cyan]")
+            break
+        if not text:
+            continue
+        if text.lower() in ("exit", "quit", "q"):
+            console.print("[bold cyan]Bye![/bold cyan]")
+            break
+        try:
+            gql = t2gql.translate(text)
+            console.print("\n[bold cyan]Generated GraphQL:[/bold cyan]")
+            console.print(Syntax(gql, "graphql", theme="monokai"))
+            result = t2gql.client.query(gql)
+            errors = result.get("errors")
+            data = result.get("data")
+            if errors:
+                console.print("\n[bold red]GraphQL errors:[/bold red]")
+                for err in errors:
+                    console.print(f"  [red]• {err.get('message', err)}[/red]")
+            if data is not None:
+                console.print("\n[bold green]Result:[/bold green]")
+                console.print_json(json.dumps(data))
+        except Exception as exc:  # noqa: BLE001
+            console.print(f"[bold red]Error:[/bold red] {exc}")
+
+
+def main_t2gql():
+    """
+    Dedicated entry point for the ``spectrumsaber-t2gql`` command.
+
+    Accepts the same --provider / --api-key / --model / --username /
+    --password / --no-cache flags as ``spectrumsaber --text2gql``.
+    """
+    parser = argparse.ArgumentParser(
+        description="SpectrumSaber Text-to-GraphQL interactive REPL",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=(
+            "Environment variables:\n"
+            "  GRAPHQL_JWT_TOKEN   JWT token (skip --username/--password)\n"
+            "  LLM_PROVIDER        anthropic | openai\n"
+            "  LLM_API_KEY         API key for the chosen LLM provider\n"
+            "  LLM_MODEL           Optional model override\n"
+            "  GRAPHQL_USERNAME    Used with --username if no JWT token\n"
+            "  GRAPHQL_PASSWORD    Used with --password if no JWT token\n"
+        ),
+    )
+    parser.add_argument(
+        "--provider",
+        choices=["anthropic", "openai"],
+        default=os.getenv("LLM_PROVIDER"),
+        help="LLM provider.",
+    )
+    parser.add_argument(
+        "--api-key",
+        metavar="KEY",
+        default=os.getenv("LLM_API_KEY"),
+        help="LLM API key.",
+    )
+    parser.add_argument(
+        "--model",
+        metavar="MODEL",
+        default=os.getenv("LLM_MODEL"),
+        help="LLM model override.",
+    )
+    parser.add_argument("--username", help="GraphQL username.")
+    parser.add_argument("--password", help="GraphQL password.")
+    parser.add_argument(
+        "--no-cache",
+        action="store_true",
+        help="Re-fetch schema on every query.",
+    )
+    args = parser.parse_args()
+    _run_text2gql_repl(args)
 
 
 if __name__ == "__main__":
