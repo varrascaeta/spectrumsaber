@@ -1,48 +1,194 @@
-# Spectrumsaber Project Run
+# Running SpectrumSaber
 
-## Running the Project
+## Prerequisites
 
-This project uses Docker to run the application. You can run different parts of the application using Docker Compose.
+- Docker and Docker Compose installed
+- A `.env` file at the project root with database credentials (see `environments/local.env` for variable names)
+- For local development without Docker: `uv` installed and a local PostgreSQL instance
 
-### Running the app and database
-1. Run the following command to start the database and the admin:
-```bash
-    docker compose -f containers/app/docker-compose.yml up --profile app
-```
+---
 
-> You can access the database admin at http://localhost:8000/admin/ or the home page at http://localhost:8000/
+## Django server (`server`)
 
-### Running the database only
-Or, if you want to run only the database:
-```bash
-    docker compose -f containers/app/docker-compose.yml up --profile db
-```
+The Django application exposes a GraphQL API at `/graphql/` and an Admin interface at `/admin/`.
 
-### Running airflow services
-This command will run the airflow services, such as the web server and scheduler.
+### With Docker (recommended)
 
 ```bash
-    docker compose -f containers/app/docker-compose.yml up --profile airflow
+# Build images and start the app + database
+make build
+
+# Start app services only (after build)
+make app
+
+# Stop app services
+make app-stop
 ```
 
-> You can access the airflow web server at http://localhost:8080/
+Access:
+- Admin UI: http://localhost:8000/admin/
+- GraphQL playground: http://localhost:8000/graphql/
 
-### Running the whole project
-If you want to run the whole project, including the database, app, and airflow:
+### Locally (without Docker)
+
 ```bash
-    docker compose -f containers/app/docker-compose.yml up
+# Apply migrations
+uv run --env-file environments/local.env --env-file .env manage.py migrate
+
+# Create a superuser
+make createsuperuser
+
+# Run the development server
+uv run --env-file environments/local.env --env-file .env manage.py runserver
 ```
 
+### First-time setup (after first `make app` or local start)
 
-## Notes
+```bash
+# Create a superuser to access the Admin
+make createsuperuser
+# or manually:
+uv run --env-file environments/local.env --env-file .env manage.py createsuperuser
+```
 
-1. If you run any container that is involved with the database, you need to run the following command to create the database and the admin user:
-    ```bash
-    uv run --env-file environments/local.env python service/manage.py createsuperuser
-    ```
+### Useful management commands
 
-2. If you want to rebuild, it is only necessary to rebuild the app. DO NOT delete the volume, otherwise you will lose all the data. To rebuild the whole project, run the following command:
-    ```bash
-    docker-compose -f containers/app/docker-compose.yml up --build --no-deps spectrumsaber
-    ```
-> Since we use docker compose with mounted volumes it is not necessary to rebuild the images unless a new dependency is added using `uv install` command.
+```bash
+# Open Django shell with all models auto-imported (shell_plus)
+make shell
+
+# Generate and apply database migrations after model changes
+make migrations
+make migrate
+```
+
+---
+
+## Airflow ETL pipeline (`etl`)
+
+Airflow orchestrates FTP ingestion. It provides a web UI to trigger DAGs and monitor runs.
+
+### With Docker (recommended)
+
+```bash
+# Build images and start all Airflow services (scheduler, webserver, worker ×2, triggerer)
+make build
+
+# Start Airflow services only
+make airflow
+
+# Stop Airflow services
+make airflow-stop
+```
+
+Access:
+- Airflow UI: http://localhost:8080/ (default credentials: `airflow` / `airflow`)
+
+### Running the whole stack at once
+
+```bash
+# Start both the app and Airflow together
+make up
+
+# Stop everything
+make stop
+```
+
+### Triggering DAGs
+
+Use the Airflow UI at http://localhost:8080/ or the REST API. The four ingestion DAGs run in order:
+
+| DAG | Purpose | Key parameter |
+|-----|---------|---------------|
+| `process_coverage` | Scan FTP root, create `Coverage` records | — |
+| `process_campaigns` | Scan campaigns under a coverage | `coverage_name` (default `AGRICULTURA`) |
+| `process_data_points` | Scan data points under campaigns | `coverage_name` (default `HIDROLOGIA`) |
+| `process_measurements` | Scan spectral files under data points | `coverage_name` (default `HIDROLOGIA`) |
+
+Each DAG accepts a `force_reprocess` boolean (default `false`) to re-ingest already-scanned entries.
+
+---
+
+## CLI client (`spectrumsaber`)
+
+The CLI client connects to the Django GraphQL API and optionally to the CONAE FTP server.
+
+### Installation
+
+The package is installed in editable mode inside Docker images automatically. For local use:
+
+```bash
+pip install -e .
+# or with uv:
+uv pip install -e .
+```
+
+### Interactive terminal UI
+
+```bash
+# Full Rich terminal shell (login, query, browse FTP)
+spectrumsaber --interactive
+
+# With a pre-configured provider for text-to-GraphQL
+spectrumsaber --interactive --provider anthropic --api-key $ANTHROPIC_API_KEY
+```
+
+### Non-interactive (scripting / CI)
+
+```bash
+# Authenticate and run a query, save results to JSON
+spectrumsaber \
+  --username admin \
+  --password secret \
+  --query '{ coverages { id name } }' \
+  --output results.json
+
+# Load query from a file with variables
+spectrumsaber \
+  --username admin \
+  --password secret \
+  --query-file my_query.graphql \
+  --variables-file vars.json \
+  --output out.json
+
+# Print the JWT token (useful for scripting)
+spectrumsaber --username admin --password secret --show-token
+```
+
+### Text-to-GraphQL REPL
+
+```bash
+# Dedicated entry point
+spectrumsaber-t2gql --provider anthropic --api-key $ANTHROPIC_API_KEY
+
+# Or via the main command
+spectrumsaber --text2gql --provider openai --api-key $OPENAI_API_KEY --model gpt-4o
+```
+
+Type a plain-English question at the prompt (e.g. `show me all campaigns from 2023`) and the tool will translate it to GraphQL, execute it, and display the result.
+
+### Environment variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `GRAPHQL_ENDPOINT` | No | API URL (default `http://localhost:8000/graphql/`) |
+| `GRAPHQL_JWT_TOKEN` | No | Skip login by providing a pre-existing JWT |
+| `FTP_HOST` | For FTP commands | CONAE FTP server hostname |
+| `FTP_USER` | For FTP commands | FTP username |
+| `FTP_PASSWORD` | For FTP commands | FTP password |
+
+Variables can be set in a `.env` file at the project root or exported in the shell.
+
+---
+
+## Running tests
+
+```bash
+# Run unit tests inside the testing Docker container
+make test
+
+# Generate coverage report
+make coverage
+```
+
+Test configuration is in `tox.ini`. The testing profile starts a dedicated PostgreSQL container on port `9432`.
