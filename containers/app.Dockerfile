@@ -23,7 +23,7 @@ RUN apt-get update && apt-get install -y \
 # Create user
 ARG GID=0
 ARG UID=1000
-# This should match the POSTGRES_USER in secrets.env
+# This should match the POSTGRES_USER in .env
 ARG USERNAME=spectrumsaber
 
 RUN useradd -m -s /bin/bash -u ${UID} -g ${GID} ${USERNAME}

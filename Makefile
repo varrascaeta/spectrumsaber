@@ -10,7 +10,7 @@
 
 CLIENT_CONTAINER=spark-client
 ENVIRONMENT=environments/local.env
-ENV_CFG=--env-file $(ENVIRONMENT) --env-file secrets.env
+ENV_CFG=--env-file $(ENVIRONMENT) --env-file .env
 DJANGO_PREFIX=uv run $(ENV_CFG) manage.py
 
 shell:
@@ -23,20 +23,20 @@ createsuperuser:
 	uv run $(ENV_CFG) manage.py createsuperuser --noinput
 build:
 	uv export --format requirements-txt --no-hashes --no-header -o requirements.txt > requirements.txt && \
-	docker compose --env-file environments/production.env --env-file secrets.env --profile app --profile airflow up --build -d
+	docker compose --env-file environments/production.env --env-file .env --profile app --profile airflow up --build -d
 stop:
-	docker compose --env-file environments/production.env --env-file secrets.env --profile airflow --profile app down
+	docker compose --env-file environments/production.env --env-file .env --profile airflow --profile app down
 up:
-	docker compose --env-file environments/production.env --env-file secrets.env --profile airflow --profile app up --scale airflow-worker=2 -d
+	docker compose --env-file environments/production.env --env-file .env --profile airflow --profile app up --scale airflow-worker=2 -d
 airflow:
-	docker compose --env-file environments/production.env --env-file secrets.env --profile airflow up --scale airflow-worker=2 -d
+	docker compose --env-file environments/production.env --env-file .env --profile airflow up --scale airflow-worker=2 -d
 app:
-	docker compose --env-file environments/production.env --env-file secrets.env --profile app up -d
+	docker compose --env-file environments/production.env --env-file .env --profile app up -d
 app-stop:
-	docker compose --env-file environments/production.env --env-file secrets.env --profile app down
+	docker compose --env-file environments/production.env --env-file .env --profile app down
 airflow-stop:
-	docker compose --env-file environments/production.env --env-file secrets.env --profile airflow down
+	docker compose --env-file environments/production.env --env-file .env --profile airflow down
 test:
-	docker compose --env-file environments/testing.env --env-file secrets.env --profile testing up -d && tox -e py312
+	docker compose --env-file environments/testing.env --env-file .env --profile testing up -d && tox -e py312
 coverage:
 	tox -e coverage

@@ -35,7 +35,7 @@ x-airflow-common:
       target: /app/project
   env_file:
     - environments/production.env
-    - secrets.env
+    - .env
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on
@@ -56,7 +56,7 @@ services:
     command: bash -c "python manage.py runserver 0.0.0.0:8000"
     env_file:
       - environments/production.env
-      - secrets.env
+      - .env
     volumes:
       - .:/app/project/
     ports:
@@ -81,7 +81,7 @@ services:
     command: bash -c "sleep 5 && python manage.py migrate"
     env_file:
       - environments/production.env
-      - secrets.env
+      - .env
     volumes:
       - .:/app/project/
     depends_on:
@@ -107,7 +107,7 @@ services:
       - .:/app/project/
     env_file:
       - environments/production.env
-      - secrets.env
+      - .env
     environment:
       - POSTGRES_HOST_AUTH_METHOD=trust
       - POSTGRES_USER
@@ -157,7 +157,7 @@ services:
       - spectrumsaber
     image: postgres:13
     env_file:
-      - secrets.env
+      - .env
     environment:
       POSTGRES_USER: ${AIRFLOW_POSTGRES_USER}
       POSTGRES_PASSWORD: ${AIRFLOW_POSTGRES_PASSWORD}
