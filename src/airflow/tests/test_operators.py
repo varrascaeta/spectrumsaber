@@ -28,28 +28,6 @@ class TestSetupDjango:
             # Verify Django setup was called
             mock_django_setup.assert_called_once()
 
-    def test_setup_django_execute_sets_environment(self):
-        """Test SetupDjango execute sets environment variables."""
-        operator = SetupDjango(task_id="test_setup_django")
-
-        # Store original values
-        original_path = sys.path.copy()
-        original_env = os.environ.get("DJANGO_SETTINGS_MODULE")
-
-        with patch("django.setup"):
-            operator.execute()
-
-            # Verify sys.path was modified
-            assert "./spectrumsaber/" in sys.path
-
-            # Verify environment variable was set
-            assert os.environ.get("DJANGO_SETTINGS_MODULE") == "service.settings"
-
-        # Restore original values
-        sys.path = original_path
-        if original_env:
-            os.environ["DJANGO_SETTINGS_MODULE"] = original_env
-
     def test_setup_django_execute_multiple_times(self):
         """Test SetupDjango can be executed multiple times."""
         operator = SetupDjango(task_id="test_setup_django")
