@@ -10,7 +10,7 @@
 
 CLIENT_CONTAINER=spark-client
 ENVIRONMENT=environments/local.env
-ENV_CFG=--env-file $(ENVIRONMENT) --env-file .env
+ENV_CFG= --env-file .env --env-file $(ENVIRONMENT) 
 DJANGO_PREFIX=uv run $(ENV_CFG) manage.py
 
 shell:
