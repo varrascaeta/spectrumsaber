@@ -13,6 +13,9 @@ from spectrumsaber.llm import (
 from spectrumsaber.text2gql import (
     Text2GQL,
     _build_schema_summary,
+    _entry_point_lines,
+    _object_type_lines,
+    _resolve_type,
     _strip_code_fences,
 )
 
@@ -553,3 +556,39 @@ class TestText2GQLExecute:
         llm_call = mock_llm.generate.call_args
         assert "CORDOBA" in llm_call[0][1]
         assert "coverages" in llm_call[0][0]  # schema was embedded
+
+
+# ---------------------------------------------------------------------------
+# _resolve_type / helper edge cases
+# ---------------------------------------------------------------------------
+
+
+class TestResolveTypeEdgeCases:
+    def test_resolve_type_none_returns_unknown(self):
+        assert _resolve_type(None) == "Unknown"
+
+    def test_resolve_type_non_null(self):
+        type_ref = {
+            "kind": "NON_NULL",
+            "name": None,
+            "ofType": {"kind": "SCALAR", "name": "String", "ofType": None},
+        }
+        assert _resolve_type(type_ref) == "String!"
+
+    def test_entry_point_lines_returns_empty_when_no_types(self):
+        assert _entry_point_lines([], "Query") == []
+
+    def test_entry_point_lines_returns_empty_when_query_type_has_no_fields(self):
+        types = [{"name": "Query", "kind": "OBJECT", "fields": None}]
+        assert _entry_point_lines(types, "Query") == []
+
+    def test_object_type_lines_skips_type_with_no_fields(self):
+        types = [
+            {
+                "name": "EmptyType",
+                "kind": "OBJECT",
+                "fields": None,
+                "inputFields": None,
+            }
+        ]
+        assert _object_type_lines(types, "Query") == []

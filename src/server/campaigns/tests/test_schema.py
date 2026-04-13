@@ -1,5 +1,5 @@
 # Standard imports
-from datetime import datetime
+from datetime import date, datetime
 from unittest.mock import Mock, patch
 
 import pytest
@@ -487,3 +487,106 @@ class TestCampaignQueryIntegration:
         assert len(query.categories(authenticated_info)) == 0
         assert len(query.measurements(authenticated_info)) == 0
         assert len(query.districts(authenticated_info)) == 0
+
+
+@pytest.mark.django_db
+class TestFilterBranches:
+    """Test that filter application branches are exercised."""
+
+    @patch("server.campaigns.schema.get_user")
+    def test_coverages_filter_branch(
+        self, mock_get_user, authenticated_info, coverage
+    ):
+        from server.campaigns.gql_types import CoverageFilter
+
+        mock_get_user.return_value = authenticated_info.context.request.user
+        query = CampaignQuery()
+        result = query.coverages(authenticated_info, filters=CoverageFilter())
+        assert len(result) >= 1
+
+    @patch("server.campaigns.schema.get_user")
+    def test_campaigns_filter_branch(
+        self, mock_get_user, authenticated_info, campaign
+    ):
+        from server.campaigns.gql_types import CampaignFilter
+
+        mock_get_user.return_value = authenticated_info.context.request.user
+        query = CampaignQuery()
+        result = query.campaigns(authenticated_info, filters=CampaignFilter())
+        assert len(result) >= 1
+
+    @patch("server.campaigns.schema.get_user")
+    def test_campaigns_date_gte_branch(
+        self, mock_get_user, authenticated_info, campaign, campaign2
+    ):
+        mock_get_user.return_value = authenticated_info.context.request.user
+        query = CampaignQuery()
+        result = query.campaigns(
+            authenticated_info, date_gte=date(2025, 2, 1)
+        )
+        assert len(result) == 1
+        assert result[0].name == "Test Campaign 2"
+
+    @patch("server.campaigns.schema.get_user")
+    def test_campaigns_date_lte_branch(
+        self, mock_get_user, authenticated_info, campaign, campaign2
+    ):
+        mock_get_user.return_value = authenticated_info.context.request.user
+        query = CampaignQuery()
+        result = query.campaigns(
+            authenticated_info, date_lte=date(2025, 1, 31)
+        )
+        assert len(result) == 1
+        assert result[0].name == "Test Campaign"
+
+    @patch("server.campaigns.schema.get_user")
+    def test_data_points_filter_branch(
+        self, mock_get_user, authenticated_info, data_point
+    ):
+        from server.campaigns.gql_types import DataPointFilter
+
+        mock_get_user.return_value = authenticated_info.context.request.user
+        query = CampaignQuery()
+        result = query.data_points(
+            authenticated_info, filters=DataPointFilter()
+        )
+        assert len(result) >= 1
+
+    @patch("server.campaigns.schema.get_user")
+    def test_categories_filter_branch(
+        self, mock_get_user, authenticated_info, category
+    ):
+        from server.campaigns.gql_types import CategoryFilter
+
+        mock_get_user.return_value = authenticated_info.context.request.user
+        query = CampaignQuery()
+        result = query.categories(
+            authenticated_info, filters=CategoryFilter()
+        )
+        assert len(result) >= 1
+
+    @patch("server.campaigns.schema.get_user")
+    def test_measurements_filter_branch(
+        self, mock_get_user, authenticated_info, measurement
+    ):
+        from server.campaigns.gql_types import MeasurementFilter
+
+        mock_get_user.return_value = authenticated_info.context.request.user
+        query = CampaignQuery()
+        result = query.measurements(
+            authenticated_info, filters=MeasurementFilter()
+        )
+        assert len(result) >= 1
+
+    @patch("server.campaigns.schema.get_user")
+    def test_districts_filter_branch(
+        self, mock_get_user, authenticated_info, district
+    ):
+        from server.campaigns.gql_types import DistrictFilter
+
+        mock_get_user.return_value = authenticated_info.context.request.user
+        query = CampaignQuery()
+        result = query.districts(
+            authenticated_info, filters=DistrictFilter()
+        )
+        assert len(result) >= 1

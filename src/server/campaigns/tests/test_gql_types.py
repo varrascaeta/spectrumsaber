@@ -27,14 +27,11 @@ User = get_user_model()
 class TestCoverageFilter:
     """Test CoverageFilter"""
 
-    def test_coverage_filter_has_id(self):
-        """Test that CoverageFilter has id field"""
+    @pytest.mark.parametrize("field", ["id", "name"])
+    def test_coverage_filter_has_field(self, field):
+        """Test that CoverageFilter has required fields"""
         assert hasattr(CoverageFilter, "__annotations__")
-        assert "id" in CoverageFilter.__annotations__
-
-    def test_coverage_filter_has_name(self):
-        """Test that CoverageFilter has name field"""
-        assert "name" in CoverageFilter.__annotations__
+        assert field in CoverageFilter.__annotations__
 
     def test_coverage_filter_meta_lookups(self):
         """Test that CoverageFilter has lookups enabled"""
@@ -47,15 +44,12 @@ class TestCoverageFilter:
 class TestCampaignFilter:
     """Test CampaignFilter"""
 
-    def test_campaign_filter_has_required_fields(self):
-        """Test that CampaignFilter has all required fields"""
-        annotations = CampaignFilter.__annotations__
-        assert "id" in annotations
-        assert "name" in annotations
-        assert "date" in annotations
-        assert "external_id" in annotations
-        assert "district" in annotations
-        assert "coverage" in annotations
+    @pytest.mark.parametrize(
+        "field", ["id", "name", "date", "external_id", "district", "coverage"]
+    )
+    def test_campaign_filter_has_field(self, field):
+        """Test that CampaignFilter has required fields"""
+        assert field in CampaignFilter.__annotations__
 
     def test_campaign_filter_meta_lookups(self):
         """Test that CampaignFilter has lookups enabled"""
@@ -67,11 +61,10 @@ class TestCampaignFilter:
 class TestCategoryFilter:
     """Test CategoryFilter"""
 
-    def test_category_filter_has_id_and_name(self):
-        """Test that CategoryFilter has id and name fields"""
-        annotations = CategoryFilter.__annotations__
-        assert "id" in annotations
-        assert "name" in annotations
+    @pytest.mark.parametrize("field", ["id", "name"])
+    def test_category_filter_has_field(self, field):
+        """Test that CategoryFilter has required fields"""
+        assert field in CategoryFilter.__annotations__
 
     def test_category_filter_meta_lookups(self):
         """Test that CategoryFilter has lookups enabled"""
@@ -83,12 +76,10 @@ class TestCategoryFilter:
 class TestDataPointFilter:
     """Test DataPointFilter"""
 
-    def test_datapoint_filter_has_required_fields(self):
-        """Test that DataPointFilter has all required fields"""
-        annotations = DataPointFilter.__annotations__
-        assert "id" in annotations
-        assert "name" in annotations
-        assert "campaign" in annotations
+    @pytest.mark.parametrize("field", ["id", "name", "campaign"])
+    def test_datapoint_filter_has_field(self, field):
+        """Test that DataPointFilter has required fields"""
+        assert field in DataPointFilter.__annotations__
 
     def test_datapoint_filter_meta_lookups(self):
         """Test that DataPointFilter has lookups enabled"""
@@ -100,13 +91,10 @@ class TestDataPointFilter:
 class TestMeasurementFilter:
     """Test MeasurementFilter"""
 
-    def test_measurement_filter_has_required_fields(self):
-        """Test that MeasurementFilter has all required fields"""
-        annotations = MeasurementFilter.__annotations__
-        assert "id" in annotations
-        assert "name" in annotations
-        assert "category" in annotations
-        assert "data_point" in annotations
+    @pytest.mark.parametrize("field", ["id", "name", "category", "data_point"])
+    def test_measurement_filter_has_field(self, field):
+        """Test that MeasurementFilter has required fields"""
+        assert field in MeasurementFilter.__annotations__
 
     def test_measurement_filter_meta_lookups(self):
         """Test that MeasurementFilter has lookups enabled"""
@@ -118,11 +106,10 @@ class TestMeasurementFilter:
 class TestDistrictFilter:
     """Test DistrictFilter"""
 
-    def test_district_filter_has_id_and_name(self):
-        """Test that DistrictFilter has id and name fields"""
-        annotations = DistrictFilter.__annotations__
-        assert "id" in annotations
-        assert "name" in annotations
+    @pytest.mark.parametrize("field", ["id", "name"])
+    def test_district_filter_has_field(self, field):
+        """Test that DistrictFilter has required fields"""
+        assert field in DistrictFilter.__annotations__
 
     def test_district_filter_meta_lookups(self):
         """Test that DistrictFilter has lookups enabled"""
@@ -134,76 +121,71 @@ class TestDistrictFilter:
 class TestDistrictType:
     """Test DistrictType"""
 
-    def test_district_type_has_required_fields(self):
-        """Test that DistrictType has all required fields"""
-        annotations = DistrictType.__annotations__
-        assert "id" in annotations
-        assert "name" in annotations
-        assert "campaigns" in annotations
+    @pytest.mark.parametrize("field", ["id", "name", "campaigns"])
+    def test_district_type_has_field(self, field):
+        """Test that DistrictType has required fields"""
+        assert field in DistrictType.__annotations__
 
 
 @pytest.mark.django_db
 class TestCoverageType:
     """Test CoverageType"""
 
-    def test_coverage_type_has_required_fields(self):
-        """Test that CoverageType has all required fields"""
-        annotations = CoverageType.__annotations__
-        assert "id" in annotations
-        assert "name" in annotations
-        assert "campaigns" in annotations
+    @pytest.mark.parametrize("field", ["id", "name", "campaigns"])
+    def test_coverage_type_has_field(self, field):
+        """Test that CoverageType has required fields"""
+        assert field in CoverageType.__annotations__
 
 
 @pytest.mark.django_db
 class TestCampaignType:
     """Test CampaignType"""
 
-    def test_campaign_type_has_required_fields(self):
-        """Test that CampaignType has all required fields"""
-        annotations = CampaignType.__annotations__
-        assert "id" in annotations
-        assert "name" in annotations
-        assert "date" in annotations
-        assert "external_id" in annotations
-        assert "metadata" in annotations
-        assert "district" in annotations
-        assert "coverage" in annotations
-        assert "data_points" in annotations
+    @pytest.mark.parametrize(
+        "field",
+        [
+            "id",
+            "name",
+            "date",
+            "external_id",
+            "metadata",
+            "district",
+            "coverage",
+            "data_points",
+        ],
+    )
+    def test_campaign_type_has_field(self, field):
+        """Test that CampaignType has required fields"""
+        assert field in CampaignType.__annotations__
 
 
 @pytest.mark.django_db
 class TestDataPointType:
     """Test DataPointType"""
 
-    def test_datapoint_type_has_required_fields(self):
-        """Test that DataPointType has all required fields"""
-        annotations = DataPointType.__annotations__
-        assert "id" in annotations
-        assert "name" in annotations
-        assert "campaign" in annotations
-        assert "measurements" in annotations
+    @pytest.mark.parametrize(
+        "field", ["id", "name", "campaign", "measurements"]
+    )
+    def test_datapoint_type_has_field(self, field):
+        """Test that DataPointType has required fields"""
+        assert field in DataPointType.__annotations__
 
 
 @pytest.mark.django_db
 class TestCategoryType:
     """Test CategoryType GraphQL type"""
 
-    def test_category_type_has_required_fields(self):
-        """Test that CategoryType has all required fields"""
-        annotations = CategoryType.__annotations__
-        assert "id" in annotations
-        assert "name" in annotations
-        assert "campaigns" in annotations
+    @pytest.mark.parametrize("field", ["id", "name", "campaigns"])
+    def test_category_type_has_field(self, field):
+        """Test that CategoryType has required fields"""
+        assert field in CategoryType.__annotations__
 
 
 @pytest.mark.django_db
 class TestMeasurementType:
     """Test MeasurementType"""
 
-    def test_measurement_type_has_required_fields(self):
-        """Test that MeasurementType has all required fields"""
-        annotations = MeasurementType.__annotations__
-        assert "id" in annotations
-        assert "name" in annotations
-        assert "category" in annotations
-        assert "data_point" in annotations
+    @pytest.mark.parametrize("field", ["id", "name", "category", "data_point"])
+    def test_measurement_type_has_field(self, field):
+        """Test that MeasurementType has required fields"""
+        assert field in MeasurementType.__annotations__

@@ -10,6 +10,7 @@ ScanFTPDirectory: Connects to the CONAE FTP server via FTPClient and
 # Standard imports
 import logging
 import os
+import sys
 
 # Airflow imports
 from airflow.models.baseoperator import BaseOperator
@@ -25,6 +26,8 @@ class SetupDjango(BaseOperator):
     def execute(self, *args, **kwargs):
         import django
 
+        if "./spectrumsaber/" not in sys.path:
+            sys.path.insert(0, "./spectrumsaber/")
         os.environ.setdefault("DJANGO_SETTINGS_MODULE", "server.settings")
         django.setup()
 
