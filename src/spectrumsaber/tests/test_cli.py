@@ -209,3 +209,210 @@ class TestMainFunction:
             main()
 
             mock_exit.assert_called_once_with(1)
+
+    @patch(
+        "spectrumsaber.client.sys.argv",
+        [
+            "client.py",
+            "--username",
+            "testuser",
+            "--password",
+            "testpass",
+            "--query",
+            "query { test }",
+        ],
+    )
+    @patch("spectrumsaber.client.CLIClient")
+    @patch("spectrumsaber.client.Console")
+    def test_main_with_already_authenticated(self, mock_console, mock_cli_client):
+        """Test main when client is already authenticated"""
+        from spectrumsaber.client import main
+
+        mock_client = Mock()
+        mock_client.saber_client.is_authenticated.return_value = True
+        mock_client.execute_query.return_value = {"data": {"test": "result"}}
+        mock_cli_client.return_value = mock_client
+
+        main()
+
+        # Should not call login since already authenticated
+        mock_client.login.assert_not_called()
+        mock_client.execute_query.assert_called_once()
+
+    @patch(
+        "spectrumsaber.client.sys.argv",
+        ["client.py"],
+    )
+    @patch("spectrumsaber.client.CLIClient")
+    @patch("spectrumsaber.client.Console")
+    def test_main_with_no_action(self, mock_console, mock_cli_client):
+        """Test main prints help when no action is specified"""
+        from spectrumsaber.client import main
+
+        mock_client = Mock()
+        mock_cli_client.return_value = mock_client
+
+        with patch("spectrumsaber.cli._build_arg_parser") as mock_parser_builder:
+            mock_parser = Mock()
+            mock_parser_builder.return_value = mock_parser
+            mock_parser.parse_args.return_value = Mock(
+                query=None,
+                query_file=None,
+                show_token=False,
+                interactive=False,
+                text2gql=False,
+            )
+
+            main()
+
+            # Should call print_help when no action
+            mock_parser.print_help.assert_called_once()
+
+    @patch(
+        "spectrumsaber.client.sys.argv",
+        [
+            "client.py",
+            "--username",
+            "testuser",
+            "--password",
+            "testpass",
+            "--query-file",
+            "/tmp/query.gql",
+        ],
+    )
+    @patch("spectrumsaber.client.CLIClient")
+    @patch("spectrumsaber.client.Console")
+    def test_main_with_query_file(self, mock_console, mock_cli_client, tmp_path):
+        """Test main executes query from file"""
+        from spectrumsaber.client import main
+
+        # Create a temporary query file
+        query_file = tmp_path / "query.gql"
+        query_file.write_text("query { testQuery }")
+
+        mock_client = Mock()
+        mock_client.saber_client.is_authenticated.return_value = False
+        mock_client.login.return_value = True
+        mock_client.execute_query.return_value = {"data": {"test": "result"}}
+        mock_cli_client.return_value = mock_client
+
+        with patch("builtins.open", create=True) as mock_open:
+            mock_open.return_value.__enter__.return_value.read.return_value = "query { testQuery }"
+            
+            main()
+
+            mock_client.execute_query.assert_called_once()
+
+    @patch(
+        "spectrumsaber.client.sys.argv",
+        [
+            "client.py",
+            "--username",
+            "testuser",
+            "--password",
+            "testpass",
+            "--query",
+            "query { test }",
+            "--variables-file",
+            "/tmp/vars.json",
+        ],
+    )
+    @patch("spectrumsaber.client.CLIClient")
+    @patch("spectrumsaber.client.Console")
+    def test_main_with_variables_file(self, mock_console, mock_cli_client):
+        """Test main loads variables from file"""
+        from spectrumsaber.client import main
+        import json
+
+        mock_client = Mock()
+        mock_client.saber_client.is_authenticated.return_value = False
+        mock_client.login.return_value = True
+        mock_client.execute_query.return_value = {"data": {"test": "result"}}
+        mock_cli_client.return_value = mock_client
+
+        with patch("builtins.open", create=True) as mock_open:
+            mock_file = Mock()
+            mock_file.__enter__ = Mock(return_value=mock_file)
+            mock_file.__exit__ = Mock(return_value=False)
+            mock_open.return_value = mock_file
+            
+            with patch("json.load", return_value={"var1": "value1"}):
+                main()
+
+                mock_client.execute_query.assert_called_once()
+                call_args = mock_client.execute_query.call_args
+                assert call_args[0][1] == {"var1": "value1"}
+
+    @patch(
+        "spectrumsaber.client.sys.argv",
+        [
+            "client.py",
+            "--username",
+            "testuser",
+            "--password",
+            "testpass",
+            "--query",
+            "query { test }",
+            "--output",
+            "/tmp/output.json",
+        ],
+    )
+    @patch("spectrumsaber.client.CLIClient")
+    @patch("spectrumsaber.client.Console")
+    def test_main_with_output_file(self, mock_console, mock_cli_client):
+        """Test main saves result to output file"""
+        from spectrumsaber.client import main
+
+        mock_client = Mock()
+        mock_client.saber_client.is_authenticated.return_value = False
+        mock_client.login.return_value = True
+        mock_client.execute_query.return_value = {"data": {"test": "result"}}
+        mock_cli_client.return_value = mock_client
+
+        main()
+
+        mock_client.save_to_file.assert_called_once_with(
+            {"data": {"test": "result"}}, "/tmp/output.json"
+        )
+
+    @patch("spectrumsaber.cli.sys.argv", ["spectrumsaber-t2gql"])
+    @patch("spectrumsaber.cli._run_text2gql_repl")
+    def test_main_text2gql_entry_point(self, mock_run_repl):
+        """Test main_t2gql entry point"""
+        from spectrumsaber.cli import main_t2gql
+
+        main_t2gql()
+
+        mock_run_repl.assert_called_once()
+
+    @patch(
+        "spectrumsaber.cli.sys.argv",
+        [
+            "spectrumsaber-t2gql",
+            "--provider",
+            "anthropic",
+            "--api-key",
+            "test-key",
+        ],
+    )
+    @patch("spectrumsaber.cli._run_text2gql_repl")
+    def test_main_text2gql_with_args(self, mock_run_repl):
+        """Test main_t2gql with provider and api key arguments"""
+        from spectrumsaber.cli import main_t2gql
+
+        main_t2gql()
+
+        mock_run_repl.assert_called_once()
+        args = mock_run_repl.call_args[0][0]
+        assert args.provider == "anthropic"
+        assert args.api_key == "test-key"
+
+    @patch("spectrumsaber.client.sys.argv", ["client.py", "--text2gql"])
+    @patch("spectrumsaber.cli._run_text2gql_repl")
+    def test_main_with_text2gql_flag(self, mock_run_repl):
+        """Test main with --text2gql flag calls text2gql repl"""
+        from spectrumsaber.client import main
+
+        main()
+
+        mock_run_repl.assert_called_once()
