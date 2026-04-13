@@ -1,5 +1,5 @@
 function init() {
-    python service/manage.py migrate
+    python manage.py migrate
 }
 
 function run_tests() {
@@ -7,7 +7,7 @@ function run_tests() {
 }
 
 function reset_db() {
-    python service/manage.py reset_db --noinput -c
+    python manage.py reset_db --noinput -c
 }
 
 if [[ $ENV = 'testing' ]]; then

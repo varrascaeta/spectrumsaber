@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - Docker and Docker Compose installed
-- A `secrets.env` file at the project root with database credentials (see `environments/local.env` for variable names)
+- A `.env` file at the project root with database credentials (see `environments/local.env` for variable names)
 - For local development without Docker: `uv` installed and a local PostgreSQL instance
 
 ---
@@ -33,13 +33,13 @@ Access:
 
 ```bash
 # Apply migrations
-uv run --env-file environments/local.env --env-file secrets.env manage.py migrate
+uv run --env-file environments/local.env --env-file .env manage.py migrate
 
 # Create a superuser
 make createsuperuser
 
 # Run the development server
-uv run --env-file environments/local.env --env-file secrets.env manage.py runserver
+uv run --env-file environments/local.env --env-file .env manage.py runserver
 ```
 
 ### First-time setup (after first `make app` or local start)
@@ -48,7 +48,7 @@ uv run --env-file environments/local.env --env-file secrets.env manage.py runser
 # Create a superuser to access the Admin
 make createsuperuser
 # or manually:
-uv run --env-file environments/local.env --env-file secrets.env manage.py createsuperuser
+uv run --env-file environments/local.env --env-file .env manage.py createsuperuser
 ```
 
 ### Useful management commands

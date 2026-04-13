@@ -171,7 +171,7 @@ process_coverage
 
 
 # Credentials
-secrets.env
+.env
 
 # Static files
 static/
