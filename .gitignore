@@ -157,16 +157,21 @@ cython_debug/
 # Puml
 *.puml
 
-# Airflow
+# Airflow runtime artifacts
 *.pid
 *.log*
-*logs/*
-*/logs/scheduler/*
+logs/
+**/logs/
+airflow/
+airflow-home/
+airflow.db
+airflow.cfg
+process_coverage
 *.db
 
 
 # Credentials
-secrets.env
+.env
 
 # Static files
 static/
