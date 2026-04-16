@@ -41,7 +41,7 @@ def analyze_file(path: Path):
 
     # Líneas reales de código
     raw = analyze(source)
-    loc = raw.loc - raw.comments - raw.blank
+    loc = raw.lloc
 
     return avg_cc, loc
 

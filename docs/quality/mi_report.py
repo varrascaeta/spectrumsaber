@@ -5,6 +5,7 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 from radon.complexity import cc_visit
 from radon.metrics import mi_visit
+from radon.raw import analyze
 
 
 # ==============================
@@ -12,8 +13,8 @@ from radon.metrics import mi_visit
 # ==============================
 
 SOURCE_DIR = "src"  # Cambiar si querés incluir también spectrumsaber
-EXCLUDE_FOLDERS = {"tests", "__pycache__", "migrations", "__init__.py"}
-OUTPUT_IMAGE = "docs/quality/metrics_report.png"
+EXCLUDE_FOLDERS = {"tests", "__pycache__", "migrations", "__init__.py", "apps.py"}
+OUTPUT_IMAGE = "docs/quality/mi_density_report.png"
 
 
 # ==============================
@@ -46,8 +47,9 @@ def analyze_file(path: Path):
 
     # Maintainability Index
     mi_score = mi_visit(source, multi=True)
+    analysis = analyze(source)
 
-    return avg_cc, mi_score
+    return avg_cc, mi_score, analysis
 
 
 # ==============================
@@ -63,13 +65,16 @@ for source_dir in [SOURCE_DIR, "spectrumsaber"]:
             if not is_relevant_file(path):
                 continue
 
-            avg_cc, mi_score = analyze_file(path)
+            avg_cc, mi_score, analysis = analyze_file(path)
 
             # Mostrar solo archivos relevantes (opcional: filtrar archivos vacíos)
             if avg_cc > 0 or mi_score > 0:
                 results[str(path)] = {
                     "cc": avg_cc,
                     "mi": mi_score,
+                    "loc": analysis.loc,
+                    "lloc": analysis.lloc,
+                    "sloc": analysis.sloc,
                 }
 
 # Ordenar por MI descendente
@@ -85,7 +90,10 @@ for module, data in results.items():
     print(
         f"{module:<60} "
         f"CC: {data['cc']:.2f} | "
-        f"MI: {data['mi']:.2f}"
+        f"MI: {data['mi']:.2f} | "
+        f"LOC: {data['loc']} | "
+        f"LLOC: {data['lloc']} | "
+        f"SLOC: {data['sloc']}"
     )
 
 # ==============================
