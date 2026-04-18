@@ -578,7 +578,9 @@ class TestResolveTypeEdgeCases:
     def test_entry_point_lines_returns_empty_when_no_types(self):
         assert _entry_point_lines([], "Query") == []
 
-    def test_entry_point_lines_returns_empty_when_query_type_has_no_fields(self):
+    def test_entry_point_lines_returns_empty_when_query_type_has_no_fields(
+        self,
+    ):
         types = [{"name": "Query", "kind": "OBJECT", "fields": None}]
         assert _entry_point_lines(types, "Query") == []
 

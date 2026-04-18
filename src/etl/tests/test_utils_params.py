@@ -52,7 +52,7 @@ class TestGetParamFromContext:
     def test_get_param_from_context_logs_param(self, mock_context, caplog):
         """Test that parameter value is logged."""
         with caplog.at_level("INFO"):
-            result = get_param_from_context(mock_context, "param1")
+            get_param_from_context(mock_context, "param1")
 
         assert "Param param1: value1" in caplog.text
 
@@ -224,8 +224,9 @@ class TestTriggerDag:
         mock_post.return_value = mock_response
 
         trigger_dag("my_special_dag", {})
+        endpoint = "http://airflow.example.com:8080/api/v1/"
 
-        expected_url = "http://airflow.example.com:8080/api/v1/dags/my_special_dag/dagRuns"
+        expected_url = endpoint + "dags/my_special_dag/dagRuns"
         actual_url = mock_post.call_args[0][0]
         assert actual_url == expected_url
 

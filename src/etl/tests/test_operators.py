@@ -1,12 +1,7 @@
 """Tests for airflow operators."""
 
-import os
-import sys
 from unittest.mock import MagicMock, patch
-
-import pytest
 from airflow.models.baseoperator import BaseOperator
-
 from etl.operators import ScanFTPDirectory, SetupDjango
 
 

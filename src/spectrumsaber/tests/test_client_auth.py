@@ -23,7 +23,9 @@ def saber_client():
 
 
 class TestSpectrumSaberClientAuth:
-    """Test SpectrumSaberClient initialization, headers, login and auth methods"""
+    """
+    Test SpectrumSaberClient initialization, headers, login and auth methods
+    """
 
     def test_saber_client_initialization(self, saber_client):
         """Test SpectrumSaberClient initializes with None tokens"""

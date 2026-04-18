@@ -23,7 +23,9 @@ AdminSite.site_header = "SpectrumSaber Administration"
 AdminSite.enable_nav_sidebar = False
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent.parent  # repo root (src/server/settings.py → src/server → src → root)
+BASE_DIR = (
+    Path(__file__).resolve().parent.parent.parent
+)  # repo root (src/server/settings.py → src/server → src → root)
 APPS_DIR = Path(__file__).resolve().parent  # src/server/
 
 # Quick-start development settings - unsuitable for production

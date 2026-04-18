@@ -158,9 +158,7 @@ class TestFilterBranches:
     ):
         mock_get_user.return_value = authenticated_info.context.request.user
         query = CampaignQuery()
-        result = query.campaigns(
-            authenticated_info, date_gte=date(2025, 2, 1)
-        )
+        result = query.campaigns(authenticated_info, date_gte=date(2025, 2, 1))
         assert len(result) == 1
         assert result[0].name == "Test Campaign 2"
 
@@ -197,9 +195,7 @@ class TestFilterBranches:
 
         mock_get_user.return_value = authenticated_info.context.request.user
         query = CampaignQuery()
-        result = query.categories(
-            authenticated_info, filters=CategoryFilter()
-        )
+        result = query.categories(authenticated_info, filters=CategoryFilter())
         assert len(result) >= 1
 
     @patch("server.campaigns.schema.get_user")
@@ -223,7 +219,5 @@ class TestFilterBranches:
 
         mock_get_user.return_value = authenticated_info.context.request.user
         query = CampaignQuery()
-        result = query.districts(
-            authenticated_info, filters=DistrictFilter()
-        )
+        result = query.districts(authenticated_info, filters=DistrictFilter())
         assert len(result) >= 1
