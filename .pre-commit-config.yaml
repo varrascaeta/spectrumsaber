@@ -3,5 +3,5 @@ repos:
     rev: 7.1.1  # Use the latest version from PyCQA/flake8
     hooks:
       - id: flake8
-        args:: [src]
+        files: ^src/
     
