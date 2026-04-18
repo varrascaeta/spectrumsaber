@@ -23,6 +23,7 @@ MI_SCATTER_OUTPUT = "docs/quality/mi_loc_scatter.png"
 # HELPERS
 # ==============================
 
+
 def is_relevant_file(path: Path) -> bool:
     if path.suffix != ".py":
         return False
@@ -68,12 +69,14 @@ for source_dir in SOURCE_DIRS:
             avg_cc, loc, mi = analyze_file(path)
             if loc == 0:
                 continue
-            data.append({
-                "name": str(path.name),
-                "cc": avg_cc,
-                "loc": loc,
-                "mi": mi,
-            })
+            data.append(
+                {
+                    "name": str(path.name),
+                    "cc": avg_cc,
+                    "loc": loc,
+                    "mi": mi,
+                }
+            )
 
 locs = np.array([d["loc"] for d in data])
 ccs = np.array([d["cc"] for d in data])
@@ -83,28 +86,26 @@ x_line = np.linspace(locs.min(), locs.max(), 200)
 
 
 # ==============================
-# PLOT 1: CC vs LOC
+# PLOT 1: CC vs LLOC
 # ==============================
 
-fig, ax = plt.subplots(figsize=(9, 6))
-ax.scatter(locs, ccs, alpha=0.75, s=55, color="steelblue", zorder=3)
+fig, ax = plt.subplots(figsize=(10, 7))
+ax.scatter(locs, ccs, alpha=0.6, s=80, color="steelblue", zorder=3)
 
 z = np.polyfit(locs, ccs, 1)
 p = np.poly1d(z)
-ax.plot(x_line, p(x_line), "r--", linewidth=1.5,
-        label=f"Tendencia lineal (y = {z[0]:.4f}x + {z[1]:.2f})")
+ax.plot(
+    x_line,
+    p(x_line),
+    "r--",
+    linewidth=1.5,
+    label=f"Tendencia lineal (y = {z[0]:.4f}x + {z[1]:.2f})",
+)
 
-for d in data:
-    ax.annotate(
-        d["name"], (d["loc"], d["cc"]),
-        fontsize=6, alpha=0.65,
-        xytext=(4, 4), textcoords="offset points",
-    )
-
-ax.set_xlabel("Líneas de código (LOC)")
-ax.set_ylabel("Complejidad ciclomática promedio (CC)")
-ax.set_title("CC promedio vs. LOC por módulo")
-ax.legend(fontsize=8)
+ax.set_xlabel("Líneas lógicas de código (LLOC)", fontsize=14)
+ax.set_ylabel("Complejidad ciclomática (CC)", fontsize=14)
+ax.set_title("CC vs. LLOC por módulo", fontsize=16)
+ax.legend(fontsize=14)
 ax.grid(True, linestyle="--", alpha=0.4)
 plt.tight_layout()
 plt.savefig(CC_SCATTER_OUTPUT, dpi=300)
@@ -114,28 +115,26 @@ print(f"Gráfico guardado en {CC_SCATTER_OUTPUT}")
 
 
 # ==============================
-# PLOT 2: MI vs LOC
+# PLOT 2: MI vs LLOC
 # ==============================
 
-fig, ax = plt.subplots(figsize=(9, 6))
-ax.scatter(locs, mis, alpha=0.75, s=55, color="darkorange", zorder=3)
+fig, ax = plt.subplots(figsize=(10, 7))
+ax.scatter(locs, mis, alpha=0.6, s=80, color="darkorange", zorder=3)
 
 z2 = np.polyfit(locs, mis, 1)
 p2 = np.poly1d(z2)
-ax.plot(x_line, p2(x_line), "r--", linewidth=1.5,
-        label=f"Tendencia lineal (y = {z2[0]:.4f}x + {z2[1]:.2f})")
+ax.plot(
+    x_line,
+    p2(x_line),
+    "r--",
+    linewidth=1.5,
+    label=f"Tendencia lineal (y = {z2[0]:.4f}x + {z2[1]:.2f})",
+)
 
-for d in data:
-    ax.annotate(
-        d["name"], (d["loc"], d["mi"]),
-        fontsize=6, alpha=0.65,
-        xytext=(4, 4), textcoords="offset points",
-    )
-
-ax.set_xlabel("Líneas de código (LOC)")
-ax.set_ylabel("Maintainability Index (MI)")
-ax.set_title("MI vs. LOC por módulo")
-ax.legend(fontsize=8)
+ax.set_xlabel("Líneas lógicas de código (LLOC)", fontsize=14)
+ax.set_ylabel("Maintainability Index (MI)", fontsize=14)
+ax.set_title("MI vs. LLOC por módulo", fontsize=16)
+ax.legend(fontsize=14)
 ax.grid(True, linestyle="--", alpha=0.4)
 plt.tight_layout()
 plt.savefig(MI_SCATTER_OUTPUT, dpi=300)

@@ -22,7 +22,9 @@ def saber_client():
 
 
 class TestSpectrumSaberClientQueries:
-    """Test SpectrumSaberClient query, run_query, verify_token and token refresh"""
+    """
+    Test SpectrumSaberClient query, run_query, verify_token and token refresh
+    """
 
     def test_query_success(self, saber_client, mock_requests):
         """Test query sends GraphQL request successfully"""

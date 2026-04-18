@@ -18,7 +18,7 @@ Key tasks:
     build_single                -- Constructs a single domain object via a
                                    named Director class and serialises it with
                                    pickle+base64 for XCom transport.
-    build_multiple              -- Same as build_single but for a list of items.
+    build_multiple             -- Same as build_single but for a list of items.
     commit_director             -- Deserialises a pickled Director and calls
                                    commit() to persist the record.
     commit_multiple             -- Batch version of commit_director.

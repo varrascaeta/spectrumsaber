@@ -374,7 +374,7 @@ class PathRule(models.Model):
         matched_files = []
         unmatched_files = []
         for file_data in files:
-            if level == "measuremet":
+            if level == "measurement":
                 category = CategoryType.get_by_path(file_data["path"])
                 if category:
                     file_data["category"] = category

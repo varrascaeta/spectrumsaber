@@ -86,9 +86,7 @@ class TestProcessMeasurementsDag:
                 assert "/path/to/dp2" in result
 
     @patch("etl.dags.process_measurements.FTPClient")
-    @patch(
-        "etl.dags.process_measurements.get_bottom_level_file_recursive"
-    )
+    @patch("etl.dags.process_measurements.get_bottom_level_file_recursive")
     def test_get_measurements(self, mock_get_files, mock_ftp_client, dag):
         """Test get_measurements task."""
         # Setup mocks
@@ -121,9 +119,7 @@ class TestProcessMeasurementsDag:
             assert item["parent"] == "/test/data_point"
             assert item["is_complimentary"] is True
 
-    @patch(
-        "etl.dags.process_measurements.get_bottom_level_file_recursive"
-    )
+    @patch("etl.dags.process_measurements.get_bottom_level_file_recursive")
     @patch("etl.dags.process_measurements.FTPClient")
     def test_get_measurements_empty(
         self, mock_ftp_client, mock_get_files, dag

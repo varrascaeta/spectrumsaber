@@ -21,18 +21,11 @@ from rich.panel import Panel
 from rich.prompt import Prompt
 from rich.syntax import Syntax
 
-# Project imports — imported at module level for use in type hints only;
-# runtime lookups go through spectrumsaber.client so patches are respected.
+# Project imports
+from spectrumsaber.interactive import RichInteractiveClient
 from spectrumsaber.saber_client import SpectrumSaberClient
 
 logger = logging.getLogger(__name__)
-
-
-def _c():
-    """Return the spectrumsaber.client shim module (fully loaded by call time)."""
-    import spectrumsaber.client as _mod
-
-    return _mod
 
 
 class CLIClient:
@@ -41,7 +34,7 @@ class CLIClient:
     """
 
     def __init__(self):
-        self.console = _c().Console()
+        self.console = Console()
         self.saber_client = SpectrumSaberClient()
 
     def login(self, username: str, password: str) -> bool:
@@ -75,7 +68,7 @@ class CLIClient:
 def _build_arg_parser() -> argparse.ArgumentParser:
     """Build and return the CLI argument parser."""
     parser = argparse.ArgumentParser(
-        description="Spectrum Saber GraphQL Client",
+        description="SpectrumSaber GraphQL Client",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
@@ -131,8 +124,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         metavar="MODEL",
         default=os.getenv("LLM_MODEL"),
         help=(
-            "LLM model override for --text2gql "
-            "(or set LLM_MODEL env var)."
+            "LLM model override for --text2gql " "(or set LLM_MODEL env var)."
         ),
     )
     return parser
@@ -152,14 +144,12 @@ def _cli_authenticate(args, cli_client, console) -> None:
                 "[bold red]Error:[/bold red] Username and password "
                 "required for authentication."
             )
-            _c().sys.exit(1)
+            sys.exit(1)
         console.print("[dim]Authenticating...[/dim]")
         success = cli_client.login(args.username, args.password)
         if not success:
-            console.print(
-                "[bold red]Error:[/bold red] Authentication failed."
-            )
-            _c().sys.exit(1)
+            console.print("[bold red]Error:[/bold red] Authentication failed.")
+            sys.exit(1)
         console.print("[green]✓ Authenticated[/green]")
     if args.show_token:
         token = cli_client.get_token()
@@ -195,7 +185,6 @@ def main():
     """
     Main entry point for CLI usage.
     """
-    mod = _c()
     parser = _build_arg_parser()
     args = parser.parse_args()
 
@@ -204,7 +193,7 @@ def main():
         return
 
     if args.interactive:
-        client = mod.RichInteractiveClient()
+        client = RichInteractiveClient()
         client.run(
             provider=args.provider,
             api_key=args.api_key,
@@ -212,8 +201,8 @@ def main():
         )
         return
 
-    console = mod.Console()
-    cli_client = mod.CLIClient()
+    console = Console()
+    cli_client = CLIClient()
     _cli_authenticate(args, cli_client, console)
     _cli_execute_query(args, cli_client, console)
 
@@ -231,13 +220,13 @@ def _validate_llm_args(args, console):  # pragma: no cover
             "[bold red]Error:[/bold red] LLM provider required. "
             "Set LLM_PROVIDER env var or pass --provider anthropic|openai."
         )
-        _c().sys.exit(1)
+        sys.exit(1)
     if not api_key:
         console.print(
             "[bold red]Error:[/bold red] LLM API key required. "
             "Set LLM_API_KEY env var or pass --api-key."
         )
-        _c().sys.exit(1)
+        sys.exit(1)
     return provider, api_key, model
 
 
@@ -259,7 +248,7 @@ def _setup_saber_client_for_t2gql(args, console):  # pragma: no cover
     saber_client.login(username, password)
     if not saber_client.is_authenticated():
         console.print("[bold red]Authentication failed.[/bold red]")
-        _c().sys.exit(1)
+        sys.exit(1)
     console.print("[green]✓ Authenticated[/green]")
     return saber_client
 
@@ -295,9 +284,7 @@ def _t2gql_repl_loop(t2gql, console) -> None:  # pragma: no cover
             if errors:
                 console.print("\n[bold red]GraphQL errors:[/bold red]")
                 for err in errors:
-                    console.print(
-                        f"  [red]• {err.get('message', err)}[/red]"
-                    )
+                    console.print(f"  [red]• {err.get('message', err)}[/red]")
             if data is not None:
                 console.print("\n[bold green]Result:[/bold green]")
                 console.print_json(json.dumps(data))
@@ -329,10 +316,8 @@ def _run_text2gql_repl(args):  # pragma: no cover
             f"[green]✓[/green] [dim]{schema.count(chr(10))} lines[/dim]"
         )
     except RuntimeError as exc:
-        console.print(
-            f"\n[bold red]Failed to fetch schema:[/bold red] {exc}"
-        )
-        _c().sys.exit(1)
+        console.print(f"\n[bold red]Failed to fetch schema:[/bold red] {exc}")
+        sys.exit(1)
 
     _t2gql_repl_loop(t2gql, console)
 

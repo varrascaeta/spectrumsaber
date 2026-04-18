@@ -92,7 +92,9 @@ class TestGetBottomLevelFileRecursive:
     def test_get_bottom_level_file_recursive_only_directories(
         self, mock_ftp_client
     ):
-        """Test with directories that contain only other directories (no files)."""
+        """
+        Test with directories that contain only other directories (no files).
+        """
         mock_ftp_client.get_dir_data.side_effect = [
             [{"path": "/test/dir1", "is_dir": True, "name": "dir1"}],
             [],  # dir1 is empty
@@ -187,7 +189,7 @@ class TestGetBottomLevelFileRecursive:
         assert result[0]["modified"] == "2024-01-01"
         assert result[0]["name"] == "file.txt"
 
-    def test_get_bottom_level_file_recursive_multiple_levels_sets_correct_parent(
+    def test_get_bottom_multiple_levels_sets_correct_parent(
         self, mock_ftp_client
     ):
         """Test that parent is set correctly in multi-level recursion."""

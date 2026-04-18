@@ -14,12 +14,10 @@ from server.campaigns.directors import (
     get_director_by_class_name,
 )
 from server.campaigns.models import (
-    Campaign,
     Category,
     CategoryType,
     ComplimentaryData,
     ComplimentaryDataType,
-    Coverage,
     DataPoint,
     Measurement,
 )

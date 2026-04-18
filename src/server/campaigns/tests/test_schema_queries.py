@@ -21,7 +21,6 @@ from server.campaigns.models import (
     Coverage,
 )
 from server.campaigns.schema import CampaignQuery
-from server.places.models import District
 
 User = get_user_model()
 

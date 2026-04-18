@@ -119,8 +119,9 @@ Convert the user's natural language request into a valid GraphQL query.
 1. Return ONLY the raw GraphQL query string — no markdown, no code
    blocks, no explanation.
 2. Use only types and fields defined in the schema below.
-3. Always include `id` and `name` in every object selection unless the
-   user asks for specific fields only.
+3. Translate and interpret the user's requested fields as best as possible.
+   For example if the user asks for "nombres de cobertura" you should return
+   the `name` field of the `Coverage` type.
 4. Apply filters when the user specifies conditions.
 5. Prefer the narrowest selection that still answers the question.
 
