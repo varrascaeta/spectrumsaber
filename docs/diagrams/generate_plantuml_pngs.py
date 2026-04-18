@@ -37,7 +37,9 @@ def check_plantuml():
             check=False,
         )
         if result.returncode == 0:
-            version_line = result.stdout.splitlines()[0] if result.stdout else ""
+            version_line = (
+                result.stdout.splitlines()[0] if result.stdout else ""
+            )
             print(f"✓ {version_line}")
             return True
         return False
@@ -90,7 +92,7 @@ def resolve_target(name: str) -> Path:
 
 def main():
     if not check_plantuml():
-        print("✗ plantuml not found. Install it and make sure it is on your PATH.")
+        print("plantuml not found.")
         sys.exit(1)
 
     if len(sys.argv) > 1:
@@ -123,7 +125,7 @@ def main():
 
     if failed:
         sys.exit(1)
-    print(f"\n✓ All diagrams converted successfully!")
+    print("\n✓ All diagrams converted successfully!")
 
 
 if __name__ == "__main__":

@@ -23,6 +23,7 @@ MI_SCATTER_OUTPUT = "docs/quality/mi_loc_scatter.png"
 # HELPERS
 # ==============================
 
+
 def is_relevant_file(path: Path) -> bool:
     if path.suffix != ".py":
         return False
@@ -68,12 +69,14 @@ for source_dir in SOURCE_DIRS:
             avg_cc, loc, mi = analyze_file(path)
             if loc == 0:
                 continue
-            data.append({
-                "name": str(path.name),
-                "cc": avg_cc,
-                "loc": loc,
-                "mi": mi,
-            })
+            data.append(
+                {
+                    "name": str(path.name),
+                    "cc": avg_cc,
+                    "loc": loc,
+                    "mi": mi,
+                }
+            )
 
 locs = np.array([d["loc"] for d in data])
 ccs = np.array([d["cc"] for d in data])
@@ -91,8 +94,13 @@ ax.scatter(locs, ccs, alpha=0.6, s=80, color="steelblue", zorder=3)
 
 z = np.polyfit(locs, ccs, 1)
 p = np.poly1d(z)
-ax.plot(x_line, p(x_line), "r--", linewidth=1.5,
-        label=f"Tendencia lineal (y = {z[0]:.4f}x + {z[1]:.2f})")
+ax.plot(
+    x_line,
+    p(x_line),
+    "r--",
+    linewidth=1.5,
+    label=f"Tendencia lineal (y = {z[0]:.4f}x + {z[1]:.2f})",
+)
 
 ax.set_xlabel("Líneas lógicas de código (LLOC)", fontsize=14)
 ax.set_ylabel("Complejidad ciclomática (CC)", fontsize=14)
@@ -115,8 +123,13 @@ ax.scatter(locs, mis, alpha=0.6, s=80, color="darkorange", zorder=3)
 
 z2 = np.polyfit(locs, mis, 1)
 p2 = np.poly1d(z2)
-ax.plot(x_line, p2(x_line), "r--", linewidth=1.5,
-        label=f"Tendencia lineal (y = {z2[0]:.4f}x + {z2[1]:.2f})")
+ax.plot(
+    x_line,
+    p2(x_line),
+    "r--",
+    linewidth=1.5,
+    label=f"Tendencia lineal (y = {z2[0]:.4f}x + {z2[1]:.2f})",
+)
 
 ax.set_xlabel("Líneas lógicas de código (LLOC)", fontsize=14)
 ax.set_ylabel("Maintainability Index (MI)", fontsize=14)

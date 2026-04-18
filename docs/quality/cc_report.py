@@ -11,13 +11,20 @@ from radon.raw import analyze
 # ==============================
 
 SOURCE_DIR = "src"
-EXCLUDE_FOLDERS = {"tests", "__pycache__", "migrations", "__init__.py", "apps.py"}
+EXCLUDE_FOLDERS = {
+    "tests",
+    "__pycache__",
+    "migrations",
+    "__init__.py",
+    "apps.py",
+}
 OUTPUT_IMAGE = "docs/quality/cc_density_report.png"
 
 
 # ==============================
 # HELPERS
 # ==============================
+
 
 def is_relevant_file(path: Path) -> bool:
     if path.suffix != ".py":
@@ -34,10 +41,7 @@ def analyze_file(path: Path):
 
     # Complejidad ciclomática
     blocks = cc_visit(source)
-    avg_cc = (
-        sum(b.complexity for b in blocks) / len(blocks)
-        if blocks else 0
-    )
+    avg_cc = sum(b.complexity for b in blocks) / len(blocks) if blocks else 0
 
     # Líneas reales de código
     raw = analyze(source)
@@ -73,9 +77,7 @@ for source_dir in [SOURCE_DIR, "spectrumsaber"]:
 
 # Ordenar por densidad descendente
 results = dict(
-    sorted(results.items(),
-           key=lambda x: x[1]["density"],
-           reverse=True)
+    sorted(results.items(), key=lambda x: x[1]["density"], reverse=True)
 )
 
 # ==============================
