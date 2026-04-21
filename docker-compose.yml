@@ -34,7 +34,8 @@ x-airflow-common:
       source: .
       target: /app/project
   env_file:
-    - environments/production.env
+    - environments/common.env
+    - environments/docker.env
     - .env
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
@@ -55,7 +56,8 @@ services:
     image: spectrumsaber:latest
     command: bash -c "python manage.py runserver 0.0.0.0:8000"
     env_file:
-      - environments/production.env
+      - environments/common.env
+      - environments/docker.env
       - .env
     volumes:
       - .:/app/project/
@@ -80,7 +82,8 @@ services:
       dockerfile: containers/app.Dockerfile
     command: bash -c "sleep 5 && python manage.py migrate"
     env_file:
-      - environments/production.env
+      - environments/common.env
+      - environments/docker.env
       - .env
     volumes:
       - .:/app/project/
@@ -106,7 +109,8 @@ services:
       - spectrumsaber-db-data:/var/lib/postgresql/data
       - .:/app/project/
     env_file:
-      - environments/production.env
+      - environments/common.env
+      - environments/docker.env
       - .env
     environment:
       - POSTGRES_HOST_AUTH_METHOD=trust
@@ -145,7 +149,9 @@ services:
     volumes:
       - .:/app/project/
     env_file:
+      - environments/common.env
       - environments/testing.env
+      - .env
     depends_on:
       - test-db
     entrypoint: bash .app/containers/tests/tests.sh

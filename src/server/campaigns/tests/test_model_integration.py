@@ -6,7 +6,6 @@ from server.campaigns.models import (
     PARENT_MAP,
     PATH_LEVELS_MODELS,
     Campaign,
-    Category,
     CategoryType,
     DataPoint,
     Measurement,

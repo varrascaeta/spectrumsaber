@@ -12,7 +12,7 @@ from strawberry.types import Info
 
 # Project imports
 from server.campaigns.schema import CampaignQuery
-from server.places.models import District, Province
+from server.places.models import District
 
 User = get_user_model()
 

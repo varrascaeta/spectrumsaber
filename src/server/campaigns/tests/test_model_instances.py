@@ -356,7 +356,7 @@ class TestPathRule:
             pattern=r"^(?P<name>measure_(?P<metadata__num>\d+))$",
             level="measurement",
         )
-        
+
         files = [
             {
                 "name": "measure_001.txt",
@@ -364,9 +364,8 @@ class TestPathRule:
                 "is_unmatched": True,
             },
         ]
-        
-        # Note: "measuremet" is a typo in the code but we test the actual behavior
-        matched, unmatched = PathRule.match_files(files, "measuremet")
+
+        matched, unmatched = PathRule.match_files(files, "measurement")
         # The typo branch should be hit but files won't get category
         assert len(files) == 1
 
@@ -379,17 +378,17 @@ class TestPathRule:
             pattern=r"^(?P<name>NoMatch_(?P<metadata__number>\d+))$",
             level="coverage",
         )
-        
+
         # Create a coverage that doesn't match
         Coverage.objects.create(
             name="SomeOtherName",
             path="/test/other",
         )
-        
+
         # Apply the rule - should iterate but not match anything
         # This covers the apply() method code path
         rule.apply()
-        
+
         # Verify get_model works correctly
         assert rule.get_model().__name__ == "Coverage"
 
@@ -481,7 +480,7 @@ class TestUnmatchedObjectManager:
             level="campaign",
             is_unmatched=True,
         )
-        
+
         # Test with leading/trailing slashes
         result = UnmatchedFile.objects.filter(path="/test/file1/")
         assert result.count() == 1
@@ -495,7 +494,7 @@ class TestUnmatchedObjectManager:
             level="campaign",
             is_unmatched=True,
         )
-        
+
         # Test with path__exact
         result = UnmatchedFile.objects.filter(path__exact="/test/file1/")
         assert result.count() == 1
@@ -509,7 +508,7 @@ class TestUnmatchedObjectManager:
             level="campaign",
             is_unmatched=True,
         )
-        
+
         # Test with path__iexact
         result = UnmatchedFile.objects.filter(path__iexact="/TEST/FILE1/")
         assert result.count() == 1
@@ -523,7 +522,7 @@ class TestUnmatchedObjectManager:
             level="campaign",
             is_unmatched=True,
         )
-        
+
         result = UnmatchedFile.objects.get(path="/test/file1/")
         assert result == uf
 
@@ -577,7 +576,7 @@ class TestBaseFileManager:
     def test_filter_with_path(self, coverage):
         """Test filter strips leading/trailing slashes from path"""
         Coverage.objects.create(name="Test2", path="/another/path")
-        
+
         # Test with leading/trailing slashes
         result = Coverage.objects.filter(path="/test/coverage/")
         assert result.count() == 1
@@ -586,7 +585,7 @@ class TestBaseFileManager:
     def test_filter_with_path_exact(self, coverage):
         """Test filter with path__exact parameter"""
         Coverage.objects.create(name="Test2", path="/another/path")
-        
+
         # Test with path__exact
         result = Coverage.objects.filter(path__exact="/test/coverage/")
         assert result.count() == 1

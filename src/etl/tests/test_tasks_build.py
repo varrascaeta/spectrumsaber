@@ -4,8 +4,6 @@ import base64
 import pickle
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from etl.tasks import (
     build_multiple,
     build_single,

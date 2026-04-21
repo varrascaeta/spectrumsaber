@@ -76,7 +76,7 @@ class RichInteractiveClient:  # pragma: no cover
         Display a welcome banner.
         """
         banner = Panel.fit(
-            "[bold cyan]Spectrum Saber GraphQL Client[/bold cyan]\n"
+            "[bold cyan]SpectrumSaber Client[/bold cyan]\n"
             "[dim]Interactive GraphQL Query Interface[/dim]",
             border_style="cyan",
         )

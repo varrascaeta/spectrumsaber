@@ -201,7 +201,7 @@ class TestGetDictResult:
         """Test extracting None value returns None."""
         data = {"key1": None}
         result = get_dict_result.function(data, "key1")
-        assert result == None
+        assert result is None
 
     def test_get_dict_result_empty_dict(self):
         """Test with empty dictionary."""
