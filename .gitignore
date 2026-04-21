@@ -176,3 +176,7 @@ process_coverage
 # Static files
 static/
 staticfiles/
+
+# LLMs
+.claude
+.github
