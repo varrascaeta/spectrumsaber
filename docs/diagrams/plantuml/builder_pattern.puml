@@ -1,0 +1,143 @@
+@startuml builder_pattern
+
+skinparam backgroundColor white
+skinparam dpi 200
+skinparam defaultFontName "DejaVu Sans"
+skinparam classAttributeIconSize 0
+skinparam ArrowColor #444444
+skinparam defaultFontSize 25
+skinparam ArrowFontSize 20
+'skinparam linetype ortho
+
+skinparam class {
+    BackgroundColor #F0F4FF
+    BorderColor     #5C6BC0
+    BorderThickness 2
+    FontSize        27
+}
+
+left to right direction
+'right to left direction
+'top to bottom direction
+
+' ================================================================
+'  BUILDERS
+' ================================================================
+
+abstract class BaseBuilder {
+    + model : class
+    + instance : BaseFile
+    +build_instance(path: str)
+    +build_name(name: str)
+    +build_metadata(metadata: dict)
+    +build_description(desc: str)
+    +build_ftp_created_at(created_at: datetime)
+    +build_is_unmatched()
+    +build_last_synced_at()
+    +remove_unmatched_if_exists(path: str)
+    +{abstract} build_parent(parent_path: str)
+    +save_to_db()
+    #{abstract} _get_model()
+}
+
+class UnmatchedBuilder {
+    +build_parent(parent_path: str)
+    +build_is_unmatched()
+    +build_level(level: int)
+}
+
+class CoverageBuilder {
+    +build_parent(parent_path: str)
+}
+
+class CampaignBuilder {
+    +build_parent(parent_path: str)
+    +build_date(rule_id: int, date_str: str)
+    +build_external_id(external_id: str)
+    +build_district()
+}
+
+class DataPointBuilder {
+    +build_parent(parent_path: str)
+    +build_order(order: int)
+    +build_latitude()
+    +build_longitude()
+}
+
+class MeasurementBuilder {
+    +build_parent(parent_path: str)
+    +build_category(path: str)
+}
+
+class ComplimentaryDataBuilder {
+    +build_parent(parent_path: str)
+    +build_complement_type(path: str)
+}
+
+' ================================================================
+'  DIRECTORS
+' ================================================================
+
+abstract class BaseDirector {
+    #_builder : BaseBuilder
+    +construct(file_data: dict)
+    +commit()
+    #{abstract} _get_builder()
+}
+
+class UnmatchedDirector {
+    +construct(file_data: dict)
+}
+
+class CoverageDirector {
+    +construct(file_data: dict)
+}
+
+class CampaignDirector {
+    +construct(file_data: dict)
+}
+
+class DataPointDirector {
+    +construct(file_data: dict)
+}
+
+class MeasurementDirector {
+    +construct(file_data: dict)
+}
+
+class ComplimentaryDirector {
+    +construct(file_data: dict)
+}
+
+' ================================================================
+'  INHERITANCE
+' ================================================================
+
+UnmatchedBuilder        -|> BaseBuilder
+CoverageBuilder         -|> BaseBuilder
+CampaignBuilder         -|> BaseBuilder
+DataPointBuilder        -|> BaseBuilder
+MeasurementBuilder      -|> BaseBuilder
+ComplimentaryDataBuilder -|> BaseBuilder
+
+UnmatchedDirector   --|> BaseDirector
+CoverageDirector    --|> BaseDirector
+CampaignDirector    --|> BaseDirector
+DataPointDirector   --|> BaseDirector
+MeasurementDirector --|> BaseDirector
+ComplimentaryDirector --|> BaseDirector
+
+' ================================================================
+'  ASSOCIATIONS
+' ================================================================
+
+BaseDirector --> BaseBuilder : uses
+
+UnmatchedDirector     --> UnmatchedBuilder        : uses
+CoverageDirector      --> CoverageBuilder         : uses
+CampaignDirector      --> CampaignBuilder         : uses
+DataPointDirector     --> DataPointBuilder        : uses
+MeasurementDirector   --> MeasurementBuilder      : uses
+ComplimentaryDirector --> ComplimentaryDataBuilder : uses
+
+@enduml

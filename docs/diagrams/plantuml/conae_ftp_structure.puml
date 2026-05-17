@@ -1,0 +1,126 @@
+@startuml conae_ftp_structure
+
+skinparam backgroundColor white
+skinparam dpi 200
+skinparam defaultFontSize 20
+skinparam defaultFontName "DejaVu Sans"
+skinparam ArrowColor #444444
+hide stereotype
+'skinparam linetype ortho
+left to right direction
+
+skinparam component {
+    BackgroundColor<<id>>          #5DADE2
+    BorderColor<<id>>              #1A5276
+    FontColor<<id>>                #FFFFFF
+
+    BackgroundColor<<intermediate>> #9CCC65
+    BorderColor<<intermediate>>     #558B2F
+    FontColor<<intermediate>>       #FFFFFF
+
+    BackgroundColor<<measurement>>  #9575CD
+    BorderColor<<measurement>>      #4527A0
+    FontColor<<measurement>>        #FFFFFF
+
+    BackgroundColor<<datatype>>     #4DD0E1
+    BorderColor<<datatype>>         #006064
+    FontColor<<datatype>>           #000000
+
+    BackgroundColor<<fileformat>>   #FFB74D
+    BorderColor<<fileformat>>       #E65100
+    FontColor<<fileformat>>         #000000
+
+    BorderThickness 2
+}
+
+' ---- Raíz ----
+component "ID-aaaammdd-sitio"     as ID  <<id>>
+
+' ---- Carpetas intermedias ----
+component "Datos complementarios" as DC  <<intermediate>>
+component "Punto-N"               as PN1 <<intermediate>>
+
+' ---- Tipos de medición ----
+component "Fotos"                  as Fotos       <<measurement>>
+component "Instrumento"            as Instrumento <<measurement>>
+component "Planilla Campo"         as PCampo      <<measurement>>
+component "Planilla Laboratorio"   as PLab        <<measurement>>
+component "Fotometría"             as Fotometria  <<measurement>>
+component "Radiometría"            as Radiometria <<measurement>>
+
+' ---- Tipos de dato ----
+component "Dato Crudo"             as DatoCrudo     <<datatype>>
+component "Radiancia"              as Radiancia     <<datatype>>
+component "Radiancia promedio"     as RadianciaProm <<datatype>>
+component "Reflectancia"           as Reflectancia  <<datatype>>
+component "Texto Radiancia"        as TextoRad      <<datatype>>
+component "Texto Rad. promedio"    as TextoRadProm  <<datatype>>
+component "Texto Reflectancia"     as TextoRefl     <<datatype>>
+component "Punto-N"               as PN2           <<datatype>>
+
+' ---- Formatos de archivo ----
+component ".jpg"           as JPG      <<fileformat>>
+component ".doc"           as DOC      <<fileformat>>
+component ".xls (campo)"   as XLS1     <<fileformat>>
+component ".xls (lab)"     as XLS2     <<fileformat>>
+component ".txt"           as TXT      <<fileformat>>
+component ".rts.txt"       as RTSTXT   <<fileformat>>
+component ".asd"           as ASD      <<fileformat>>
+component ".rad"           as RAD      <<fileformat>>
+component ".rad.md"        as RADMD    <<fileformat>>
+component ".rts"           as RTS      <<fileformat>>
+component ".rad.txt"       as RADTXT   <<fileformat>>
+component ".rad.md.txt"    as RADMDTXT <<fileformat>>
+
+' ================================================================
+'  CONEXIONES
+' ================================================================
+
+ID  --> DC
+ID  --> PN1
+
+DC  --> Fotos
+DC  --> Instrumento
+DC  --> PCampo
+DC  --> PLab
+
+PN2         --> JPG
+Instrumento --> DOC
+PCampo      --> XLS1
+PLab        --> XLS2
+
+PN1 --> Fotometria
+PN1 --> Radiometria
+Fotos --> PN2
+
+Fotometria --> TXT
+TextoRefl  --> RTSTXT
+
+Radiometria --> DatoCrudo
+DatoCrudo   --> ASD
+
+Radiometria --> Radiancia
+Radiancia   --> RAD
+Radiometria --> RadianciaProm
+RadianciaProm --> RADMD
+Radiometria --> Reflectancia
+Reflectancia  --> RTS
+Radiometria --> TextoRad
+TextoRad      --> RADTXT
+Radiometria --> TextoRadProm
+TextoRadProm  --> RADMDTXT
+Radiometria --> TextoRefl
+
+' ================================================================
+'  LEYENDA
+' ================================================================
+legend bottom
+  |= Color               |= Tipo                  |
+  |<#5DADE2>             | Identificador          |
+  |<#9CCC65>             | Carpeta intermedia     |
+  |<#9575CD>             | Tipo de medición       |
+  |<#4DD0E1>             | Tipo de dato           |
+  |<#FFB74D>             | Formato de archivo     |
+endlegend
+
+@enduml

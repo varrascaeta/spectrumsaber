@@ -1,0 +1,69 @@
+@startuml dag_process_measurements
+
+skinparam backgroundColor white
+skinparam dpi 200
+skinparam defaultFontSize 20
+skinparam defaultFontName "DejaVu Sans"
+skinparam ArrowColor #444444
+hide stereotype
+
+top to bottom direction
+
+skinparam component {
+    BackgroundColor<<task>>     #A5D6A7
+    BorderColor<<task>>         #2E7D32
+    FontColor<<task>>           #000000
+
+    BackgroundColor<<operator>> #90CAF9
+    BorderColor<<operator>>     #1565C0
+    FontColor<<operator>>       #000000
+
+    BorderThickness 2
+}
+
+skinparam package {
+    BackgroundColor #FFFDE7
+    BorderColor     #F9A825
+    BorderThickness 2
+    FontStyle       bold
+}
+
+' ---- Nodos sueltos ----
+component "setup_django"              as sd  <<operator>>
+component "get_data_points_to_scan"   as gdp <<task>>
+component "get_measurements"          as gm  <<task>>
+component "check_non_empty (matched)"       as cm  <<task>>
+component "check_non_empty (complimentary)" as cc  <<task>>
+
+' ---- Subgrafos ----
+package "process_matched" as pm {
+    component "build_matched"   as bm  <<task>>
+    component "commit_matched"  as com <<task>>
+    bm --> com
+}
+
+package "process_complimentary" as pc {
+    component "build_complimentary"  as bc  <<task>>
+    component "commit_complimentary" as coc <<task>>
+    bc --> coc
+}
+
+' ---- Flujo principal ----
+sd --> gdp
+gdp --> gm
+gm --> cm
+gm --> cc
+cm --> bm
+cc --> bc
+
+' ================================================================
+'  LEYENDA
+' ================================================================
+legend bottom
+  |= Color       |= Tipo     |
+  |<#90CAF9>     | Operator  |
+  |<#A5D6A7>     | Task      |
+  |<#FFFDE7>     | Task Group    |
+endlegend
+
+@enduml

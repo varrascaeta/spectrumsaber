@@ -1,0 +1,58 @@
+@startuml directors
+
+skinparam backgroundColor white
+skinparam dpi 200
+skinparam defaultFontName "DejaVu Sans"
+skinparam classAttributeIconSize 0
+skinparam ArrowColor #444444
+skinparam defaultFontSize 25
+skinparam ArrowFontSize 20
+
+skinparam class {
+    BackgroundColor #F0F4FF
+    BorderColor     #5C6BC0
+    BorderThickness 2
+    FontSize        27
+}
+
+left to right direction
+
+abstract class BaseDirector {
+    -_builder : BaseBuilder
+    +construct(file_data: dict)
+    +commit()
+    -{abstract} _get_builder()
+}
+
+class UnmatchedDirector {
+    +construct(file_data: dict)
+}
+
+class CoverageDirector {
+    +construct(file_data: dict)
+}
+
+class CampaignDirector {
+    +construct(file_data: dict)
+}
+
+class DataPointDirector {
+    +construct(file_data: dict)
+}
+
+class MeasurementDirector {
+    +construct(file_data: dict)
+}
+
+class ComplimentaryDirector {
+    +construct(file_data: dict)
+}
+
+UnmatchedDirector     --|> BaseDirector
+CoverageDirector      --|> BaseDirector
+CampaignDirector      --|> BaseDirector
+DataPointDirector     --|> BaseDirector
+MeasurementDirector   --|> BaseDirector
+ComplimentaryDirector --|> BaseDirector
+
+@enduml

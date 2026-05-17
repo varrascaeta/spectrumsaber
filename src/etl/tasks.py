@@ -27,9 +27,11 @@ Task-group factories:
     process_expanded_by_class_group  -- Returns an expanded task group that
         applies build_single + commit_director to each item in a list,
         optionally recursing into complimentary directories first.
-    process_multiple_by_class_group  -- Returns a task group that applies
+    process_multiple_by_class_group  -- Returns a task group callable that applies
         get_dict_result + build_multiple + commit_multiple for a given
-        selector key, optionally with complimentary-dir recursion.
+        selector key (batch, single group instance). With recurse_dirs=True,
+        returns the inner process_multiple_with_recursion variant which inserts
+        recurse_complimentary_dirs between get and build.
 """
 
 # Standard imports
@@ -172,6 +174,27 @@ def process_expanded_by_class_group(
     director_class: str,
     recurse_dirs: bool = False,
 ):
+    """
+    Fan-out task group factory using Airflow dynamic task mapping.
+
+    Creates one task group instance per item in ``file_data`` via ``.expand()``,
+    so N files produce N parallel task groups in the DAG graph. Each group runs
+    ``build_single`` → ``commit_director`` on a single file dict.
+
+    When ``recurse_dirs=True``, a ``recurse_complimentary_dirs`` step is
+    prepended inside each task group instance, recursing into the item's FTP
+    directory before building. Recursion is scoped per-item (not over the
+    full list).
+
+    Args:
+        group_id: Task group ID used as the Airflow UI label.
+        file_data: List of file dicts; each becomes one expanded task group.
+        director_class: Name of the Director class passed to ``build_single``.
+        recurse_dirs: If True, recurse into complimentary dirs before building.
+
+    Returns:
+        The result of the expanded task group (already invoked via ``.expand()``).
+    """
 
     @task_group(group_id=group_id)
     def process_single_by_class(file_data: dict, director_class: str):
@@ -195,6 +218,30 @@ def process_expanded_by_class_group(
 
 
 def process_multiple_by_class_group(group_id: str, recurse_dirs: bool = False):
+    """
+    Batch task group factory — processes all files in one task group instance.
+
+    Returns a task group **callable** (not yet invoked). The returned group runs
+    ``get_dict_result`` → ``build_multiple`` → ``commit_multiple`` over the
+    entire file list in a single task group, using named task IDs derived from
+    ``selector_key`` so multiple instances can coexist in the same DAG.
+
+    When ``recurse_dirs=True``, returns the inner ``process_multiple_with_recursion``
+    variant, which inserts ``recurse_complimentary_dirs`` between ``get_dict_result``
+    and ``build_multiple``. Recursion operates on the full batch (not per-item).
+
+    Contrast with ``process_expanded_by_class_group``: this factory produces a
+    single task group regardless of list length, using ``build_multiple`` /
+    ``commit_multiple`` instead of fan-out with ``build_single`` / ``commit_director``.
+
+    Args:
+        group_id: Task group ID used as the Airflow UI label.
+        recurse_dirs: If True, return the recursion-aware variant of the group.
+
+    Returns:
+        A ``@task_group``-decorated callable that the caller must invoke with
+        ``(file_data, selector_key, director_class)`` arguments.
+    """
 
     @task_group(group_id=group_id)
     def process_multiple_by_class(
@@ -218,6 +265,14 @@ def process_multiple_by_class_group(group_id: str, recurse_dirs: bool = False):
     def process_multiple_with_recursion(
         file_data: dict, selector_key: str, director_class: str
     ):
+        """
+        Batch task group with complimentary-dir recursion.
+
+        Chain: ``get_dict_result`` → ``recurse_complimentary_dirs`` →
+        ``build_multiple`` → ``commit_multiple``. Recursion walks FTP dirs
+        for the full file list before building. Returned by
+        ``process_multiple_by_class_group`` when ``recurse_dirs=True``.
+        """
         data_task = get_dict_result.override(
             task_id=f"get_result_{selector_key}"
         )

@@ -80,7 +80,7 @@ services:
     build:
       context: .
       dockerfile: containers/app.Dockerfile
-    command: bash -c "sleep 5 && python manage.py migrate"
+    command: bash -c "sleep 5 && python manage.py migrate && python manage.py init_path_rules"
     env_file:
       - environments/common.env
       - environments/docker.env
@@ -114,11 +114,6 @@ services:
       - .env
     environment:
       - POSTGRES_HOST_AUTH_METHOD=trust
-      - POSTGRES_USER
-      - POSTGRES_PASSWORD
-      - POSTGRES_DB
-      - POSTGRES_HOST
-      - POSTGRES_PORT
     ports:
       - "5433:5432"
     networks:

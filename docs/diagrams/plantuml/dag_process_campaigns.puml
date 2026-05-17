@@ -1,0 +1,82 @@
+@startuml dag_process_campaigns
+
+skinparam backgroundColor white
+skinparam dpi 200
+skinparam defaultFontSize 20
+skinparam defaultFontName "DejaVu Sans"
+skinparam ArrowColor #444444
+hide stereotype
+
+top to bottom direction
+
+skinparam component {
+    BackgroundColor<<task>>     #A5D6A7
+    BorderColor<<task>>         #2E7D32
+    FontColor<<task>>           #000000
+
+    BackgroundColor<<operator>> #90CAF9
+    BorderColor<<operator>>     #1565C0
+    FontColor<<operator>>       #000000
+
+    BorderThickness 2
+}
+
+skinparam package {
+    BackgroundColor #FFFDE7
+    BorderColor     #F9A825
+    BorderThickness 2
+    FontStyle       bold
+}
+
+' ---- Nodos sueltos ----
+component "setup_django"               as sd  <<operator>>
+component "scan_campaigns"             as sc  <<operator>>
+component "get_campaigns_to_process"   as gc  <<task>>
+component "match_patterns"             as mp  <<task>>
+component "check_non_empty (matched)"       as cm  <<task>>
+component "check_non_empty (unmatched)"     as cu  <<task>>
+component "check_non_empty (complimentary)" as cc  <<task>>
+
+' ---- Subgrafos ----
+package "process_matched_campaigns" as pmc {
+    component "build_single"    as bsm <<task>>
+    component "commit_director" as cdm <<task>>
+    bsm --> cdm
+}
+
+package "process_unmatched_campaigns" as puc {
+    component "build_single"    as bsu <<task>>
+    component "commit_director" as cdu <<task>>
+    bsu --> cdu
+}
+
+package "process_complimentary_campaigns" as pcc {
+    component "recurse_complimentary_dirs" as rcd <<task>>
+    component "build_single"               as bsc <<task>>
+    component "commit_director"            as cdc <<task>>
+    rcd --> bsc
+    bsc --> cdc
+}
+
+' ---- Flujo principal ----
+sd --> sc 
+sc --> gc
+gc --> mp
+mp --> cm
+mp --> cu
+mp --> cc
+cm --> bsm
+cu --> bsu
+cc --> rcd
+
+' ================================================================
+'  LEYENDA
+' ================================================================
+legend bottom
+  |= Color       |= Tipo     |
+  |<#90CAF9>     | Operator  |
+  |<#A5D6A7>     | Task      |
+  |<#FFFDE7>     | Task Group    |
+endlegend
+
+@enduml

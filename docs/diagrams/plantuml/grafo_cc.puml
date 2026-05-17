@@ -1,0 +1,43 @@
+@startuml grafo_cc
+
+skinparam backgroundColor white
+skinparam dpi 200
+skinparam defaultFontSize 16
+skinparam defaultFontName "DejaVu Sans"
+skinparam ArrowColor #444444
+
+skinparam component {
+    BackgroundColor #90CAF9
+    BorderColor     #1565C0
+    FontColor       #000000
+    BorderThickness 2
+}
+
+left to right direction
+
+component "1"  as n1
+component "2"  as n2
+component "3"  as n3
+component "4"  as n4
+component "5"  as n5
+component "6"  as n6
+component "7"  as n7
+component "8"  as n8
+component "9"  as n9
+component "10" as n10
+component "11" as n11
+
+n1  --> n2
+n2  --> n3
+n2  --> n7
+n3  --> n5
+n3  --> n4
+n4  --> n11
+n5  --> n6
+n6  --> n11
+n7  --> n8
+n7  --> n9
+n9  --> n10
+n10 --> n11
+
+@enduml

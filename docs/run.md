@@ -31,25 +31,38 @@ Access:
 
 ### Locally (without Docker)
 
+> **Prerequisite:** the Docker database must be running (`make db` or `make app`) before running any local management commands. The app connects to Postgres on `localhost:5433`.
+
+Prefer `make` targets — they load all required env files automatically:
+
 ```bash
 # Apply migrations
-uv run --env-file environments/local.env --env-file .env manage.py migrate
+make migrate
 
 # Create a superuser
 make createsuperuser
 
 # Run the development server
-uv run --env-file environments/local.env --env-file .env manage.py runserver
+make run
 ```
+
+If running `uv` directly, include all three env files (omitting `common.env` causes missing `POSTGRES_DB` / `PYTHONPATH`):
+
+```bash
+uv run --env-file environments/common.env --env-file environments/local.env --env-file .env manage.py migrate
+```
+
+> **Never** run bare `python manage.py ...` — it will pick up the wrong `POSTGRES_HOST` and fail with permission errors against the system Postgres instead of the Docker one.
 
 ### First-time setup (after first `make app` or local start)
 
+Run all first-time steps in one command:
+
 ```bash
-# Create a superuser to access the Admin
-make createsuperuser
-# or manually:
-uv run --env-file environments/local.env --env-file .env manage.py createsuperuser
+make setup
 ```
+
+This runs `migrate` → `createsuperuser` → `init_path_rules` (seeds the PathRule records required by all DAGs) in order.
 
 ### Useful management commands
 
@@ -192,3 +205,21 @@ make coverage
 ```
 
 Test configuration is in `tox.ini`. The testing profile starts a dedicated PostgreSQL container on port `9432`.
+
+---
+
+## Troubleshooting
+
+### `relation "campaigns_pathrule" does not exist`
+
+Migrations haven't been applied yet.
+
+```bash
+make migrate
+```
+
+### `permission denied for schema public` / `Unable to create the django_migrations table`
+
+Caused by connecting to the wrong Postgres instance — typically the system Postgres instead of the Docker one, which happens when running bare `python manage.py` without the `local.env` env file (which sets `POSTGRES_HOST=localhost POSTGRES_PORT=5433`).
+
+Fix: always use `make migrate` or the full `uv run` form with all three env files (see above). Never run `python manage.py` directly.

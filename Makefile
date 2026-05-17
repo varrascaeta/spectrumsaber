@@ -37,6 +37,14 @@ migrate:          ## Apply Django migrations
 createsuperuser:  ## Create a Django superuser (uses DJANGO_SUPERUSER_* from .env)
 	$(DJANGO) createsuperuser --noinput
 
+init-path-rules:  ## Seed default PathRule records (required before running DAGs)
+	$(DJANGO) init_path_rules
+
+setup:            ## First-time local setup: migrate + createsuperuser + init-path-rules
+	$(MAKE) migrate
+	$(MAKE) createsuperuser
+	$(MAKE) init-path-rules
+
 # ─── CLI client ───────────────────────────────────────────────────────────────
 
 client:           ## Run the spectrumsaber CLI  (usage: make client ARGS="--query '...'")
@@ -112,7 +120,7 @@ help:             ## Show this help message
 
 .DEFAULT_GOAL := help
 
-.PHONY: run shell migrations migrate createsuperuser \
+.PHONY: run shell migrations migrate createsuperuser init-path-rules setup \
         client client-interactive t2gql \
         build up stop logs ps \
         app app-stop app-build \

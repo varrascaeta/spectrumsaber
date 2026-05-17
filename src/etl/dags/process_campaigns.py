@@ -77,13 +77,13 @@ def process_campaigns():
 
     splitted = match_patterns(campaigns_to_process, level="campaign")
 
-    check_matched = check_non_empty_dict(splitted, "matched")
-    check_unmatched = check_non_empty_dict(splitted, "unmatched")
-    check_complimentary = check_non_empty_dict(splitted, "complimentary")
+    check_matched = check_non_empty_dict.override(task_id="check_matched")(splitted, "matched")
+    check_unmatched = check_non_empty_dict.override(task_id="check_unmatched")(splitted, "unmatched")
+    check_complimentary = check_non_empty_dict.override(task_id="check_complimentary")(splitted, "complimentary")
 
-    matched = get_dict_result(splitted, "matched")
-    unmatched = get_dict_result(splitted, "unmatched")
-    complimentary = get_dict_result(splitted, "complimentary")
+    matched = get_dict_result.override(task_id="get_matched")(splitted, "matched")
+    unmatched = get_dict_result.override(task_id="get_unmatched")(splitted, "unmatched")
+    complimentary = get_dict_result.override(task_id="get_complimentary")(splitted, "complimentary")
 
     process_matched = process_expanded_by_class_group(
         "process_matched_campaigns",

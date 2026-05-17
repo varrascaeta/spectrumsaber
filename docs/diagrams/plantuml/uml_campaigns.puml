@@ -1,0 +1,92 @@
+@startuml uml_campaigns
+
+skinparam backgroundColor white
+skinparam dpi 200
+skinparam defaultFontName "DejaVu Sans"
+skinparam classAttributeIconSize 0
+skinparam ArrowColor #444444
+
+skinparam defaultFontSize 25
+skinparam ArrowFontSize 20
+
+skinparam class {
+    BackgroundColor #F0F4FF
+    BorderColor     #5C6BC0
+    BorderThickness 2
+    FontSize        27
+}
+
+top to bottom direction
+
+abstract class BaseFile {
+    +String name
+    +String normalized_name
+    +String path
+    +String description
+    +JSON metadata
+    +DateTime ftp_created_at
+    +DateTime created_at
+    +DateTime updated_at
+    +bool scan_complete
+    +bool is_unmatched
+    +DateTime last_synced_at
+    +{abstract} match_pattern()
+}
+
+class Coverage
+
+class Campaign {
+    +Date date
+    +String external_id
+    +coverage : FK
+    +district : FK
+}
+
+class DataPoint {
+    +int order
+    +Float latitude
+    +Float longitude
+    +campaign : FK
+}
+
+class Measurement {
+    +data_point : FK
+    +category : FK
+}
+
+class ComplimentaryData {
+    +String complement_type
+    +data_point : FK
+    +campaign : FK
+    +{static} get_parent(file_path: str)
+}
+
+class UnmatchedFile {
+    +String parent_path
+    +String level
+    +create_matched_file(attributes: dict)
+}
+
+class Category {
+    +String name
+    +String normalized_name
+    +DateTime created_at
+}
+
+' ---- Herencia ----
+Coverage         --|> BaseFile
+Campaign         --|> BaseFile
+DataPoint        --|> BaseFile
+Measurement      --|> BaseFile
+ComplimentaryData --|> BaseFile
+UnmatchedFile    --|> BaseFile
+
+' ---- Asociaciones ----
+Campaign          "*" --> "1"   Coverage  : coverage
+DataPoint         "*" --> "1"   Campaign  : campaign
+Measurement       "*" --> "1"   DataPoint : data_point
+Measurement       "*" --> "0..1" Category : category
+ComplimentaryData "*" --> "0..1" Campaign  : campaign
+ComplimentaryData "*" --> "0..1" DataPoint : data_point
+
+@enduml

@@ -1,327 +1,1462 @@
 -e .
 aiohappyeyeballs==2.6.1
+    # via
+    #   aiohttp
+    #   spectrumsaber
 aiohttp==3.11.16
+    # via
+    #   apache-airflow-providers-http
+    #   spectrumsaber
 aiosignal==1.3.2
+    # via
+    #   aiohttp
+    #   spectrumsaber
 aiosqlite==0.21.0
+    # via
+    #   apache-airflow-providers-sqlite
+    #   spectrumsaber
 alembic==1.15.2
+    # via
+    #   apache-airflow
+    #   spectrumsaber
 annotated-doc==0.0.4
+    # via fastapi
 annotated-types==0.7.0
+    # via pydantic
 anyio==4.9.0
+    # via
+    #   gql
+    #   httpx
+    #   mcp
+    #   openai
+    #   spectrumsaber
+    #   sse-starlette
+    #   starlette
 apache-airflow==2.10.5
+    # via
+    #   apache-airflow-providers-amazon
+    #   apache-airflow-providers-common-compat
+    #   apache-airflow-providers-common-io
+    #   apache-airflow-providers-common-sql
+    #   apache-airflow-providers-fab
+    #   apache-airflow-providers-ftp
+    #   apache-airflow-providers-http
+    #   apache-airflow-providers-imap
+    #   apache-airflow-providers-smtp
+    #   apache-airflow-providers-sqlite
+    #   spectrumsaber
 apache-airflow-providers-amazon==9.0.0
+    # via spectrumsaber
 apache-airflow-providers-common-compat==1.6.0
+    # via
+    #   apache-airflow
+    #   apache-airflow-providers-amazon
+    #   apache-airflow-providers-fab
+    #   apache-airflow-providers-smtp
+    #   spectrumsaber
 apache-airflow-providers-common-io==1.5.2
+    # via
+    #   apache-airflow
+    #   spectrumsaber
 apache-airflow-providers-common-sql==1.24.1
+    # via
+    #   apache-airflow
+    #   apache-airflow-providers-amazon
+    #   apache-airflow-providers-sqlite
+    #   spectrumsaber
 apache-airflow-providers-fab==1.5.3
+    # via
+    #   apache-airflow
+    #   spectrumsaber
 apache-airflow-providers-ftp==3.12.3
+    # via
+    #   apache-airflow
+    #   spectrumsaber
 apache-airflow-providers-http==5.2.0
+    # via
+    #   apache-airflow
+    #   apache-airflow-providers-amazon
+    #   spectrumsaber
 apache-airflow-providers-imap==3.8.3
+    # via
+    #   apache-airflow
+    #   spectrumsaber
 apache-airflow-providers-smtp==2.0.2
+    # via
+    #   apache-airflow
+    #   spectrumsaber
 apache-airflow-providers-sqlite==4.0.1
+    # via
+    #   apache-airflow
+    #   spectrumsaber
 apispec==6.8.1
+    # via
+    #   flask-appbuilder
+    #   spectrumsaber
 appnope==0.1.4 ; sys_platform == 'darwin'
+    # via ipykernel
 argcomplete==3.6.1
+    # via
+    #   apache-airflow
+    #   spectrumsaber
 asgiref==3.8.1
+    # via
+    #   apache-airflow
+    #   apache-airflow-providers-amazon
+    #   apache-airflow-providers-http
+    #   django
+    #   spectrumsaber
+    #   strawberry-graphql-django
 asn1crypto==1.5.1
+    # via
+    #   scramp
+    #   spectrumsaber
 asttokens==3.0.0
+    # via
+    #   spectrumsaber
+    #   stack-data
 async-timeout==4.0.3 ; python_full_version < '3.11'
+    # via
+    #   aiohttp
+    #   langchain
+    #   spectrumsaber
 async-timeout==5.0.1 ; python_full_version >= '3.11'
+    # via spectrumsaber
 attrs==25.3.0
-authlib==1.6.8
+    # via
+    #   aiohttp
+    #   apache-airflow
+    #   cyclopts
+    #   jsonschema
+    #   referencing
+    #   spectrumsaber
+authlib==1.6.12
+    # via fastmcp
 babel==2.17.0
+    # via
+    #   flask-babel
+    #   spectrumsaber
 backoff==2.2.1
+    # via gql
 beautifulsoup4==4.13.3
+    # via
+    #   redshift-connector
+    #   spectrumsaber
 black==25.12.0
+    # via
+    #   flake8-black
+    #   spectrumsaber
 blinker==1.9.0
+    # via
+    #   apache-airflow
+    #   spectrumsaber
 boto3==1.37.25
+    # via
+    #   apache-airflow-providers-amazon
+    #   pyathena
+    #   redshift-connector
+    #   spectrumsaber
+    #   watchtower
 botocore==1.37.25
+    # via
+    #   apache-airflow-providers-amazon
+    #   boto3
+    #   pyathena
+    #   redshift-connector
+    #   s3transfer
+    #   spectrumsaber
 cachelib==0.13.0
+    # via
+    #   flask-caching
+    #   flask-session
+    #   spectrumsaber
 cachetools==5.5.2
+    # via
+    #   spectrumsaber
+    #   tox
 certifi==2025.1.31
+    # via
+    #   httpcore
+    #   httpx
+    #   requests
+    #   spectrumsaber
 cffi==1.17.1 ; implementation_name == 'pypy' or platform_python_implementation != 'PyPy'
+    # via
+    #   cryptography
+    #   pyzmq
+    #   spectrumsaber
 cfgv==3.5.0
+    # via pre-commit
 chardet==5.2.0
+    # via
+    #   spectrumsaber
+    #   tox
 charset-normalizer==3.4.1
+    # via
+    #   requests
+    #   spectrumsaber
 click==8.1.8
+    # via
+    #   black
+    #   clickclick
+    #   flask
+    #   flask-appbuilder
+    #   spectrumsaber
+    #   uvicorn
 clickclick==20.10.2
+    # via
+    #   connexion
+    #   spectrumsaber
 colorama==0.4.6
+    # via
+    #   click
+    #   colorlog
+    #   flask-appbuilder
+    #   ipython
+    #   loguru
+    #   pytest
+    #   radon
+    #   spectrumsaber
+    #   tox
+    #   tqdm
 colorlog==6.9.0
+    # via
+    #   apache-airflow
+    #   spectrumsaber
 comm==0.2.3
+    # via ipykernel
 configupdater==3.2
+    # via
+    #   apache-airflow
+    #   spectrumsaber
 connexion==2.14.2
+    # via
+    #   apache-airflow
+    #   spectrumsaber
 contourpy==1.3.2 ; python_full_version < '3.11'
+    # via matplotlib
 contourpy==1.3.3 ; python_full_version >= '3.11'
-coverage==7.13.4
+    # via matplotlib
+coverage==7.14.0
+    # via pytest-cov
 cron-descriptor==1.4.5
+    # via
+    #   apache-airflow
+    #   spectrumsaber
 croniter==6.0.0
+    # via
+    #   apache-airflow
+    #   spectrumsaber
 cryptography==44.0.2
+    # via
+    #   apache-airflow
+    #   authlib
+    #   jwcrypto
+    #   spectrumsaber
 cycler==0.12.1
-cyclopts==4.5.3
+    # via matplotlib
+cyclopts==4.12.0
+    # via fastmcp
 debugpy==1.8.20
+    # via ipykernel
 decorator==5.2.1
+    # via
+    #   ipdb
+    #   ipython
+    #   spectrumsaber
 deprecated==1.2.18
+    # via
+    #   apache-airflow
+    #   limits
+    #   opentelemetry-api
+    #   opentelemetry-exporter-otlp-proto-grpc
+    #   opentelemetry-exporter-otlp-proto-http
+    #   opentelemetry-semantic-conventions
+    #   spectrumsaber
 diagrams==0.25.1
+    # via spectrumsaber
 dill==0.3.9
+    # via
+    #   apache-airflow
+    #   spectrumsaber
 distlib==0.3.9
+    # via
+    #   spectrumsaber
+    #   virtualenv
 distro==1.9.0
-django==5.2.11
+    # via openai
+django==5.2.14
+    # via
+    #   django-admin-autocomplete-filter
+    #   django-choices-field
+    #   django-extensions
+    #   django-filter
+    #   django-graphql-auth
+    #   django-graphql-jwt
+    #   django-stubs
+    #   django-stubs-ext
+    #   graphene-django
+    #   spectrumsaber
+    #   strawberry-django-auth
+    #   strawberry-graphql-django
 django-admin-autocomplete-filter==0.7.1
+    # via spectrumsaber
 django-admin-rangefilter==0.13.0
+    # via spectrumsaber
 django-choices-field==4.0.0
+    # via spectrumsaber
 django-extensions==3.2.3
+    # via spectrumsaber
 django-filter==25.2
+    # via
+    #   django-graphql-auth
+    #   spectrumsaber
 django-graphql-auth==0.3.7
+    # via spectrumsaber
 django-graphql-jwt==0.4.0
+    # via django-graphql-auth
 django-model2puml==0.6.1
-django-stubs==5.2.9
-django-stubs-ext==5.2.9
+    # via spectrumsaber
+django-stubs==6.0.4
+    # via strawberry-django-auth
+django-stubs-ext==6.0.4
+    # via django-stubs
 dnspython==2.7.0
-docstring-parser==0.17.0
+    # via
+    #   email-validator
+    #   spectrumsaber
+docstring-parser==0.18.0
+    # via cyclopts
 docutils==0.22.4
+    # via rich-rst
 email-validator==2.2.0
+    # via
+    #   flask-appbuilder
+    #   pydantic
+    #   spectrumsaber
 et-xmlfile==2.0.0
+    # via
+    #   openpyxl
+    #   spectrumsaber
 exceptiongroup==1.2.2 ; python_full_version < '3.11'
+    # via
+    #   anyio
+    #   fastmcp
+    #   ipython
+    #   pytest
+    #   spectrumsaber
 exceptiongroup==1.3.1 ; python_full_version >= '3.11'
+    # via fastmcp
 executing==2.2.0
-fastapi==0.129.0
+    # via
+    #   spectrumsaber
+    #   stack-data
+fastapi==0.136.1
+    # via text-to-graphql-mcp
 fastmcp==2.12.5
+    # via text-to-graphql-mcp
 filelock==3.18.0
+    # via
+    #   spectrumsaber
+    #   tox
+    #   virtualenv
 flake8==7.2.0
+    # via
+    #   flake8-black
+    #   flake8-builtins
+    #   flake8-isort
+    #   spectrumsaber
 flake8-black==0.4.0
+    # via spectrumsaber
 flake8-builtins==3.1.0
+    # via spectrumsaber
 flake8-import-order==0.19.2
+    # via spectrumsaber
 flake8-isort==7.0.0
+    # via spectrumsaber
 flask==2.2.5
+    # via
+    #   apache-airflow
+    #   apache-airflow-providers-fab
+    #   connexion
+    #   flask-appbuilder
+    #   flask-babel
+    #   flask-caching
+    #   flask-jwt-extended
+    #   flask-limiter
+    #   flask-login
+    #   flask-session
+    #   flask-sqlalchemy
+    #   flask-wtf
+    #   spectrumsaber
 flask-appbuilder==4.5.3
+    # via
+    #   apache-airflow-providers-fab
+    #   spectrumsaber
 flask-babel==2.0.0
+    # via
+    #   flask-appbuilder
+    #   spectrumsaber
 flask-caching==2.3.1
+    # via
+    #   apache-airflow
+    #   spectrumsaber
 flask-jwt-extended==4.7.1
+    # via
+    #   flask-appbuilder
+    #   spectrumsaber
 flask-limiter==3.12
+    # via
+    #   flask-appbuilder
+    #   spectrumsaber
 flask-login==0.6.3
+    # via
+    #   apache-airflow-providers-fab
+    #   flask-appbuilder
+    #   spectrumsaber
 flask-session==0.5.0
+    # via
+    #   apache-airflow
+    #   spectrumsaber
 flask-sqlalchemy==2.5.1
+    # via
+    #   flask-appbuilder
+    #   spectrumsaber
 flask-wtf==1.2.2
-fonttools==4.61.1
+    # via
+    #   apache-airflow
+    #   flask-appbuilder
+    #   spectrumsaber
+fonttools==4.63.0
+    # via matplotlib
 frozenlist==1.5.0
+    # via
+    #   aiohttp
+    #   aiosignal
+    #   spectrumsaber
 fsspec==2025.3.2
+    # via
+    #   apache-airflow
+    #   pyathena
+    #   spectrumsaber
+    #   universal-pathlib
 gcloud==0.18.3
+    # via
+    #   pyrebase4
+    #   spectrumsaber
 google-re2==1.1.20240702
+    # via
+    #   apache-airflow
+    #   apache-airflow-providers-fab
+    #   spectrumsaber
 googleapis-common-protos==1.69.2
+    # via
+    #   gcloud
+    #   opentelemetry-exporter-otlp-proto-grpc
+    #   opentelemetry-exporter-otlp-proto-http
+    #   spectrumsaber
 gql==4.0.0
+    # via
+    #   spectrumsaber
+    #   text-to-graphql-mcp
 graphene==3.4.3
+    # via
+    #   django-graphql-auth
+    #   django-graphql-jwt
+    #   graphene-django
 graphene-django==3.2.3
+    # via
+    #   django-graphql-auth
+    #   django-graphql-jwt
 graphql-core==3.2.6
+    # via
+    #   gql
+    #   graphene
+    #   graphene-django
+    #   graphql-relay
+    #   spectrumsaber
+    #   strawberry-graphql
+    #   text-to-graphql-mcp
 graphql-relay==3.2.0
+    # via
+    #   graphene
+    #   graphene-django
+    #   spectrumsaber
 graphviz==0.20.3
+    # via diagrams
 greenlet==3.1.1 ; platform_machine == 'AMD64' or platform_machine == 'WIN32' or platform_machine == 'aarch64' or platform_machine == 'amd64' or platform_machine == 'ppc64le' or platform_machine == 'win32' or platform_machine == 'x86_64'
+    # via
+    #   spectrumsaber
+    #   sqlalchemy
 grpcio==1.71.0
+    # via
+    #   opentelemetry-exporter-otlp-proto-grpc
+    #   spectrumsaber
 gunicorn==23.0.0
+    # via
+    #   apache-airflow
+    #   spectrumsaber
 h11==0.14.0
+    # via
+    #   httpcore
+    #   spectrumsaber
+    #   uvicorn
 httpcore==1.0.7
+    # via
+    #   httpx
+    #   spectrumsaber
 httplib2==0.22.0
+    # via
+    #   gcloud
+    #   oauth2client
+    #   spectrumsaber
 httpx==0.28.1
+    # via
+    #   apache-airflow
+    #   fastmcp
+    #   langgraph-sdk
+    #   langsmith
+    #   mcp
+    #   openai
+    #   spectrumsaber
 httpx-sse==0.4.3
-identify==2.6.16
+    # via mcp
+identify==2.6.19
+    # via pre-commit
 idna==3.10
+    # via
+    #   anyio
+    #   email-validator
+    #   httpx
+    #   requests
+    #   spectrumsaber
+    #   yarl
 importlib-metadata==8.6.1
+    # via
+    #   apache-airflow
+    #   opentelemetry-api
+    #   spectrumsaber
 inflection==0.5.1
+    # via
+    #   apache-airflow-providers-amazon
+    #   connexion
+    #   spectrumsaber
 iniconfig==2.1.0
+    # via
+    #   pytest
+    #   spectrumsaber
 ipdb==0.13.13
+    # via spectrumsaber
 ipykernel==7.2.0
+    # via text-to-graphql-mcp
 ipython==8.34.0 ; python_full_version < '3.11'
+    # via
+    #   ipdb
+    #   ipykernel
+    #   spectrumsaber
 ipython==9.0.2 ; python_full_version >= '3.11'
+    # via
+    #   ipdb
+    #   ipykernel
+    #   spectrumsaber
 ipython-pygments-lexers==1.1.1 ; python_full_version >= '3.11'
+    # via
+    #   ipython
+    #   spectrumsaber
 isodate==0.7.2
-isort==8.0.0
+    # via
+    #   openapi-core
+    #   python3-saml
+    #   spectrumsaber
+isort==8.0.1
+    # via
+    #   flake8-isort
+    #   spectrumsaber
 itsdangerous==2.2.0
+    # via
+    #   apache-airflow
+    #   connexion
+    #   flask
+    #   flask-wtf
+    #   spectrumsaber
 jedi==0.19.2
+    # via
+    #   ipython
+    #   spectrumsaber
 jinja2==3.1.6
-jiter==0.13.0
+    # via
+    #   apache-airflow
+    #   diagrams
+    #   flask
+    #   flask-babel
+    #   python-nvd3
+    #   spectrumsaber
+    #   text-to-graphql-mcp
+jiter==0.14.0
+    # via openai
 jmespath==1.0.1
+    # via
+    #   apache-airflow-providers-amazon
+    #   apache-airflow-providers-fab
+    #   boto3
+    #   botocore
+    #   spectrumsaber
 jsonpatch==1.33
+    # via langchain-core
 jsonpath-ng==1.7.0
-jsonpointer==3.0.0
+    # via
+    #   apache-airflow-providers-amazon
+    #   spectrumsaber
+jsonpointer==3.1.1
+    # via jsonpatch
 jsonschema==4.23.0
+    # via
+    #   apache-airflow
+    #   connexion
+    #   flask-appbuilder
+    #   mcp
+    #   openapi-core
+    #   openapi-schema-validator
+    #   openapi-spec-validator
+    #   spectrumsaber
 jsonschema-path==0.3.4
+    # via
+    #   openapi-core
+    #   openapi-spec-validator
 jsonschema-specifications==2024.10.1
+    # via
+    #   jsonschema
+    #   openapi-schema-validator
+    #   spectrumsaber
 jupyter-client==8.8.0
+    # via ipykernel
 jupyter-core==5.9.1
+    # via
+    #   ipykernel
+    #   jupyter-client
 jwcrypto==1.5.6
-kiwisolver==1.4.9
+    # via
+    #   python-jwt
+    #   spectrumsaber
+kiwisolver==1.5.0
+    # via matplotlib
 langchain==0.3.25
+    # via text-to-graphql-mcp
 langchain-core==0.3.63
+    # via
+    #   langchain
+    #   langchain-openai
+    #   langchain-text-splitters
+    #   langgraph
+    #   langgraph-checkpoint
+    #   langgraph-prebuilt
 langchain-openai==0.3.19
+    # via text-to-graphql-mcp
 langchain-text-splitters==0.3.8
+    # via langchain
 langgraph==0.5.4
+    # via text-to-graphql-mcp
 langgraph-checkpoint==2.1.2
+    # via
+    #   langgraph
+    #   langgraph-prebuilt
 langgraph-prebuilt==0.5.1
+    # via langgraph
 langgraph-sdk==0.1.74
+    # via langgraph
 langsmith==0.1.129
+    # via
+    #   langchain
+    #   langchain-core
 lazy-object-proxy==1.10.0
-librt==0.8.1 ; platform_python_implementation != 'PyPy'
+    # via
+    #   apache-airflow
+    #   openapi-spec-validator
+    #   spectrumsaber
+librt==0.11.0 ; platform_python_implementation != 'PyPy'
+    # via mypy
 limits==4.4.1
+    # via
+    #   flask-limiter
+    #   spectrumsaber
 linkify-it-py==2.0.3
+    # via
+    #   apache-airflow
+    #   spectrumsaber
 lockfile==0.12.2
+    # via
+    #   apache-airflow
+    #   python-daemon
+    #   spectrumsaber
 loguru==0.7.3
+    # via text-to-graphql-mcp
 lxml==5.3.1
+    # via
+    #   python3-saml
+    #   redshift-connector
+    #   spectrumsaber
+    #   xmlsec
 mako==1.3.9
+    # via
+    #   alembic
+    #   spectrumsaber
 mando==0.7.1
+    # via radon
 markdown-it-py==3.0.0
+    # via
+    #   apache-airflow
+    #   mdit-py-plugins
+    #   rich
+    #   spectrumsaber
 markupsafe==3.0.2
+    # via
+    #   apache-airflow
+    #   jinja2
+    #   mako
+    #   spectrumsaber
+    #   werkzeug
+    #   wtforms
 marshmallow==3.26.1
+    # via
+    #   flask-appbuilder
+    #   marshmallow-oneofschema
+    #   marshmallow-sqlalchemy
+    #   spectrumsaber
 marshmallow-oneofschema==3.1.1
+    # via
+    #   apache-airflow
+    #   spectrumsaber
 marshmallow-sqlalchemy==0.28.2
-matplotlib==3.10.8
+    # via
+    #   flask-appbuilder
+    #   spectrumsaber
+matplotlib==3.10.9
+    # via spectrumsaber
 matplotlib-inline==0.1.7
+    # via
+    #   ipykernel
+    #   ipython
+    #   spectrumsaber
 mccabe==0.7.0
+    # via
+    #   flake8
+    #   spectrumsaber
 mcp==1.16.0
+    # via fastmcp
 mdit-py-plugins==0.4.2
+    # via
+    #   apache-airflow
+    #   spectrumsaber
 mdurl==0.1.2
+    # via
+    #   markdown-it-py
+    #   spectrumsaber
 methodtools==0.4.7
+    # via
+    #   apache-airflow
+    #   apache-airflow-providers-common-sql
+    #   spectrumsaber
 more-itertools==10.6.0
+    # via
+    #   apache-airflow-providers-common-sql
+    #   openapi-core
+    #   spectrumsaber
 multidict==6.3.1
+    # via
+    #   aiohttp
+    #   spectrumsaber
+    #   yarl
 mypy==1.19.1
+    # via django-stubs
 mypy-extensions==1.1.0
+    # via
+    #   black
+    #   mypy
 nest-asyncio==1.6.0
+    # via ipykernel
 nodeenv==1.10.0
+    # via pre-commit
 numpy==2.2.4
+    # via
+    #   contourpy
+    #   matplotlib
+    #   pandas
+    #   spectrumsaber
 oauth2client==4.1.3
+    # via
+    #   gcloud
+    #   pyrebase4
+    #   spectrumsaber
 openai==1.109.1
+    # via
+    #   langchain-openai
+    #   text-to-graphql-mcp
 openapi-core==0.22.0
+    # via fastmcp
 openapi-pydantic==0.5.1
+    # via fastmcp
 openapi-schema-validator==0.6.3
+    # via
+    #   openapi-core
+    #   openapi-spec-validator
 openapi-spec-validator==0.7.2
+    # via openapi-core
 openpyxl==3.1.3
+    # via spectrumsaber
 opentelemetry-api==1.31.1
+    # via
+    #   apache-airflow
+    #   opentelemetry-exporter-otlp-proto-grpc
+    #   opentelemetry-exporter-otlp-proto-http
+    #   opentelemetry-sdk
+    #   opentelemetry-semantic-conventions
+    #   spectrumsaber
 opentelemetry-exporter-otlp==1.31.1
+    # via
+    #   apache-airflow
+    #   spectrumsaber
 opentelemetry-exporter-otlp-proto-common==1.31.1
+    # via
+    #   opentelemetry-exporter-otlp-proto-grpc
+    #   opentelemetry-exporter-otlp-proto-http
+    #   spectrumsaber
 opentelemetry-exporter-otlp-proto-grpc==1.31.1
+    # via
+    #   opentelemetry-exporter-otlp
+    #   spectrumsaber
 opentelemetry-exporter-otlp-proto-http==1.31.1
+    # via
+    #   opentelemetry-exporter-otlp
+    #   spectrumsaber
 opentelemetry-proto==1.31.1
+    # via
+    #   opentelemetry-exporter-otlp-proto-common
+    #   opentelemetry-exporter-otlp-proto-grpc
+    #   opentelemetry-exporter-otlp-proto-http
+    #   spectrumsaber
 opentelemetry-sdk==1.31.1
+    # via
+    #   opentelemetry-exporter-otlp-proto-grpc
+    #   opentelemetry-exporter-otlp-proto-http
+    #   spectrumsaber
 opentelemetry-semantic-conventions==0.52b1
+    # via
+    #   opentelemetry-sdk
+    #   spectrumsaber
 ordered-set==4.1.0
-orjson==3.11.7
+    # via
+    #   flask-limiter
+    #   spectrumsaber
+orjson==3.11.9
+    # via
+    #   langgraph-sdk
+    #   langsmith
 ormsgpack==1.12.2
+    # via langgraph-checkpoint
 packaging==24.2
+    # via
+    #   apache-airflow
+    #   apispec
+    #   black
+    #   connexion
+    #   gunicorn
+    #   ipykernel
+    #   langchain-core
+    #   limits
+    #   marshmallow
+    #   marshmallow-sqlalchemy
+    #   matplotlib
+    #   pyproject-api
+    #   pytest
+    #   redshift-connector
+    #   spectrumsaber
+    #   sqlalchemy-redshift
+    #   strawberry-graphql
+    #   tox
+    #   tox-uv
 pandas==2.2.2
+    # via spectrumsaber
 parso==0.8.4
+    # via
+    #   jedi
+    #   spectrumsaber
 pathable==0.4.4
+    # via jsonschema-path
 pathspec==0.12.1
+    # via
+    #   apache-airflow
+    #   black
+    #   mypy
+    #   spectrumsaber
 pendulum==3.0.0
+    # via
+    #   apache-airflow
+    #   spectrumsaber
 pexpect==4.9.0 ; sys_platform != 'emscripten' and sys_platform != 'win32'
-pillow==12.1.1
+    # via
+    #   ipython
+    #   spectrumsaber
+pillow==12.2.0
+    # via
+    #   matplotlib
+    #   spectrumsaber
 platformdirs==4.3.7
+    # via
+    #   black
+    #   jupyter-core
+    #   spectrumsaber
+    #   tox
+    #   virtualenv
 pluggy==1.5.0
+    # via
+    #   apache-airflow
+    #   pytest
+    #   pytest-cov
+    #   spectrumsaber
+    #   tox
 ply==3.11
-pre-commit==4.5.1
+    # via
+    #   jsonpath-ng
+    #   spectrumsaber
+pre-commit==4.6.0
+    # via
+    #   diagrams
+    #   spectrumsaber
 prison==0.2.1
+    # via
+    #   flask-appbuilder
+    #   spectrumsaber
 promise==2.3
+    # via
+    #   graphene-django
+    #   spectrumsaber
 prompt-toolkit==3.0.50
+    # via
+    #   ipython
+    #   spectrumsaber
 propcache==0.3.1
+    # via
+    #   aiohttp
+    #   spectrumsaber
+    #   yarl
 protobuf==5.29.4
+    # via
+    #   gcloud
+    #   googleapis-common-protos
+    #   opentelemetry-proto
+    #   spectrumsaber
 psutil==7.0.0
+    # via
+    #   apache-airflow
+    #   ipykernel
+    #   spectrumsaber
 psycopg2-binary==2.9.9
+    # via spectrumsaber
 ptyprocess==0.7.0 ; sys_platform != 'emscripten' and sys_platform != 'win32'
+    # via
+    #   pexpect
+    #   spectrumsaber
 pure-eval==0.2.3
+    # via
+    #   spectrumsaber
+    #   stack-data
 pyasn1==0.6.1
+    # via
+    #   oauth2client
+    #   pyasn1-modules
+    #   rsa
+    #   spectrumsaber
 pyasn1-modules==0.4.2
+    # via
+    #   oauth2client
+    #   spectrumsaber
 pyathena==3.12.2
+    # via
+    #   apache-airflow-providers-amazon
+    #   spectrumsaber
 pycodestyle==2.13.0
+    # via
+    #   flake8
+    #   flake8-import-order
+    #   spectrumsaber
 pycparser==2.22 ; implementation_name == 'pypy' or platform_python_implementation != 'PyPy'
+    # via
+    #   cffi
+    #   spectrumsaber
 pycryptodome==3.22.0
+    # via
+    #   pyrebase4
+    #   spectrumsaber
 pydantic==2.11.10
+    # via
+    #   fastapi
+    #   fastmcp
+    #   langchain
+    #   langchain-core
+    #   langgraph
+    #   langsmith
+    #   mcp
+    #   openai
+    #   openapi-pydantic
+    #   pydantic-settings
+    #   text-to-graphql-mcp
 pydantic-core==2.33.2
-pydantic-settings==2.13.1
+    # via pydantic
+pydantic-settings==2.14.1
+    # via
+    #   mcp
+    #   text-to-graphql-mcp
 pydotplus==2.0.2
+    # via spectrumsaber
 pyflakes==3.3.2
+    # via
+    #   flake8
+    #   spectrumsaber
 pygments==2.19.1
+    # via
+    #   apache-airflow
+    #   ipython
+    #   ipython-pygments-lexers
+    #   rich
+    #   spectrumsaber
 pyjwt==2.10.1
+    # via
+    #   apache-airflow
+    #   django-graphql-jwt
+    #   flask-appbuilder
+    #   flask-jwt-extended
+    #   spectrumsaber
+    #   strawberry-django-auth
 pyparsing==3.2.3
+    # via
+    #   httplib2
+    #   matplotlib
+    #   pydotplus
+    #   spectrumsaber
 pyperclip==1.11.0
+    # via fastmcp
 pyproject-api==1.9.0
+    # via
+    #   spectrumsaber
+    #   tox
 pyrebase4==4.8.0
+    # via spectrumsaber
 pytest==8.2.2
-pytest-cov==7.0.0
+    # via
+    #   pytest-cov
+    #   pytest-django
+    #   spectrumsaber
+pytest-cov==7.1.0
+    # via spectrumsaber
 pytest-django==4.8.0
+    # via spectrumsaber
 python-daemon==3.1.2
+    # via
+    #   apache-airflow
+    #   spectrumsaber
 python-dateutil==2.9.0.post0
-python-dotenv==1.2.1
+    # via
+    #   apache-airflow
+    #   botocore
+    #   croniter
+    #   flask-appbuilder
+    #   graphene
+    #   jupyter-client
+    #   matplotlib
+    #   pandas
+    #   pendulum
+    #   pyathena
+    #   spectrumsaber
+    #   strawberry-graphql
+    #   time-machine
+python-dotenv==1.2.2
+    # via
+    #   fastmcp
+    #   pydantic-settings
+    #   text-to-graphql-mcp
+    #   tox-envfile
 python-jwt==4.1.0
-python-multipart==0.0.22
+    # via
+    #   pyrebase4
+    #   spectrumsaber
+python-multipart==0.0.28
+    # via
+    #   mcp
+    #   text-to-graphql-mcp
 python-nvd3==0.16.0
+    # via
+    #   apache-airflow
+    #   spectrumsaber
 python-slugify==8.0.4
+    # via
+    #   apache-airflow
+    #   python-nvd3
+    #   spectrumsaber
 python3-saml==1.16.0
+    # via
+    #   apache-airflow-providers-amazon
+    #   spectrumsaber
 pytokens==0.4.1
+    # via black
 pytz==2025.2
+    # via
+    #   croniter
+    #   flask-babel
+    #   pandas
+    #   redshift-connector
+    #   spectrumsaber
 pywin32==311 ; sys_platform == 'win32'
+    # via mcp
 pyyaml==6.0.2
+    # via
+    #   apispec
+    #   clickclick
+    #   connexion
+    #   jsonschema-path
+    #   langchain
+    #   langchain-core
+    #   pre-commit
+    #   spectrumsaber
 pyzmq==27.1.0
+    # via
+    #   ipykernel
+    #   jupyter-client
 radon==6.0.1
+    # via spectrumsaber
 redshift-connector==2.1.5
+    # via
+    #   apache-airflow-providers-amazon
+    #   spectrumsaber
 referencing==0.36.2
-regex==2026.2.19
+    # via
+    #   jsonschema
+    #   jsonschema-path
+    #   jsonschema-specifications
+    #   spectrumsaber
+regex==2026.5.9
+    # via tiktoken
 requests==2.32.3
+    # via
+    #   apache-airflow
+    #   apache-airflow-providers-http
+    #   connexion
+    #   jsonschema-path
+    #   langchain
+    #   langsmith
+    #   opentelemetry-exporter-otlp-proto-http
+    #   pyrebase4
+    #   redshift-connector
+    #   requests-toolbelt
+    #   spectrumsaber
+    #   text-to-graphql-mcp
+    #   tiktoken
 requests-toolbelt==0.10.1
+    # via
+    #   apache-airflow
+    #   apache-airflow-providers-http
+    #   pyrebase4
+    #   spectrumsaber
 rfc3339-validator==0.1.4
+    # via
+    #   apache-airflow
+    #   openapi-schema-validator
+    #   spectrumsaber
 rich==13.9.4
+    # via
+    #   apache-airflow
+    #   cyclopts
+    #   fastmcp
+    #   flask-limiter
+    #   rich-argparse
+    #   rich-rst
+    #   spectrumsaber
 rich-argparse==1.7.0
+    # via
+    #   apache-airflow
+    #   spectrumsaber
 rich-rst==1.3.2
+    # via cyclopts
 rpds-py==0.24.0
+    # via
+    #   jsonschema
+    #   referencing
+    #   spectrumsaber
 rsa==4.9
+    # via
+    #   oauth2client
+    #   spectrumsaber
 s3transfer==0.11.4
+    # via
+    #   boto3
+    #   spectrumsaber
 scramp==1.4.5
+    # via
+    #   redshift-connector
+    #   spectrumsaber
 serpy==0.3.1
+    # via spectrumsaber
 setproctitle==1.3.5
+    # via
+    #   apache-airflow
+    #   spectrumsaber
 setuptools==78.1.0
+    # via
+    #   flake8-import-order
+    #   redshift-connector
+    #   spectrumsaber
 six==1.17.0
+    # via
+    #   gcloud
+    #   mando
+    #   oauth2client
+    #   prison
+    #   promise
+    #   python-dateutil
+    #   rfc3339-validator
+    #   serpy
+    #   spectrumsaber
+    #   wirerope
 sniffio==1.3.1
+    # via
+    #   anyio
+    #   openai
+    #   spectrumsaber
 soupsieve==2.6
+    # via
+    #   beautifulsoup4
+    #   spectrumsaber
 sqlalchemy==1.4.54
+    # via
+    #   alembic
+    #   apache-airflow
+    #   flask-appbuilder
+    #   flask-sqlalchemy
+    #   langchain
+    #   marshmallow-sqlalchemy
+    #   spectrumsaber
+    #   sqlalchemy-jsonfield
+    #   sqlalchemy-redshift
+    #   sqlalchemy-utils
 sqlalchemy-jsonfield==1.0.2
+    # via
+    #   apache-airflow
+    #   spectrumsaber
 sqlalchemy-redshift==0.8.14
+    # via
+    #   apache-airflow-providers-amazon
+    #   spectrumsaber
 sqlalchemy-utils==0.41.2
+    # via
+    #   flask-appbuilder
+    #   spectrumsaber
 sqlparse==0.5.3
-sse-starlette==3.2.0
+    # via
+    #   apache-airflow-providers-common-sql
+    #   django
+    #   spectrumsaber
+sse-starlette==3.4.4
+    # via mcp
 stack-data==0.6.3
-starlette==0.52.1
+    # via
+    #   ipython
+    #   spectrumsaber
+starlette==1.0.0
+    # via
+    #   fastapi
+    #   mcp
+    #   sse-starlette
 strawberry-django-auth==0.378.4
+    # via spectrumsaber
 strawberry-graphql==0.278.0
+    # via strawberry-graphql-django
 strawberry-graphql-django==0.65.1
+    # via
+    #   spectrumsaber
+    #   strawberry-django-auth
 tabulate==0.9.0
+    # via
+    #   apache-airflow
+    #   spectrumsaber
 tenacity==9.1.2
+    # via
+    #   apache-airflow
+    #   langchain-core
+    #   pyathena
+    #   spectrumsaber
 termcolor==3.0.1
+    # via
+    #   apache-airflow
+    #   spectrumsaber
+    #   text-to-graphql-mcp
 text-to-graphql-mcp==0.1.3
+    # via spectrumsaber
 text-unidecode==1.3
+    # via
+    #   graphene-django
+    #   python-slugify
+    #   spectrumsaber
 tiktoken==0.12.0
+    # via langchain-openai
 time-machine==2.16.0 ; implementation_name != 'pypy'
+    # via
+    #   pendulum
+    #   spectrumsaber
 tomli==2.2.1 ; python_full_version < '3.11'
-tomli==2.4.0 ; python_full_version >= '3.11'
-tornado==6.5.4
+    # via
+    #   black
+    #   coverage
+    #   cyclopts
+    #   django-stubs
+    #   flake8-black
+    #   ipdb
+    #   mypy
+    #   pyproject-api
+    #   pytest
+    #   spectrumsaber
+    #   tox
+tomli==2.4.1 ; python_full_version >= '3.11'
+    # via
+    #   coverage
+    #   spectrumsaber
+tornado==6.5.5
+    # via
+    #   ipykernel
+    #   jupyter-client
 tox==4.25.0
+    # via tox-uv
 tox-envfile==0.0.8
+    # via spectrumsaber
 tox-uv==1.25.0
+    # via spectrumsaber
 tqdm==4.67.3
+    # via openai
 traitlets==5.14.3
-types-pyyaml==6.0.12.20250915
+    # via
+    #   ipykernel
+    #   ipython
+    #   jupyter-client
+    #   jupyter-core
+    #   matplotlib-inline
+    #   spectrumsaber
+types-pyyaml==6.0.12.20260510
+    # via django-stubs
 typing-extensions==4.13.0
+    # via
+    #   aiosqlite
+    #   alembic
+    #   anyio
+    #   asgiref
+    #   beautifulsoup4
+    #   black
+    #   cyclopts
+    #   django-choices-field
+    #   django-stubs
+    #   django-stubs-ext
+    #   exceptiongroup
+    #   fastapi
+    #   graphene
+    #   ipython
+    #   jwcrypto
+    #   langchain-core
+    #   limits
+    #   multidict
+    #   mypy
+    #   openai
+    #   openapi-core
+    #   opentelemetry-sdk
+    #   pydantic
+    #   pydantic-core
+    #   referencing
+    #   rich
+    #   spectrumsaber
+    #   starlette
+    #   strawberry-graphql
+    #   tox
+    #   typing-inspection
+    #   uvicorn
 typing-inspection==0.4.2
+    # via
+    #   fastapi
+    #   pydantic
+    #   pydantic-settings
 tzdata==2025.2
+    # via
+    #   django
+    #   pandas
+    #   pendulum
+    #   spectrumsaber
 uc-micro-py==1.0.3
+    # via
+    #   linkify-it-py
+    #   spectrumsaber
 unicodecsv==0.14.1
+    # via spectrumsaber
 universal-pathlib==0.2.6
+    # via
+    #   apache-airflow
+    #   spectrumsaber
 urllib3==1.26.20
-uv==0.10.4
-uvicorn==0.41.0
+    # via
+    #   botocore
+    #   pyrebase4
+    #   requests
+    #   spectrumsaber
+uv==0.11.14
+    # via tox-uv
+uvicorn==0.47.0
+    # via
+    #   mcp
+    #   text-to-graphql-mcp
 virtualenv==20.30.0
+    # via
+    #   pre-commit
+    #   spectrumsaber
+    #   tox
 watchtower==3.4.0
+    # via
+    #   apache-airflow-providers-amazon
+    #   spectrumsaber
 wcwidth==0.2.13
+    # via
+    #   prompt-toolkit
+    #   spectrumsaber
 werkzeug==2.2.3
+    # via
+    #   apache-airflow
+    #   connexion
+    #   flask
+    #   flask-appbuilder
+    #   flask-jwt-extended
+    #   flask-login
+    #   openapi-core
+    #   spectrumsaber
 win32-setctime==1.2.0 ; sys_platform == 'win32'
+    # via loguru
 wirerope==1.0.0
+    # via
+    #   methodtools
+    #   spectrumsaber
 wrapt==1.17.2
+    # via
+    #   deprecated
+    #   spectrumsaber
 wtforms==3.2.1
+    # via
+    #   flask-appbuilder
+    #   flask-wtf
+    #   spectrumsaber
 xmlsec==1.3.14
-xxhash==3.6.0
+    # via
+    #   python3-saml
+    #   spectrumsaber
+xxhash==3.7.0
+    # via langgraph
 yarl==1.18.3
+    # via
+    #   aiohttp
+    #   gql
+    #   spectrumsaber
 zipp==3.21.0
+    # via
+    #   importlib-metadata
+    #   spectrumsaber
