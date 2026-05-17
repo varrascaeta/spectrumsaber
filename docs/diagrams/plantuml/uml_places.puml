@@ -1,0 +1,42 @@
+@startuml uml_places
+
+skinparam backgroundColor white
+skinparam dpi 200
+skinparam defaultFontName "DejaVu Sans"
+skinparam classAttributeIconSize 0
+skinparam ArrowColor #444444
+skinparam defaultFontSize 25
+skinparam ArrowFontSize 20
+left to right direction
+
+skinparam class {
+    BackgroundColor #F0F4FF
+    BorderColor     #5C6BC0
+    BorderThickness 2
+    FontSize        27
+}
+
+class Country {
+    +String name
+    +String code
+    +DateTime created_at
+}
+
+class Province {
+    +String name
+    +String code
+    +DateTime created_at
+    +country : FK
+}
+
+class District {
+    +String name
+    +String code
+    +DateTime created_at
+    +province : FK
+}
+
+Province "*" --> "1" Country  : country
+District "*" --> "1" Province : province
+
+@enduml

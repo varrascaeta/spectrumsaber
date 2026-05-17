@@ -1,0 +1,81 @@
+@startuml etl_process
+
+skinparam backgroundColor white
+skinparam dpi 200
+skinparam defaultFontSize 20
+skinparam defaultFontName "DejaVu Sans"
+skinparam ArrowColor #444444
+hide stereotype
+skinparam linetype ortho
+
+skinparam component {
+    BackgroundColor<<extract>>   #81C784
+    BorderColor<<extract>>       #2E7D32
+    FontColor<<extract>>         #FFFFFF
+
+    BackgroundColor<<transform>> #64B5F6
+    BorderColor<<transform>>     #1565C0
+    FontColor<<transform>>       #FFFFFF
+
+    BackgroundColor<<load>>      #E57373
+    BorderColor<<load>>          #C62828
+    FontColor<<load>>            #FFFFFF
+
+    BorderThickness 2
+}
+
+skinparam database {
+    BackgroundColor<<storage>> #FFD54F
+    BorderColor<<storage>>     #F57F17
+    FontColor<<storage>>       #000000
+    BorderThickness 2
+}
+
+skinparam package {
+    BackgroundColor #F8F8FF
+    BorderColor     #AAAAAA
+    BorderThickness 2
+    FontStyle       bold
+}
+
+' ---- Almacenamiento externo ----
+database "FTP"           as FTP <<storage>>
+database "PostgreSQL DB" as DB  <<storage>>
+
+' ---- Subgrafos ETL ----
+package "Extract" {
+    component "Listar\narchivos"      as Listar     <<extract>>
+    component "Recolectar\nmetadatos" as Recolectar <<extract>>
+    Listar -right-> Recolectar
+}
+
+package "Transform" {
+    component "Normalizar\nrutas y nombres" as Normalizar  <<transform>>
+    component "Categorizar"                 as Categorizar <<transform>>
+    Normalizar -right-> Categorizar
+}
+package "Load" {
+    component "Instanciar\nmodelos\nrelacionales" as Cargar  <<load>>
+    component "Guardar\nen la DB"               as Guardar <<load>>
+    Cargar -right-> Guardar
+}
+
+' ---- Flujo principal ----
+'Recolectar -down- Categorizar
+'Normalizar -down- Listar
+
+'Categorizar -down- Guardar
+'Cargar -down- Normalizar
+'Listar -[hidden]d- Normalizar
+'Normalizar -[hidden]d- Cargar
+Recolectar -down-> Normalizar
+Recolectar -[hidden]d-> Categorizar
+Listar -[hidden]d-> Categorizar
+
+Categorizar -down-> Cargar
+Normalizar -[hidden]d-> Cargar
+
+FTP --> Listar
+Guardar -down-> DB
+
+@enduml
