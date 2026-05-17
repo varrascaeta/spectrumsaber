@@ -69,9 +69,13 @@ for source_dir in SOURCE_DIRS:
             avg_cc, loc, mi = analyze_file(path)
             if loc == 0:
                 continue
+            # First subdirectory under source_dir is the module
+            rel = path.relative_to(source_dir)
+            module = rel.parts[0] if len(rel.parts) > 1 else source_dir
             data.append(
                 {
                     "name": str(path.name),
+                    "module": module,
                     "cc": avg_cc,
                     "loc": loc,
                     "mi": mi,
@@ -83,6 +87,35 @@ ccs = np.array([d["cc"] for d in data])
 mis = np.array([d["mi"] for d in data])
 
 x_line = np.linspace(locs.min(), locs.max(), 200)
+
+
+# ==============================
+# LOGS: CC/LLOC and MI/LLOC
+# ==============================
+
+from collections import defaultdict
+
+module_buckets = defaultdict(list)
+for d in data:
+    module_buckets[d["module"]].append(d)
+
+print("\n--- CC/LLOC por módulo ---")
+for mod in sorted(module_buckets):
+    files = module_buckets[mod]
+    ratios = [f["cc"] / f["loc"] for f in files]
+    print(f"  {mod}: {sum(ratios) / len(ratios):.4f}")
+
+global_cc_lloc = sum(d["cc"] / d["loc"] for d in data) / len(data)
+print(f"  [global]: {global_cc_lloc:.4f}")
+
+print("\n--- MI/LLOC por módulo ---")
+for mod in sorted(module_buckets):
+    files = module_buckets[mod]
+    ratios = [f["mi"] / f["loc"] for f in files]
+    print(f"  {mod}: {sum(ratios) / len(ratios):.4f}")
+
+global_mi_lloc = sum(d["mi"] / d["loc"] for d in data) / len(data)
+print(f"  [global]: {global_mi_lloc:.4f}\n")
 
 
 # ==============================
