@@ -1,0 +1,204 @@
+@startuml architecture
+
+' ================================================================
+'  CUSTOMIZATION — tweak these to fit your thesis page
+' ================================================================
+' Overall scale: 1.0 = native, 1.5 / 2.0 to enlarge everything
+scale 1.5
+
+' Base font size for all labels (points)
+skinparam defaultFontSize 20
+skinparam defaultFontName "DejaVu Sans"
+skinparam packageFontSize 30
+'skinparam linetype ortho
+
+' DPI: 150 for screen preview, 300 for print / thesis PDF
+skinparam dpi 300
+
+' Spacing between nodes and ranks (increase to spread the graph)
+skinparam NodeSep 25
+skinparam RankSep 40
+skinparam Padding 10
+' ================================================================
+
+skinparam backgroundColor white
+skinparam ArrowColor #444444
+skinparam ArrowFontSize 11
+
+' Junction dots for merged arrows
+skinparam interface {
+    BackgroundColor #555555
+    BorderColor     #333333
+}
+skinparam groupInheritance 3
+
+
+' Hide <<stereotype>> text — colors are still applied via skinparam
+hide stereotype
+
+'left to right direction
+
+' ---- Node colors by stereotype ----
+
+skinparam component {
+    BackgroundColor<<airflow>>  #90CAF9
+    BorderColor<<airflow>>      #1976D2
+    FontColor<<airflow>>        #000000
+
+    BackgroundColor<<django>>   #C8E6C9
+    BorderColor<<django>>       #388E3C
+    FontColor<<django>>         #000000
+
+    BackgroundColor<<dag>>      #FFE082
+    BorderColor<<dag>>          #F57C00
+    FontColor<<dag>>            #000000
+
+    BackgroundColor<<api>>      #bf81fa
+    BorderColor<<api>>          #440089
+    FontColor<<api>>            #000000
+
+    BackgroundColor<<external>> #CE93D8
+    BorderColor<<external>>     #7B1FA2
+    FontColor<<external>>       #000000
+
+    BackgroundColor<<python>>   #48BD71
+    BorderColor<<python>>       #3A9C48
+    FontColor<<python>>         #000000
+
+    BackgroundColor<<web>>      #FFCCBC
+    BorderColor<<web>>          #D84315
+    FontColor<<web>>            #000000
+
+    BorderThickness 2
+}
+
+skinparam database {
+    BackgroundColor<<data>>     #FFF59D
+    BorderColor<<data>>         #F57F17
+    FontColor<<data>>           #000000
+    BorderThickness 2
+}
+
+skinparam package {
+    BackgroundColor            #F8F8FF
+    BorderColor                #AAAAAA
+    BorderThickness            2
+    FontSize                   14
+    FontStyle                  bold
+    FontColor                  #222222
+}
+
+' ================================================================
+'  NODES
+'  Icons use built-in OpenIconic sprites: <&icon-name>
+'  Full list: https://useiconic.com/open
+' ================================================================
+
+' -- External (outside all packages) --
+package "CONAE" as CONAE {
+    component "<&people> Users" as ConaeUsers <<external>>
+    component "<&folder> FTP"   as FTP       <<external>>
+}
+
+' -- Clients --
+package "Spectrumsaber" as Clients {
+    component "<&code> CLI" as CLI <<external>>
+    component "<&code> LLM" as LLM <<external>>
+}
+
+' -- ETL Process --
+package "ETL Process" as ETL {
+
+    package "Airflow" as AirflowPkg #E3F2FD {
+        database "<&database> Redis"      as Redis    <<data>>
+        database "<&database> PostgresDB" as AFDBNode <<data>>
+        component "<&cog> Scheduler"  as Scheduler  <<airflow>>
+        component "<&globe> Webserver"  as Webserver  <<web>>
+        component "<&cog> Worker"     as Worker     <<airflow>>
+        component "<&cog> Triggerer"  as Triggerer  <<airflow>>
+    }
+
+    component "<&share> process_coverage"     as ProcessCoverage    <<dag>>
+    component "<&share> process_campaigns"    as ProcessCampaigns   <<dag>>
+    component "<&share> process_data_points"  as ProcessDataPoints  <<dag>>
+    component "<&share> process_measurements" as ProcessMeasurements<<dag>>
+}
+
+' -- Server --
+package "Server" as Server {
+    component "<&graph> GraphQL API"      as GQLAPI     <<api>>
+    database  "<&database> Spectrumsaber DB" as DBMain  <<data>>
+    component "<&layers> users"           as Users      <<django>>
+    component "<&layers> places"          as Places     <<django>>
+    component "<&globe> admin"            as DjangoAdmin<<web>>
+    component "<&layers> campaigns"       as Campaigns  <<django>>
+}
+
+' ================================================================
+'  CONNECTIONS
+' ================================================================
+
+' External
+ConaeUsers --> FTP
+ConaeUsers --> CLI
+' Airflow internal (undirected — peer services)
+Redis      --  AFDBNode
+AFDBNode   --  Scheduler
+AFDBNode   --  Webserver
+Scheduler  --  Worker
+Scheduler  --  Triggerer
+'ConaeAdmin --> Webserver
+
+
+' Triggerer launches DAGs (fan-out via junction dot)
+
+Triggerer --> ProcessCoverage
+Triggerer --> ProcessCampaigns
+Triggerer --> ProcessDataPoints
+Triggerer --> ProcessMeasurements
+
+' FTP feeds every DAG
+FTP --> ProcessCoverage
+FTP --> ProcessCampaigns
+FTP --> ProcessDataPoints
+FTP --> ProcessMeasurements
+
+'Hidden connections between DAGs and Server (fan-in via junction dot)
+ProcessCoverage     -[hidden]-> ProcessCampaigns
+ProcessCampaigns    -[hidden]-> ProcessDataPoints
+ProcessDataPoints   -[hidden]-> ProcessMeasurements
+ProcessMeasurements -[hidden]-> ProcessCampaigns
+ProcessCoverage     -[hidden]-> ProcessDataPoints
+ProcessCoverage     -[hidden]-> ProcessMeasurements
+
+' DAGs write into the Server (fan-in via junction dot)
+ProcessCampaigns    --> Campaigns
+ProcessCoverage     --> Campaigns
+ProcessDataPoints   --> Campaigns
+ProcessMeasurements --> Campaigns
+
+
+' Server internal
+GQLAPI     --> DBMain
+Users      --> DBMain
+Places     --> DBMain
+DjangoAdmin--> DBMain
+Campaigns  --> DBMain
+
+' Client
+CLI --> GQLAPI
+CLI --> LLM
+
+
+' ================================================================
+'  LEGEND
+' ================================================================
+legend bottom
+  |= Color    |= Type                     |=Color      |= Type                     |
+  |<#90CAF9>  | Airflow Service          |<#bf81fa>   | API Gateway               |
+  |<#48BD71>  | Python Script             |<#FFF59D>   | Database                 |
+  |<#C8E6C9>  | Django App                |<#FFCCBC>   | Web Interface (admins)    |
+  |<#FFE082>  | Airflow DAG               |            |                           |
+endlegend
+
+@enduml

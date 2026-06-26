@@ -6,6 +6,7 @@ import numpy as np
 from radon.complexity import cc_visit
 from radon.metrics import mi_visit
 from radon.raw import analyze
+from scipy.stats import pearsonr
 
 
 # ==============================
@@ -69,9 +70,13 @@ for source_dir in SOURCE_DIRS:
             avg_cc, loc, mi = analyze_file(path)
             if loc == 0:
                 continue
+            # First subdirectory under source_dir is the module
+            rel = path.relative_to(source_dir)
+            module = rel.parts[0] if len(rel.parts) > 1 else source_dir
             data.append(
                 {
                     "name": str(path.name),
+                    "module": module,
                     "cc": avg_cc,
                     "loc": loc,
                     "mi": mi,
@@ -83,6 +88,42 @@ ccs = np.array([d["cc"] for d in data])
 mis = np.array([d["mi"] for d in data])
 
 x_line = np.linspace(locs.min(), locs.max(), 200)
+
+r_cc, p_cc = pearsonr(locs, ccs)
+r_mi, p_mi = pearsonr(locs, mis)
+
+
+# ==============================
+# LOGS: CC/LLOC and MI/LLOC
+# ==============================
+
+from collections import defaultdict
+
+module_buckets = defaultdict(list)
+for d in data:
+    module_buckets[d["module"]].append(d)
+
+print("\n--- CC/LLOC por módulo ---")
+for mod in sorted(module_buckets):
+    files = module_buckets[mod]
+    ratios = [f["cc"] / f["loc"] for f in files]
+    print(f"  {mod}: {sum(ratios) / len(ratios):.4f}")
+
+global_cc_lloc = sum(d["cc"] / d["loc"] for d in data) / len(data)
+print(f"  [global]: {global_cc_lloc:.4f}")
+
+print("\n--- MI/LLOC por módulo ---")
+for mod in sorted(module_buckets):
+    files = module_buckets[mod]
+    ratios = [f["mi"] / f["loc"] for f in files]
+    print(f"  {mod}: {sum(ratios) / len(ratios):.4f}")
+
+global_mi_lloc = sum(d["mi"] / d["loc"] for d in data) / len(data)
+print(f"  [global]: {global_mi_lloc:.4f}\n")
+
+print("--- Pearson r ---")
+print(f"  CC vs LLOC: r={r_cc:.4f}, p={p_cc:.4e}")
+print(f"  MI vs LLOC: r={r_mi:.4f}, p={p_mi:.4e}\n")
 
 
 # ==============================
@@ -99,7 +140,7 @@ ax.plot(
     p(x_line),
     "r--",
     linewidth=1.5,
-    label=f"Tendencia lineal (y = {z[0]:.4f}x + {z[1]:.2f})",
+    label=f"Tendencia lineal (y = {z[0]:.4f}x + {z[1]:.2f})\nr = {r_cc:.4f}, R² = {r_cc**2:.4f}, p = {p_cc:.2e}",
 )
 
 ax.set_xlabel("Líneas lógicas de código (LLOC)", fontsize=14)
@@ -107,6 +148,7 @@ ax.set_ylabel("Complejidad ciclomática (CC)", fontsize=14)
 ax.set_title("CC vs. LLOC por módulo", fontsize=16)
 ax.legend(fontsize=14)
 ax.grid(True, linestyle="--", alpha=0.4)
+ax.set_ylim(0, 10)
 plt.tight_layout()
 plt.savefig(CC_SCATTER_OUTPUT, dpi=300)
 plt.close()
@@ -128,7 +170,7 @@ ax.plot(
     p2(x_line),
     "r--",
     linewidth=1.5,
-    label=f"Tendencia lineal (y = {z2[0]:.4f}x + {z2[1]:.2f})",
+    label=f"Tendencia lineal (y = {z2[0]:.4f}x + {z2[1]:.2f})\nr = {r_mi:.4f}, R² = {r_mi**2:.4f}, p = {p_mi:.2e}",
 )
 
 ax.set_xlabel("Líneas lógicas de código (LLOC)", fontsize=14)

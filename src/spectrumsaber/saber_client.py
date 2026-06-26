@@ -29,6 +29,11 @@ class SpectrumSaberClient:
         self.__refresh_token__ = None
         self.user = None
         self.updated_token = False
+        if self.__token__ and not self.__verify_token__():
+            logger.warning(
+                "JWT token from environment is invalid or expired. Please login."
+            )
+            self.__token__ = None
 
     def __get_headers__(self) -> dict:
         """
@@ -134,6 +139,10 @@ class SpectrumSaberClient:
             json=payload,
             headers=self.__get_headers__(),
         )
+        if not resp.ok or not resp.content:
+            raise RuntimeError(
+                f"GraphQL request failed: {resp.status_code} {resp.reason}\n{resp.text[:500]}"
+            )
         data = resp.json()
         if data.get("errors"):
             for error in data["errors"]:
@@ -155,7 +164,7 @@ class SpectrumSaberClient:
             password (str): The password.
         """
         # First, try to use token from environment variable
-        if GRAPHQL_JWT_TOKEN:
+        if self.__token__:
             logger.info("Found GRAPHQL_JWT_TOKEN in environment, verifying...")
             if self.__verify_token__():
                 logger.info(

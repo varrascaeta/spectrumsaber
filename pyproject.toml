@@ -239,12 +239,13 @@ dependencies = [
     "pytest-cov>=7.0.0",
     "diagrams>=0.25.1",
     "tox-uv>=1.25.0",
-    "tox-envfile>=0.0.8",
     "text-to-graphql-mcp",
     "async-timeout>=4.0.3",
     "radon>=6.0.1",
     "matplotlib>=3.10.8",
     "pre-commit>=4.5.1",
+    "scipy>=1.15.3",
+    "tox>=4.25.0",
 ]
 
 [project.scripts]

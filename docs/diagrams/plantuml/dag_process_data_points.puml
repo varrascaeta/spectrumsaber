@@ -1,0 +1,92 @@
+@startuml dag_process_data_points
+
+skinparam backgroundColor white
+skinparam dpi 200
+skinparam defaultFontSize 20
+skinparam defaultFontName "DejaVu Sans"
+skinparam ArrowColor #444444
+hide stereotype
+
+top to bottom direction
+
+skinparam component {
+    BackgroundColor<<task>>     #A5D6A7
+    BorderColor<<task>>         #2E7D32
+    FontColor<<task>>           #000000
+
+    BackgroundColor<<operator>> #90CAF9
+    BorderColor<<operator>>     #1565C0
+    FontColor<<operator>>       #000000
+
+    BorderThickness 2
+}
+
+skinparam package {
+    BackgroundColor #FFFDE7
+    BorderColor     #F9A825
+    BorderThickness 2
+    FontStyle       bold
+}
+
+' ---- Nodos sueltos ----
+component "setup_django"               as sd  <<operator>>
+component "get_campaigns_to_scan"      as gcs <<task>>
+component "scan_campaigns"             as sc  <<operator>>
+component "get_data_points_to_process" as gdp <<task>>
+component "filter_non_empty"           as fn  <<task>>
+component "match_patterns"             as mp  <<task>>
+component "check_non_empty (matched)"       as cm  <<task>>
+component "check_non_empty (unmatched)"     as cu  <<task>>
+component "check_non_empty (complimentary)" as cc  <<task>>
+
+' ---- Subgrafos ----
+package "process_matched" as pm {
+    component "get_result_matched"  as grm <<task>>
+    component "build_matched"       as bm  <<task>>
+    component "commit_matched"      as com <<task>>
+    grm --> bm
+    bm --> com
+}
+
+package "process_unmatched" as pu {
+    component "get_result_unmatched" as gru <<task>>
+    component "build_unmatched"      as bu  <<task>>
+    component "commit_unmatched"     as cou <<task>>
+    gru --> bu
+    bu --> cou
+}
+
+package "process_complimentary" as pc {
+    component "get_result_complimentary" as grc <<task>>
+    component "recurse_complimentary"    as rcc <<task>>
+    component "build_complimentary"      as bc  <<task>>
+    component "commit_complimentary"     as coc <<task>>
+    grc --> rcc
+    rcc --> bc
+    bc --> coc
+}
+
+' ---- Flujo principal ----
+sd --> gcs 
+gcs --> sc
+sc --> gdp
+gdp --> fn
+fn --> mp
+mp --> cm
+mp --> cu
+mp --> cc
+cm --> grm
+cu --> gru
+cc --> grc
+
+' ================================================================
+'  LEYENDA
+' ================================================================
+legend bottom
+  |= Color       |= Tipo     |
+  |<#90CAF9>     | Operator  |
+  |<#A5D6A7>     | Task      |
+  |<#FFFDE7>     | Task Group    |
+endlegend
+
+@enduml

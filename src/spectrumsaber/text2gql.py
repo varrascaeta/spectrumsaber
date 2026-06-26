@@ -19,7 +19,7 @@ The module relies on an :class:`~spectrumsaber.llm.LLMProvider` instance
 GraphQL from the schema summary and the user's natural-language input.
 
 Usage:
-    from spectrumsaber.client import SpectrumSaberClient
+    from spectrumsaber.saber_client import SpectrumSaberClient
     from spectrumsaber.llm import create_provider
     from spectrumsaber.text2gql import Text2GQL
 
@@ -128,22 +128,25 @@ Convert the user's natural language request into a valid GraphQL query.
 ## Filter syntax
 Filter fields accept plain scalar values — pass the value directly:
   - String fields: `name: "CORDOBA"` (NOT `name: {{ exact: "CORDOBA" }}`)
-  - Date fields:   `date: "2023-06-15"` (NOT `date: {{ exact: "..." }}`)
   - ID fields:     `id: "42"`
 
-For date ranges use `dateGte` and `dateLte` as top-level arguments on
-the `campaigns` query (NOT inside `filters`):
-  `campaigns(dateGte: "2023-01-01", dateLte: "2023-12-31") {{ ... }}`
-They can be combined with `filters` freely.
+`name` and `normalizedName` are two SEPARATE sibling fields on every filter
+type. Never nest one inside the other.
+  - Correct:   `coverage: {{ normalizedName: "hidrologia" }}`
+  - WRONG:     `coverage: {{ name: {{ normalizedName: "hidrologia" }} }}`
+
+For date ranges use `dateGte`/`dateLte` inside `filters` (NOT as top-level args):
+  `campaigns(filters: {{ dateGte: "2023-01-01", dateLte: "2023-12-31" }}) {{ ... }}`
 
 For OR / AND conditions use `OR:`, `AND:`, `NOT:` (same filter type
 recursively).
 
 ## Data conventions
-- **Coverage names** are stored in UPPERCASE (e.g. "CORDOBA", "TUCUMAN").
-  Always convert the user's input to uppercase when filtering by `name`.
-- **Prefer `normalizedName`** (lowercase) for case-insensitive lookups
-  when the user gives a name in mixed case.
+- **Coverage names** are stored in UPPERCASE (e.g. "CORDOBA", "HIDROLOGIA").
+  Domain/topic names like "hidrologia", "agricultura", "tucuman" refer to
+  **coverages**, not campaign names — filter via `coverage: {{ ... }}`.
+- Use `name: "HIDROLOGIA"` (uppercase) or `normalizedName: "hidrologia"`
+  (lowercase). Both are plain string scalars on the filter type.
 - **Campaign names** follow patterns like "12345-20230615-GEO".
 - **Category names** (exact values): "Raw Data", "Radiance",
   "Reflectance", "Average Radiance", "Average Reflectance", "Text Data",
@@ -159,19 +162,21 @@ recursively).
 Campaigns from a coverage (by normalized lowercase name):
 ```
 query {{
-  campaigns(filters: {{ coverage: {{ normalizedName: "cordoba" }} }}) {{
+  campaigns(filters: {{ coverage: {{ normalizedName: "hidrologia" }} }}) {{
     id name date coverage {{ id name }}
   }}
 }}
 ```
 
-Campaigns within a year range (dateGte/dateLte are top-level args):
+Campaigns within a year range (dateGte/dateLte inside filters):
 ```
 query {{
   campaigns(
-    filters: {{ coverage: {{ name: "CORDOBA" }} }}
-    dateGte: "2011-01-01"
-    dateLte: "2011-12-31"
+    filters: {{
+      coverage: {{ normalizedName: "hidrologia" }}
+      dateGte: "2011-01-01"
+      dateLte: "2011-12-31"
+    }}
   ) {{
     id name date
   }}

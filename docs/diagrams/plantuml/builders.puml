@@ -1,0 +1,77 @@
+@startuml builders
+
+skinparam backgroundColor white
+skinparam dpi 200
+skinparam defaultFontName "DejaVu Sans"
+skinparam classAttributeIconSize 0
+skinparam ArrowColor #444444
+skinparam defaultFontSize 25
+skinparam ArrowFontSize 20
+
+skinparam class {
+    BackgroundColor #F0F4FF
+    BorderColor     #5C6BC0
+    BorderThickness 2
+    FontSize        27
+}
+
+left to right direction
+
+abstract class BaseBuilder {
+    + model : class
+    + instance : BaseFile
+    +build_instance(path: str)
+    +build_name(name: str)
+    +build_metadata(metadata: dict)
+    +build_description(desc: str)
+    +build_ftp_created_at(created_at: datetime)
+    +build_is_unmatched()
+    +build_last_synced_at()
+    +remove_unmatched_if_exists(path: str)
+    +{abstract} build_parent(parent_path: str)
+    +save_to_db()
+    -{abstract} _get_model()
+}
+
+class UnmatchedBuilder {
+    +build_parent(parent_path: str)
+    +build_is_unmatched()
+    +build_level(level: int)
+}
+
+class CoverageBuilder {
+    +build_parent(parent_path: str)
+}
+
+class CampaignBuilder {
+    +build_parent(parent_path: str)
+    +build_date(rule_id: int, date_str: str)
+    +build_external_id(external_id: str)
+    +build_district()
+}
+
+class DataPointBuilder {
+    +build_parent(parent_path: str)
+    +build_order(order: int)
+    +build_latitude()
+    +build_longitude()
+}
+
+class MeasurementBuilder {
+    +build_parent(parent_path: str)
+    +build_category(path: str)
+}
+
+class ComplimentaryDataBuilder {
+    +build_parent(parent_path: str)
+    +build_complement_type(path: str)
+}
+
+UnmatchedBuilder         --|> BaseBuilder
+CoverageBuilder          --|> BaseBuilder
+CampaignBuilder          --|> BaseBuilder
+DataPointBuilder         --|> BaseBuilder
+MeasurementBuilder       --|> BaseBuilder
+ComplimentaryDataBuilder --|> BaseBuilder
+
+@enduml
