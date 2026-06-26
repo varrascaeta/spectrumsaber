@@ -54,11 +54,11 @@ def process_coverage():
     # Define task flow
 
     apply_rules = match_patterns(scan_coverages.output, level="coverage")
-    check_matched = check_non_empty_dict.override(task_id="check_matched")(apply_rules, "matched")
-    check_unmatched = check_non_empty_dict.override(task_id="check_unmatched")(apply_rules, "unmatched")
+    check_matched = check_non_empty_dict(apply_rules, "matched")
+    check_unmatched = check_non_empty_dict(apply_rules, "unmatched")
 
-    matched = get_dict_result.override(task_id="get_matched")(apply_rules, "matched")
-    unmatched = get_dict_result.override(task_id="get_unmatched")(apply_rules, "unmatched")
+    matched = get_dict_result(apply_rules, "matched")
+    unmatched = get_dict_result(apply_rules, "unmatched")
 
     process_matched = process_expanded_by_class_group(
         "process_matched_coverages", matched, "CoverageDirector"

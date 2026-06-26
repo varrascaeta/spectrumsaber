@@ -5,7 +5,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 # Project imports
-from spectrumsaber.client import SpectrumSaberClient
+from spectrumsaber.saber_client import SpectrumSaberClient
 
 
 class TestCLIClient:

@@ -19,7 +19,7 @@ FTP_PASSWORD = os.getenv("FTP_PASSWORD")
 
 # GraphQL Endpoint
 GRAPHQL_ENDPOINT = os.getenv(
-    "GRAPHQL_ENDPOINT", "http://localhost:8000/graphql/"
+    "GRAPHQL_ENDPOINT", "http://localhost:8000/graphql"
 )
 
 # GraphQL JWT Token (optional, for pre-authenticated sessions)

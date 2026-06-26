@@ -1,5 +1,7 @@
+import datetime
 from typing import Optional
 
+import strawberry
 import strawberry_django
 from strawberry import auto
 
@@ -30,12 +32,24 @@ class CampaignFilter:
     name: auto
     normalized_name: auto
     date: auto
+    date_gte: Optional[datetime.date] = strawberry.UNSET
+    date_lte: Optional[datetime.date] = strawberry.UNSET
     external_id: auto
     district: Optional["DistrictFilter"]
     coverage: Optional["CoverageFilter"]
 
     class Meta:
         lookups = True
+
+    def filter_date_gte(self, queryset):
+        if self.date_gte not in (strawberry.UNSET, None):
+            return queryset.filter(date__gte=self.date_gte)
+        return queryset
+
+    def filter_date_lte(self, queryset):
+        if self.date_lte not in (strawberry.UNSET, None):
+            return queryset.filter(date__lte=self.date_lte)
+        return queryset
 
 
 @strawberry_django.filter_type(Category)

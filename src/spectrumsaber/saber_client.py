@@ -164,7 +164,7 @@ class SpectrumSaberClient:
             password (str): The password.
         """
         # First, try to use token from environment variable
-        if GRAPHQL_JWT_TOKEN:
+        if self.__token__:
             logger.info("Found GRAPHQL_JWT_TOKEN in environment, verifying...")
             if self.__verify_token__():
                 logger.info(

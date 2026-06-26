@@ -99,13 +99,13 @@ airflow-build:    ## Build and start the Airflow services
 # ─── Testing ──────────────────────────────────────────────────────────────────
 
 test:             ## Run tests (spins up test DB in Docker, then runs tox)
-	$(DC_TEST) --profile testing up -d && tox -e py312
+	$(DC_TEST) --profile testing up -d && uv run tox -e py312
 
 coverage:         ## Run coverage report via tox
-	tox -e coverage
+	uv run tox -e coverage
 
 lint:             ## Run flake8 style checks via tox
-	tox -e style
+	uv run tox -e style
 
 # ─── Packaging ────────────────────────────────────────────────────────────────
 
