@@ -294,3 +294,4 @@ def process_multiple_by_class_group(group_id: str, recurse_dirs: bool = False):
         return process_multiple_with_recursion
     else:
         return process_multiple_by_class
+

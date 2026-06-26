@@ -6,7 +6,7 @@ import pytest
 
 # Project imports
 from spectrumsaber.cfg import GRAPHQL_JWT_TOKEN
-from spectrumsaber.client import SpectrumSaberClient
+from spectrumsaber.saber_client import SpectrumSaberClient
 
 
 @pytest.fixture

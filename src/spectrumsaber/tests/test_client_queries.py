@@ -5,7 +5,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 # Project imports
-from spectrumsaber.client import SpectrumSaberClient
+from spectrumsaber.saber_client import SpectrumSaberClient
 
 
 @pytest.fixture
@@ -28,6 +28,7 @@ class TestSpectrumSaberClientQueries:
 
     def test_query_success(self, saber_client, mock_requests):
         """Test query sends GraphQL request successfully"""
+        saber_client.__token__ = "test_token"
         mock_response = Mock()
         mock_response.json.return_value = {"data": {"test": "success"}}
         mock_requests.post.return_value = mock_response

@@ -6,6 +6,7 @@ import numpy as np
 from radon.complexity import cc_visit
 from radon.metrics import mi_visit
 from radon.raw import analyze
+from scipy.stats import pearsonr
 
 
 # ==============================
@@ -88,6 +89,9 @@ mis = np.array([d["mi"] for d in data])
 
 x_line = np.linspace(locs.min(), locs.max(), 200)
 
+r_cc, p_cc = pearsonr(locs, ccs)
+r_mi, p_mi = pearsonr(locs, mis)
+
 
 # ==============================
 # LOGS: CC/LLOC and MI/LLOC
@@ -117,6 +121,10 @@ for mod in sorted(module_buckets):
 global_mi_lloc = sum(d["mi"] / d["loc"] for d in data) / len(data)
 print(f"  [global]: {global_mi_lloc:.4f}\n")
 
+print("--- Pearson r ---")
+print(f"  CC vs LLOC: r={r_cc:.4f}, p={p_cc:.4e}")
+print(f"  MI vs LLOC: r={r_mi:.4f}, p={p_mi:.4e}\n")
+
 
 # ==============================
 # PLOT 1: CC vs LLOC
@@ -132,7 +140,7 @@ ax.plot(
     p(x_line),
     "r--",
     linewidth=1.5,
-    label=f"Tendencia lineal (y = {z[0]:.4f}x + {z[1]:.2f})",
+    label=f"Tendencia lineal (y = {z[0]:.4f}x + {z[1]:.2f})\nr = {r_cc:.4f}, R² = {r_cc**2:.4f}, p = {p_cc:.2e}",
 )
 
 ax.set_xlabel("Líneas lógicas de código (LLOC)", fontsize=14)
@@ -140,6 +148,7 @@ ax.set_ylabel("Complejidad ciclomática (CC)", fontsize=14)
 ax.set_title("CC vs. LLOC por módulo", fontsize=16)
 ax.legend(fontsize=14)
 ax.grid(True, linestyle="--", alpha=0.4)
+ax.set_ylim(0, 10)
 plt.tight_layout()
 plt.savefig(CC_SCATTER_OUTPUT, dpi=300)
 plt.close()
@@ -161,7 +170,7 @@ ax.plot(
     p2(x_line),
     "r--",
     linewidth=1.5,
-    label=f"Tendencia lineal (y = {z2[0]:.4f}x + {z2[1]:.2f})",
+    label=f"Tendencia lineal (y = {z2[0]:.4f}x + {z2[1]:.2f})\nr = {r_mi:.4f}, R² = {r_mi**2:.4f}, p = {p_mi:.2e}",
 )
 
 ax.set_xlabel("Líneas lógicas de código (LLOC)", fontsize=14)

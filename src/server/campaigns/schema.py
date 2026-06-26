@@ -1,6 +1,5 @@
 # Standard imports
-import datetime
-from typing import Optional
+from datetime import date
 
 # Strawberry imports
 import strawberry
@@ -36,101 +35,50 @@ from server.campaigns.models import (
 from server.places.models import District
 
 
+def _authenticated_qs(info: Info, model):
+    user = get_user(info)
+    if not user.is_authenticated:
+        raise GQLAuthError(code=GQLAuthErrors.UNAUTHENTICATED)
+    return model.objects.all()
+
+
+def _apply(filters, qs):
+    return strawberry_django.filters.apply(filters, qs) if filters else qs
+
+
 @strawberry.type
 class CampaignQuery:
-    # Coverage
     @strawberry.field
-    def coverages(
-        self,
-        info: Info,
-        filters: CoverageFilter | None = None,
-    ) -> list[CoverageType]:
-        user = get_user(info)
-        if not user.is_authenticated:
-            raise GQLAuthError(code=GQLAuthErrors.UNAUTHENTICATED)
-
-        qs = Coverage.objects.all()
-        if filters:
-            qs = strawberry_django.filters.apply(filters, qs)
-        return qs
+    def coverages(self, info: Info, filters: CoverageFilter | None = None) -> list[CoverageType]:
+        return _apply(filters, _authenticated_qs(info, Coverage))
 
     @strawberry.field
     def campaigns(
         self,
         info: Info,
         filters: CampaignFilter | None = None,
-        date_gte: Optional[datetime.date] = None,
-        date_lte: Optional[datetime.date] = None,
+        date_gte: date | None = None,
+        date_lte: date | None = None,
     ) -> list[CampaignType]:
-        user = get_user(info)
-        if not user.is_authenticated:
-            raise GQLAuthError(code=GQLAuthErrors.UNAUTHENTICATED)
-
-        qs = Campaign.objects.all()
-        if filters:
-            qs = strawberry_django.filters.apply(filters, qs)
-        if date_gte is not None:
+        qs = _authenticated_qs(info, Campaign)
+        if date_gte:
             qs = qs.filter(date__gte=date_gte)
-        if date_lte is not None:
+        if date_lte:
             qs = qs.filter(date__lte=date_lte)
-        return qs
+        return _apply(filters, qs)
 
     @strawberry.field
-    def data_points(
-        self,
-        info: Info,
-        filters: DataPointFilter | None = None,
-    ) -> list[DataPointType]:
-        user = get_user(info)
-        if not user.is_authenticated:
-            raise GQLAuthError(code=GQLAuthErrors.UNAUTHENTICATED)
-
-        qs = DataPoint.objects.all()
-        if filters:
-            qs = strawberry_django.filters.apply(filters, qs)
-        return qs
+    def data_points(self, info: Info, filters: DataPointFilter | None = None) -> list[DataPointType]:
+        return _apply(filters, _authenticated_qs(info, DataPoint))
 
     @strawberry.field
-    def categories(
-        self,
-        info: Info,
-        filters: CategoryFilter | None = None,
-    ) -> list[CategoryType]:
-        user = get_user(info)
-        if not user.is_authenticated:
-            raise GQLAuthError(code=GQLAuthErrors.UNAUTHENTICATED)
-
-        qs = Category.objects.all()
-        if filters:
-            qs = strawberry_django.filters.apply(filters, qs)
-        return qs
+    def categories(self, info: Info, filters: CategoryFilter | None = None) -> list[CategoryType]:
+        return _apply(filters, _authenticated_qs(info, Category))
 
     @strawberry.field
-    def measurements(
-        self,
-        info: Info,
-        filters: MeasurementFilter | None = None,
-    ) -> list[MeasurementType]:
-        user = get_user(info)
-        if not user.is_authenticated:
-            raise GQLAuthError(code=GQLAuthErrors.UNAUTHENTICATED)
-
-        qs = Measurement.objects.all()
-        if filters:
-            qs = strawberry_django.filters.apply(filters, qs)
-        return qs
+    def measurements(self, info: Info, filters: MeasurementFilter | None = None) -> list[MeasurementType]:
+        return _apply(filters, _authenticated_qs(info, Measurement))
 
     @strawberry.field
-    def districts(
-        self,
-        info: Info,
-        filters: DistrictFilter | None = None,
-    ) -> list[DistrictType]:
-        user = get_user(info)
-        if not user.is_authenticated:
-            raise GQLAuthError(code=GQLAuthErrors.UNAUTHENTICATED)
-
-        qs = District.objects.all()
-        if filters:
-            qs = strawberry_django.filters.apply(filters, qs)
-        return qs
+    def districts(self, info: Info, filters: DistrictFilter | None = None) -> list[DistrictType]:
+        return _apply(filters, _authenticated_qs(info, District))
